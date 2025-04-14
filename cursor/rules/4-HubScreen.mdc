@@ -1,0 +1,98 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Hub Screen – Noodle Balance
+
+## 🧭 Overview
+The Hub is the central interface where the player will manage all aspects of their noodle business between periods. It mimics a retro-modern dashboard and includes both navigational elements and immersive world elements. The left side is menu-based, while the right side displays contextual and game progression visuals.
+
+---
+
+## 🖥️ Layout Structure
+
+```
+┌─────────────────────────────┐             ┌─────────────────────────────┐
+│ 🏢 Company Name (Custom)     │             │ Rank: 🥈 152  | 💰 Funds: ¥5,255,582 │
+│ Period 13 / Next Investor in 7 periods     │             │                            │
+├─────────────────────────────┤             │                            │
+│ 🍜 Noodle Bars              │             │                            │
+│ 👥 Employees                │             │         [ Pixel Art        │
+│ 💳 Debts                   │             │         noodle bar ]       │
+│ 🤝 Social                  │             │                            │
+│ 🚀 Start Period [CTA]      │             │                            │
+└─────────────────────────────┘             ├─────────────────────────────┤
+                                           │ Burnout: ▓▓▓░░░░░░ (32%)      │
+                                           │ Buffs: 🔰 [Click → modal]     │
+                                           │ Settings: ⚙️ [Click → modal] │
+                                           ├─────────────────────────────┤
+                                           │ 📈 Timeline (last 10 periods):│
+                                           │ ● 🟢 Success (P12)           │
+                                           │ ● 🔴 Failure (P11)           │
+                                           │ ● 🟢 Success (P10)           │
+                                           │ ● ...                        │
+                                           └─────────────────────────────┘
+```
+
+---
+
+## 🔍 Menu Panel (Left Side)
+
+- **🍜 Noodle Bars**
+  - Overview of current properties.
+  - Status per stand: staffing, condition, upgrades.
+
+- **👥 Employees**
+  - View, assign, and manage employees.
+  - Morale and skill stats displayed.
+
+- **💳 Debts**
+  - Active loans, next payment schedule.
+  - Option to repay or refinance.
+
+- **🤝 Social**
+  - 5 characters to develop relationships with.
+  - Tracks current bond level and available interactions.
+
+- **🚀 Start Period**
+  - Large confirmation button.
+  - Launches the delivery simulation phase.
+  - Warning if incomplete setups (e.g., unassigned stands).
+
+---
+
+## 🧩 Visual Panel (Right Side)
+
+- **Pixel art background**: animated noodle bar, changes with progress.
+- **Company Stats**:
+  - Rank (1 to 200)
+  - Current funds
+  - Period tracker + countdown to next Business Angel visit
+
+### 📊 Burnout Indicator
+- Horizontal bar from 0% to 100%
+- Tooltip: "If the bar fills up, you will burn out."
+
+### ✨ Active Buffs Icon
+- Shows if any temporary or permanent buffs are active
+- Clicking/tapping opens modal:
+  - Buff source (e.g. Social link Lv3 – Employee morale +10%)
+  - Duration or permanent
+
+### ⚙️ Options Icon
+- Opens settings modal (to be defined in a separate markdown file)
+- Includes accessibility, audio, save/load, etc.
+
+### 🕒 Mini Timeline (Last 10 Periods)
+- Displays colored dots + period numbers:
+  - 🟢 = Positive period (good revenue, high morale, good reviews)
+  - 🔴 = Negative period (loss, staff issues, bad reviews)
+- Clicking/tapping one could allow viewing recap (optional future feature)
+
+---
+
+## 🎨 Design Notes
+- **React**: all UI components (menus, modals, indicators)
+- **Phaser**: background animations and any live scene elements
+- **Touch friendly**: large click zones, swipe navigation optional on mobile

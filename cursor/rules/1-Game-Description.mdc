@@ -1,0 +1,126 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Game Description – Noodle Balance
+
+## 🎯 Pitch
+
+You play as a former office worker who quits their job to pursue a new life running artisanal noodle stands. Faced with debt, employee management, social pressure, and personal burnout, the protagonist must build a thriving business while maintaining a healthy mental balance. The game combines passive simulation, light management mechanics, social interactions, and stylized arcade moments.
+
+## 🧠 Core Concept
+- Manage multiple noodle stands and employees.
+- Balance personal well-being and economic growth.
+- Build social relationships to unlock passive buffs.
+- Navigate random events and critical reviews.
+- Confront your investor every 10 periods through a debate-battle.
+
+## 🎮 Core Gameplay Loop
+
+### Hub Interface (per Period)
+- **Noodle Bars**: Overview of active stands (revenue, staff, condition, rating).
+- **Employees**: Hire, assign, train, and monitor staff morale.
+- **Debts**: Track borrowed funds, pay back loans, refinance if needed.
+- **Social**: Interact with 5 key NPCs to develop bonds and unlock bonuses.
+- **Start Period**: Launches the delivery simulation and resolves all stand activities.
+
+## 🥇 Progression and Endgame
+- **Ultimate Goal**: Become the Top 1 ranked artisan noodle chain in the region.
+- **Game Over Conditions**:
+  - Total burnout (mental gauge full).
+  - Bankruptcy (unrecoverable negative balance).
+- **Restart System**: Player can continue from 10 periods prior to failure.
+- **No narrative ending** – continued play is allowed post-victory.
+
+## 📊 Business Rank Structure (TBD Labels)
+- Rank 101+: Street Noodle Stand
+- Rank 61–100: Newcomer
+- Rank 31–60: Promising Business
+- Rank 11–30: Good Reputation
+- Rank 2–10: Recognized Artisan
+- Rank 1: Legendary Noodle Shop
+
+Based on customer satisfaction, total profit, stand diversity, and growth rate.
+
+## 🧘‍♂️ Burnout System
+- One mental gauge tracking burnout (no "stress" on the other end).
+- Burnout increases with:
+  - Overwork
+  - Negative events
+  - Low staff morale
+- Reduced by:
+  - Rest periods
+  - Positive social interactions
+  - Stand success and morale boosts
+
+## 🤝 Social System
+- 5 characters with individual storylines.
+- Each relationship has 5 levels.
+- Levels unlock passive business or mental bonuses:
+  - Reduce burnout
+  - Increase profit margins
+  - Improve employee morale
+  - Discover secret recipes
+  - Boost special event success
+
+## 🚚 Delivery Simulation (Passive Side-Scroller)
+- Each stand is visualized as a horizontal track.
+- Player’s character rides a scooter collecting results.
+- Animated bubbles pop up:
+  - "Delivery Success"
+  - "Client Loved It!"
+  - "Kitchen Mishap"
+  - "Recipe Bonus"
+- Unfolds automatically.
+- At end of delivery:
+  - Each stand gets a bowl icon:
+    - Full Bowl = Perfect
+    - Tilted Bowl = Decent
+    - Spilled Bowl = Failure
+
+Random events occur during periods:
+- Good events (free PR, customer gifts).
+- Problems (stockouts, sick staff).
+- Some resolved instantly, others involve a risk/reward decision (dice roll %).
+
+## 💬 Investor Debate (Every 10 Periods)
+
+Simplified battle system inspired by Yakuza:
+- Bring 4 employees with elemental roles:
+  - Red = Authority
+  - Green = Empathy
+  - Blue = Data
+- Enemy investor attacks with elements.
+- Match correct employee (rock-paper-scissors dynamic):
+  - Red > Green
+  - Green > Blue
+  - Blue > Red
+
+Cooldowns apply between employee uses.
+
+Success or failure affected by:
+- Business results from last periods
+- Employee morale
+- Social link bonuses
+
+Winning the debate grants:
+- Reduced interest rates
+- Public recognition
+- Bonus opportunities
+
+Losing results in:
+- Tighter loan conditions
+- Possible penalty events
+
+## 🎨 Visual and Technical Style
+- **Art**: Pixel art, urban Asian street-food aesthetic.
+- **UI**: Built using **React** for all menu/hub/social elements.
+- **Game engine**: **Phaser 3** used for side-scroller and animations.
+- **Responsive**: Designed for both desktop and mobile (touch-friendly).
+
+## ♻️ Replayability and Flow
+- No forced ending.
+- Once Top 1 is reached, players can continue expanding freely.
+- Failure allows retry from previous period checkpoints.
+- New playthroughs may include shuffled staff/recipes/events for variety.

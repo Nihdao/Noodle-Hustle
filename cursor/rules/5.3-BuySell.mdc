@@ -1,0 +1,63 @@
+# 5.3 – Buy/Sell Noodle Bars
+
+## 🧭 Purpose
+
+Allows the player to manage their portfolio of noodle bars by **purchasing new locations** or **selling existing ones**. This gives the player strategic control over their expansion and resource allocation.
+
+---
+
+## 💼 Access
+
+From the **Noodle Bars** menu, clicking on **Buy/Sell** opens a screen similar to Assign/Upgrade.
+
+- **Left Panel**: list of potential property slots
+  - Occupied → shows currently owned noodle bars
+  - Empty → available for purchase
+  - Locked → requires rank threshold to unlock
+
+- **Right Panel**: contextual info depending on what is selected
+
+---
+
+## 🛒 Buying Properties
+
+- Clicking on an empty slot opens a selection of available noodle bars for purchase
+- Each property comes with:
+  - A unique name and pixel art visual
+  - Base upkeep cost
+  - Stats cap (maximum potential for upgrades)
+  - A short description
+- Purchase requires upfront cost in **dollars ($)**
+
+📝 The traits and effects of each noodle bar (location, capacity, etc.) will be defined in a separate file.
+
+---
+
+## 💸 Selling Properties
+
+- Clicking on an **occupied** property opens the sell confirmation prompt
+- **The first noodle bar is not sellable**
+- Sale shows:
+  - Current value (based on upgrades and rank)
+  - Impact on future upkeep and performance
+- Once sold:
+  - Employees previously assigned return to the idle pool
+  - Profits and upgrade levels are wiped from that stand
+
+---
+
+## ⚠️ Rules & Limits
+
+- You can only buy/sell when **not in an active delivery period**
+- Some properties may be **limited time offers** (optional)
+- Selling cannot be undone unless repurchased later
+
+---
+
+## 💾 Persistence
+
+All transactions are saved and affect forecasted profits immediately.
+
+---
+
+Next → Employee system and stand stats

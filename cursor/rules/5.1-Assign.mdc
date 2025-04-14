@@ -1,0 +1,92 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# 5.1 – Assign Employees to Noodle Bars
+
+## 👥 Feature: Assign
+
+Allows the player to allocate employees (including the main character) to their available noodle bars.
+
+---
+
+## 📌 Overview
+
+### Boutique List View (Left Panel)
+- Displays unlocked noodle bars
+- 1 bar is available by default
+- Additional bars unlock at the following global ranking milestones:
+  - Rank 175 → +1 slot
+  - Rank 125 → +1 slot
+  - Rank 75 → +1 slot
+  - Rank 25 → Final slot (5 total)
+
+---
+
+## 🗂️ Boutique Detail View (Right Panel)
+
+When selecting a bar, the panel shows:
+
+- **📛 Name** of the noodle bar
+- **🖼️ Image** (facade, interior — stylized pixel art)
+- **💰 Sale Price** (not available for the first stand)
+- **🧱 Upkeep Cost** (terrain, facilities)
+- **👥 Assigned Staff** (max. 3 employees)
+- **💸 Total Labor Cost**
+- **📊 Forecasted Sales for current period**
+
+---
+
+## 🎯 Operational Criteria
+
+Each noodle bar has **minimum performance thresholds** across 3 categories:
+
+- 🍜 **Cooking**
+- 💖 **Service**
+- 🎭 **Ambiance**
+
+These values must be met by the team assigned to the stand.
+
+> Example:
+> **Ramen Express**  
+> Requirements: Cooking 40 / Service 20 / Ambiance 10
+
+---
+
+### ⚠️ Failure to meet requirements
+- Reduces projected sales
+- Increases chance of negative events during delivery phase
+- May trigger lower customer ratings
+- Can impact staff morale and increase burnout risk
+
+---
+
+## 🧑‍🍳 Assigning Employees
+
+- Click or drag & drop interface
+- Available employees are listed in a pool
+- Hovering reveals:
+  - Employee stats (see Employee System)
+  - Current status (resting, sick, busy)
+  - Labor cost
+
+---
+
+## 🔄 Effects of Assignment
+
+Upon any assignment change:
+- Estimated sales and costs are **recalculated**
+- **Forecasted profit** is updated in the Hub Header
+- Tooltip shows: “Requirements Met” or “Missing X in Service”
+
+---
+
+## 💾 Persistence
+- Assignments are saved for the current period and carried over
+- Manual changes override the default carry-over
+- “Reset Assignments” button allows clearing all current slots
+
+---
+
+Next up → **5.2 – Upgrade**
