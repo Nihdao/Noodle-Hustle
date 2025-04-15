@@ -2,7 +2,7 @@ import PropTypes from "prop-types";
 import { useState } from "react";
 import OptionsModal from "./OptionsModal";
 import CreditsModal from "./CreditsModal";
-import "../styles/OptionsModal.css";
+// import "../styles/OptionsModal.css";
 // Import the styles - make sure the path is correct
 // If style.css is in the public folder, it's linked via index.html, no direct import needed here.
 // If you move it to src/styles/MainMenu.css, then use:

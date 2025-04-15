@@ -16,6 +16,7 @@ You play as a former office worker who quits their job to pursue a new life runn
 - Navigate random events and critical reviews.
 - Confront your investor every 10 periods through a debate-battle.
 
+
 ## 🎮 Core Gameplay Loop
 
 ### Hub Interface (per Period)
@@ -115,7 +116,7 @@ Losing results in:
 
 ## 🎨 Visual and Technical Style
 - **Art**: Pixel art, urban Asian street-food aesthetic.
-- **UI**: Built using **React** for all menu/hub/social elements.
+- **UI**: Built using **React** for all menu/hub/social elements with **TailwindCSS 4.1**.
 - **Game engine**: **Phaser 3** used for side-scroller and animations.
 - **Responsive**: Designed for both desktop and mobile (touch-friendly).
 
