@@ -1,52 +1,39 @@
+import Phaser from "phaser";
 import { EventBus } from "../EventBus";
-import { Scene } from "phaser";
 
-export class MainMenu extends Scene {
-    logoTween;
-
+export class MainMenu extends Phaser.Scene {
     constructor() {
         super("MainMenu");
     }
 
+    preload() {
+        // TODO: Load background image, logo, and button assets based on 2-HomePage.mdc
+        // Example placeholders:
+        this.load.setPath("assets");
+        this.load.image("background", "bg.png");
+        // this.load.image('logo', 'assets/logo.png');
+    }
+
     create() {
-        this.add.image(512, 384, "background");
+        // TODO: Display background image and logo based on 2-HomePage.mdc
+        // Example placeholders:
+        this.add
+            .image(
+                this.cameras.main.centerX,
+                this.cameras.main.centerY * 0.8, // Dezooming the image by adjusting the Y position
+                "background"
+            )
+            .setScale(0.9); // Optionally scale down the image for a zoom-out effect
+        // this.add.image(this.cameras.main.centerX, this.cameras.main.centerY / 2, 'logo');
 
         EventBus.emit("current-scene-ready", this);
     }
 
+    // Placeholder for scene change logic, can be triggered by React component
     changeScene() {
-        if (this.logoTween) {
-            this.logoTween.stop();
-            this.logoTween = null;
-        }
-
-        this.scene.start("Game");
-    }
-
-    moveLogo(reactCallback) {
-        if (this.logoTween) {
-            if (this.logoTween.isPlaying()) {
-                this.logoTween.pause();
-            } else {
-                this.logoTween.play();
-            }
-        } else {
-            this.logoTween = this.tweens.add({
-                targets: this.logo,
-                x: { value: 750, duration: 3000, ease: "Back.easeInOut" },
-                y: { value: 80, duration: 1500, ease: "Sine.easeOut" },
-                yoyo: true,
-                repeat: -1,
-                onUpdate: () => {
-                    if (reactCallback) {
-                        reactCallback({
-                            x: Math.floor(this.logo.x),
-                            y: Math.floor(this.logo.y),
-                        });
-                    }
-                },
-            });
-        }
+        // Example: Transition to the main game hub scene
+        // this.scene.start('HubScreen');
+        console.log("Change scene requested from MainMenu");
     }
 }
 
