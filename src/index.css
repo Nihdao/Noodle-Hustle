@@ -1,4 +1,33 @@
-@import "tailwindcss";
+@import "tailwindcss/preflight";
+@import "tailwindcss/utilities";
+
+/* Custom styles for range input */
+@layer utilities {
+    input[type="range"] {
+        @apply appearance-none bg-gradient-to-r from-[#d35400] to-[#34495e] h-2 rounded-full;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+        @apply appearance-none w-5 h-5 bg-white rounded-full cursor-pointer shadow-lg hover:scale-110 transition-transform;
+    }
+
+    input[type="range"]::-moz-range-thumb {
+        @apply w-5 h-5 bg-white rounded-full cursor-pointer shadow-lg hover:scale-110 transition-transform border-none;
+    }
+
+    /* Custom scrollbar */
+    .custom-scrollbar::-webkit-scrollbar {
+        @apply w-2;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+        @apply bg-[#2c3e50]/50 rounded-full;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        @apply bg-[#d35400]/50 rounded-full hover:bg-[#d35400]/70 transition-colors;
+    }
+}
 
 /* Your other base styles can go here */
 body {
@@ -9,3 +38,4 @@ body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
+
