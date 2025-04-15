@@ -1,0 +1,75 @@
+# 7.1 - Shareholder Showdown – Investor Battle System
+
+The Shareholder Showdown is a critical and flashy combat mini-game triggered every 4 periods. In this event, the player must defend their business against an aggressive investor and their hired interrogators. These agents are trying to sabotage your company's public image, which would lower your rank and reduce investor trust.
+
+## 🧠 Objective
+
+Defend your approval rating by winning against hostile shareholder agents in a turn-based, real-time "argument duel" inspired by RPG battles and rhythm-action games.
+
+---
+
+## 🧾 Battle Setup
+
+- The battle starts with **3 investor agents** (can increase in difficulty).
+- Each agent has:
+  - A **persuasion value** (their attack strength).
+  - A **stance** (Product, HR, Finance).
+  - A **rage meter** (fills as they speak without interruption).
+- The player has:
+  - Up to **4 employees selected in advance** to defend.
+  - Each employee has:
+    - A persuasion power (linked to **Relevance + Mood**).
+    - A **stance icon** (Product, HR, Finance).
+    - **Cooldown** (based on Repartee stat).
+    - **Intervention Cost**.
+
+---
+
+## 🎮 Gameplay Flow
+
+1. Each agent raises a question or criticism.
+2. The player must **tap/select an employee** who has the correct stance to counter it.
+3. If the selected employee’s **stance matches**, damage is multiplied.
+4. The **Repartee** stat defines how fast the employee can be reused.
+5. Successful hits fill the “Support Meter” and reduce the agent’s confidence (HP bar).
+6. Agents with depleted bars are silenced.
+
+---
+
+## 🧪 Mechanics
+
+### 🔁 Counter System
+- Choose employees whose stance beats the agent's:
+  - **Product beats HR**
+  - **HR beats Finance**
+  - **Finance beats Product**
+
+### 💥 Critical Strikes
+- At **Support Meter ≥ 80%**, employees can trigger **Critical Speech** (damage x2).
+- At 100%, unleash **All-Out Argument**, a flashy team attack.
+
+### 🔓 Support Meter Buffs
+- Winning quickly boosts overall **Support %** post-meeting.
+- Losing too many arguments lowers **Share Price** and **Support**.
+
+---
+
+## 📊 Results Screen
+
+After the battle:
+- All agents defeated: +10% Approval.
+- Partial win: +5%.
+- Loss: -10%.
+- Employees earn EXP and Mood increases if victorious.
+
+---
+
+## 🧠 Strategy Tips
+
+- Mix personalities (Authoritarian, Empathic, Analytic) to cover more cases.
+- Use low-cost employees first to save energy.
+- Train employees with high Relevance and Repartee stats.
+
+---
+
+This system adds depth, tension, and dramatic flair to the business loop, rewarding the player’s team composition, upgrades, and buff usage.

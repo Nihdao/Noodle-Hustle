@@ -1,0 +1,83 @@
+# 9.0 – Personal / Social System
+
+This module allows the player to explore different locations and build relationships with key characters (Confidants), unlocking powerful gameplay buffs through interaction.
+
+---
+
+## 🧭 Access
+
+From the Hub, clicking on **Social** opens a dedicated screen with:
+- Company name
+- Current period
+- Periods remaining before next Business Angel meeting
+- Burnout bar (displayed on the screen)
+
+---
+
+## 📍 Location Choice (Left Panel)
+
+Players can select **one location per period**:
+
+- 🏡 **Home**: Does not trigger a meeting, but reduces burnout at the end of the period.
+- 🌳 **Park**
+- 🌊 **Lake**
+- 🏙 **Downtown**
+- 🏬 **Hypermarket**
+
+---
+
+## 🤝 Confidant Panel (Right Panel)
+
+Displays known confidants (max 5). Unknown ones are hidden as “???”.
+Each displayed confidant shows:
+- Portrait (stylized pixel art)
+- Social Link Level (1 to 5)
+- Title
+- Associated Buff
+- Button “View Relationship” → opens a short description and progression
+
+---
+
+## 🎭 Confidants Overview
+
+Each confidant:
+- Can be met at a specific location
+- Appears on a fixed periodic cycle (ex: every 3 periods)
+- Unlocks a **unique gameplay buff** through social level progression
+
+| Name        | Role                   | Buff               | Favorite Location | First Appearance | Frequency |
+|-------------|------------------------|--------------------|-------------------|------------------|-----------|
+| Mr. Miso    | Ex-HR Director         | Recruitment Guru   | Park              | Period 1         | Every 3   |
+| Riko        | Former Delivery Driver | Delivery Flow      | Downtown          | Period 2         | Every 4   |
+| Ginji       | Debate Coach           | Investor Whisperer | Lake              | Period 4         | Every 5   |
+| Yuna        | Burnout Therapist      | Mental Clarity     | Home              | Period 3         | Every 1   |
+| Sensei Kuro | Retired Accountant     | Smart Spending     | Hypermarket       | Period 3         | Every 3   |
+
+---
+
+## 🧠 Yuna Exception
+
+- She appears **once per period** regardless of location.
+- Automatically unlocks if burnout exceeds a threshold (emergency meeting).
+- She is the only confidant whose presence is guaranteed per cycle.
+
+---
+
+## 🎬 Interactions & Progression
+
+- Meeting a confidant increases their Social Link by 1 (up to 5)
+- Each level unlocks stronger buffs
+- Every level-up triggers a **cinematic scene with dialogue** (external .md files per confidant)
+- Level 5 unlocks a unique “memory” item or visual easter egg in the Hub
+
+---
+
+## 🎲 Encounter System
+
+- Going to a location triggers a 50% chance to meet the scheduled confidant if conditions are met
+- Meeting is guaranteed if conditions AND RNG align
+- The player cannot meet more than one confidant per period
+
+---
+
+This system adds emotional depth and provides strategic advantages based on where the player chooses to spend time.

@@ -1,0 +1,57 @@
+# 8.0 – Debt System
+
+This module allows the player to manage their outstanding debts and access new loans from their mysterious Business Angel.
+
+---
+
+## 🧭 Access
+
+From the Hub, clicking on **Debts** opens a dedicated screen with:
+- Company name
+- Current period
+- Periods until next Business Angel meeting
+- Profit forecast (updated dynamically)
+
+---
+
+## 💰 Debt Management Panel
+
+### Active Debt Summary
+- List of current debts with:
+  - Total borrowed
+  - Remaining amount
+  - Monthly repayment amount
+  - Next payment date (in periods)
+  - Interest rate
+
+The player can view how much each loan impacts their **monthly budget** and overall cashflow.
+
+---
+
+### New Loan Offers
+
+On the right side of the screen, the Business Angel may offer new loans.
+
+#### Loan Proposal UI:
+- Loan Amount options: e.g. $50,000 / $100,000 / $250,000 / $500,000
+- Interest rate: randomized between 5% and 12%
+- Repayment duration: fixed (e.g. 10 to 30 periods)
+
+#### Player Options:
+- Review conditions
+- Accept the offer (adds to active debt)
+- Decline the offer (no penalty)
+
+New loans become available **after every Business Angel meeting**, or if funds fall below a critical threshold.
+
+---
+
+## 🧨 Debt Failure
+
+- Failure to meet repayments for 3 consecutive periods = **Game Over (bankruptcy)**
+- Repayments are automatic and deducted **at the start** of each period
+- Player must balance loan usage with profitability to avoid financial collapse
+
+---
+
+The Debt screen is simple, elegant, and reflects the core balance mechanic: take risks to grow, but manage responsibly.
