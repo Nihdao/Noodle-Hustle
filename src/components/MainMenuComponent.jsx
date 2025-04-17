@@ -37,7 +37,7 @@ function MainMenuComponent({
     const handleNewGameClick = () => {
         console.log("Starting new game...");
         localStorage.removeItem("noodleBalanceSave");
-        if (onStartNewGame) onStartNewGame("Default Company");
+        if (onStartNewGame) onStartNewGame();
     };
 
     const handleContinueClick = () => {

@@ -1,0 +1,392 @@
+/* Game Intro CSS */
+
+/* Common styles */
+.game-intro-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.game-intro-overlay > * {
+    pointer-events: auto;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+}
+
+@keyframes blink {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0;
+    }
+}
+
+/* Japanese slate off-white styling (similar to MenuContainer) */
+.jp-container {
+    background-color: #f9f3e5;
+    border: 8px solid #ecdbc5;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    position: relative;
+}
+
+.jp-inner {
+    background-color: #f9f3e5;
+    border: 2px solid #e1d1b3;
+    border-radius: 4px;
+    padding: 20px;
+    position: relative;
+}
+
+.jp-texture {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        45deg,
+        rgba(167, 139, 107, 0.05) 25%,
+        transparent 25%,
+        transparent 50%,
+        rgba(167, 139, 107, 0.05) 50%,
+        rgba(167, 139, 107, 0.05) 75%,
+        transparent 75%,
+        transparent
+    );
+    background-size: 4px 4px;
+    pointer-events: none;
+}
+
+/* Intro Image Container */
+.intro-image-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 20;
+    margin-top: -5%;
+}
+
+.intro-image-container.fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+}
+
+.intro-image-container.fade-out {
+    animation: fadeOut 0.5s ease-out forwards;
+}
+
+.intro-image-box {
+    background-color: #f9f3e5;
+    border: 8px solid #ecdbc5;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    padding: 8px;
+    position: relative;
+    width: auto;
+    max-width: 800px;
+    max-height: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.intro-image-box::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23a78b6b' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.intro-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 4px;
+    transform: scale(0.5);
+}
+
+/* NameInput Component */
+.name-input-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 20;
+}
+
+.name-input-container.fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+}
+
+.name-input-container.fade-out {
+    animation: fadeOut 0.5s ease-out forwards;
+}
+
+.name-input-box {
+    background-color: #f9f3e5;
+    border: 8px solid #ecdbc5;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    padding: 6px;
+    position: relative;
+    max-width: 500px;
+    width: 90%;
+    transform: rotate(-1deg);
+}
+
+.name-input-box::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23a78b6b' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.input-title {
+    color: #5a4a42;
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 5px;
+    text-align: center;
+}
+
+.input-subtitle {
+    color: #8a7a72;
+    font-size: 16px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.name-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e1d1b3;
+    border-radius: 4px;
+    background-color: #fffef9;
+    font-size: 18px;
+    color: #5a4a42;
+    margin-bottom: 20px;
+}
+
+.name-input:focus {
+    outline: none;
+    border-color: #c7b299;
+    box-shadow: 0 0 0 3px rgba(199, 178, 153, 0.3);
+}
+
+.name-submit-button {
+    background-color: #e67e22; /* Orange to match game theme */
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    border: none;
+    border-radius: 4px;
+    padding: 12px 24px;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.name-submit-button:hover {
+    background-color: #d35400;
+}
+
+.name-submit-button:active {
+    transform: scale(0.98);
+}
+
+.error-message {
+    color: #d35400;
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+/* Dialog Box Component */
+.intro-dialog-container {
+    position: absolute;
+    bottom: 30px;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    padding: 0 20px;
+    z-index: 20;
+    animation: fadeIn 0.5s ease-out;
+}
+
+.intro-dialog-box {
+    background-color: #f9f3e5;
+    border: 8px solid #ecdbc5;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    padding: 6px;
+    position: relative;
+    width: 90%;
+    max-width: 800px;
+    transform: rotate(-0.5deg);
+    cursor: pointer;
+}
+
+.intro-dialog-box::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23a78b6b' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.dialog-text {
+    background-color: #f9f3e5;
+    border: 2px solid #e1d1b3;
+    border-radius: 4px;
+    padding: 20px;
+    position: relative;
+    min-height: 120px;
+}
+
+.dialog-line {
+    color: #5a4a42;
+    font-size: 18px;
+    line-height: 1.5;
+    margin-bottom: 10px;
+}
+
+.dialog-line.current {
+    display: flex;
+    align-items: center;
+}
+
+.cursor {
+    display: inline-block;
+    margin-left: 2px;
+    animation: blink 0.7s infinite;
+}
+
+.cursor.hidden {
+    opacity: 0;
+}
+
+.dialog-continue-indicator {
+    position: absolute;
+    bottom: 15px;
+    right: 15px;
+    display: flex;
+    align-items: center;
+    opacity: 0.7;
+    animation: fadeIn 0.5s;
+}
+
+.continue-arrow {
+    color: #e67e22;
+    font-size: 20px;
+    margin-right: 5px;
+}
+
+.continue-text {
+    color: #8a7a72;
+    font-size: 14px;
+}
+
+/* Hold to Skip Button */
+.hold-to-skip-button {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background-color: rgba(249, 243, 229, 0.9);
+    border: 2px solid #ecdbc5;
+    border-radius: 20px;
+    padding: 10px 20px;
+    cursor: pointer;
+    z-index: 30;
+    user-select: none;
+    transition: all 0.2s ease;
+}
+
+.hold-to-skip-button:hover {
+    background-color: rgba(249, 243, 229, 1);
+    border-color: #e67e22;
+    box-shadow: 0 0 10px rgba(230, 126, 34, 0.3);
+    transform: translateY(-2px);
+}
+
+.hold-to-skip-button.active {
+    background-color: rgba(249, 243, 229, 1);
+    box-shadow: 0 0 15px rgba(230, 126, 34, 0.5);
+    transform: scale(1.02);
+}
+
+.skip-button-text {
+    color: #5a4a42;
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.skip-progress-container {
+    height: 4px;
+    background-color: #e1d1b3;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.skip-progress-bar {
+    height: 100%;
+    background-color: #e67e22;
+    width: 0;
+    transition: width 0.1s linear;
+}
+

@@ -4,6 +4,8 @@ import { GameOver } from "./scenes/GameOver";
 import { MainMenu } from "./scenes/MainMenu";
 import Phaser from "phaser";
 import { Preloader } from "./scenes/Preloader";
+import { GameIntro } from "./scenes/GameIntro";
+import { HubScreen } from "./scenes/HubScreen";
 
 // Find out more information about the Game Config at:
 // https://newdocs.phaser.io/docs/3.70.0/Phaser.Types.Core.GameConfig
@@ -14,7 +16,7 @@ const config = {
     parent: "game-container",
     backgroundColor: "#028af8",
     pixelArt: true,
-    scene: [Boot, Preloader, MainMenu, Game, GameOver],
+    scene: [Boot, Preloader, MainMenu, GameIntro, HubScreen, Game, GameOver],
     scale: {
         mode: Phaser.Scale.RESIZE,
         autoCenter: Phaser.Scale.CENTER_BOTH, // Centrage automatique du canvas

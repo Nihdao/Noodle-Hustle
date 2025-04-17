@@ -1,31 +1,33 @@
 import Phaser from "phaser";
 import { EventBus } from "../EventBus";
 
-export class MainMenu extends Phaser.Scene {
+export class GameIntro extends Phaser.Scene {
     constructor() {
-        super("MainMenu");
+        super("GameIntro");
     }
 
     preload() {
+        // Load only background assets
         this.load.image("noodles", "noodles.png");
+        // We don't need to load intro images here as they'll be handled by React
     }
 
     create() {
-        // Create an orange background
+        // Get dimensions
         const width = this.cameras.main.width;
         const height = this.cameras.main.height;
 
-        // Add orange background
+        // Add orange background (same as MainMenu for consistency)
         this.add.rectangle(0, 0, width, height, 0xe67e22).setOrigin(0);
 
-        // Add repeating noodles pattern with diagonal scrolling
+        // Add repeating noodles pattern with diagonal scrolling (same as MainMenu)
         this.noodlesPattern = this.add
             .tileSprite(0, 0, width, height, "noodles")
             .setOrigin(0)
             .setAlpha(0.3); // Add some transparency
 
-        // Register this scene with the event bus
-        console.log("MainMenu: Registering scene with EventBus");
+        // Register this scene with the event bus for React components to access
+        console.log("GameIntro: Registering scene with EventBus");
         EventBus.registerScene(this);
     }
 
@@ -39,9 +41,10 @@ export class MainMenu extends Phaser.Scene {
 
     onResize() {}
 
-    // Placeholder for scene change logic, can be triggered by React component
-    changeScene() {
-        console.log("Change scene requested from MainMenu");
+    // Method to proceed to the HubScreen
+    goToHubScreen() {
+        console.log("GameIntro: Transitioning to HubScreen");
+        this.scene.start("HubScreen");
     }
 }
 

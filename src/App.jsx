@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { PhaserGame } from "./game/PhaserGame";
 // Update import path
 import MainMenuComponent from "./components/MainMenuComponent";
+import GameIntroComponent from "./components/GameIntroComponent";
 
 function App() {
     // References to the PhaserGame component (game and scene are exposed)
@@ -13,20 +14,33 @@ function App() {
 
     // Event emitted from the PhaserGame component
     const currentScene = (scene) => {
+        console.log("App received scene:", scene);
+        if (scene) {
+            console.log(
+                "Scene methods:",
+                Object.getOwnPropertyNames(Object.getPrototypeOf(scene))
+            );
+        }
+
         if (scene && scene.scene) {
             setCurrentSceneKey(scene.scene.key);
+
+            // Store scene reference in window to allow components to access it
+            window.gameRef = scene;
+            console.log("Set window.gameRef with scene key:", scene.scene.key);
         } else {
             setCurrentSceneKey(null);
+            window.gameRef = null;
         }
     };
 
     // --- Button handlers for MainMenuComponent ---
-    const handleStartNewGame = () => {
-        console.log("App: Start New Game");
+    const handleStartNewGame = (companyName) => {
+        console.log("App: Start New Game, Company:", companyName);
         const scene = phaserRef.current?.scene;
         if (scene?.scene.key === "MainMenu") {
-            console.log("Triggering scene change from App...");
-            scene.scene.start("Game"); // Example: Start the 'Game' scene
+            console.log("Starting GameIntro scene...");
+            scene.scene.start("GameIntro"); // Start the GameIntro scene
         }
     };
 
@@ -34,8 +48,8 @@ function App() {
         console.log("App: Continue Game");
         const scene = phaserRef.current?.scene;
         if (scene?.scene.key === "MainMenu") {
-            console.log("Triggering scene change from App...");
-            scene.scene.start("Game"); // Example: Start 'Game' scene
+            console.log("Directly to HubScreen...");
+            scene.scene.start("HubScreen"); // Skip intro and go to HubScreen
         }
     };
 
@@ -50,6 +64,11 @@ function App() {
     };
     // --- End Handlers ---
 
+    // Handler for intro completion
+    const handleCompleteIntro = () => {
+        console.log("Intro sequence completed");
+    };
+
     return (
         <div id="app">
             <PhaserGame ref={phaserRef} currentActiveScene={currentScene} />
@@ -62,6 +81,11 @@ function App() {
                     onOptions={handleOptions}
                     onCredits={handleCredits}
                 />
+            )}
+
+            {/* Conditionally render the GameIntroComponent */}
+            {currentSceneKey === "GameIntro" && (
+                <GameIntroComponent onCompleteIntro={handleCompleteIntro} />
             )}
 
             {/* Example: Conditionally render other components based on scene key */}

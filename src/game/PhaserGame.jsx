@@ -29,6 +29,18 @@ export const PhaserGame = forwardRef(function PhaserGame(
 
     useEffect(() => {
         EventBus.on("current-scene-ready", (currentScene) => {
+            console.log("Current scene ready:", currentScene);
+            console.log(
+                "Scene methods:",
+                Object.getOwnPropertyNames(currentScene)
+            );
+            if (currentScene.constructor) {
+                console.log(
+                    "Scene constructor:",
+                    currentScene.constructor.name
+                );
+            }
+
             if (currentActiveScene instanceof Function) {
                 currentActiveScene(currentScene);
             }
