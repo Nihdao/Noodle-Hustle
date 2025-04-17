@@ -21,6 +21,20 @@ function HoldToSkipButton({ onSkip, visible }) {
     // Handle progress updates when holding
     useEffect(() => {
         if (isHolding) {
+            // Define triggerSkip inside useEffect to avoid dependency issues
+            const triggerSkip = () => {
+                if (!isSkipTriggered) {
+                    setIsSkipTriggered(true);
+                    setIsHolding(false);
+                    setProgress(100);
+                    console.log("Skip triggered!");
+                    // Add a small delay to ensure visual feedback before skipping
+                    setTimeout(() => {
+                        onSkip();
+                    }, 50);
+                }
+            };
+
             // Set up progress interval
             progressIntervalRef.current = setInterval(() => {
                 setProgress((prev) => {
@@ -55,21 +69,7 @@ function HoldToSkipButton({ onSkip, visible }) {
                 return () => clearTimeout(fadeTimeout);
             }
         }
-    }, [isHolding, onSkip, progress, isSkipTriggered]);
-
-    // Function to trigger skip to prevent duplicate calls
-    const triggerSkip = () => {
-        if (!isSkipTriggered) {
-            setIsSkipTriggered(true);
-            setIsHolding(false);
-            setProgress(100);
-            console.log("Skip triggered!");
-            // Add a small delay to ensure visual feedback before skipping
-            setTimeout(() => {
-                onSkip();
-            }, 50);
-        }
-    };
+    }, [isHolding, onSkip, progress, isSkipTriggered, holdDuration]);
 
     const handleMouseDown = () => {
         setIsHolding(true);
