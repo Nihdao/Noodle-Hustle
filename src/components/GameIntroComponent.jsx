@@ -53,6 +53,34 @@ function GameIntroComponent({ onCompleteIntro }) {
     const [currentSlide, setCurrentSlide] = useState(0);
     const [isTransitioning, setIsTransitioning] = useState(false);
 
+    // Function to initialize save data
+    const initializeSaveData = () => {
+        // Get player name from localStorage
+        const playerName = localStorage.getItem("playerName") || "Player";
+
+        // Create initial save data object
+        const initialSaveData = {
+            playerName: playerName,
+            createdAt: new Date().toISOString(),
+            gameProgress: {
+                currentDay: 1,
+                money: 5000,
+                completedIntro: true,
+            },
+            stats: {
+                burnoutLevel: 0,
+                reputation: 10,
+            },
+        };
+
+        // Save to localStorage
+        localStorage.setItem(
+            "noodleBalanceSave",
+            JSON.stringify(initialSaveData)
+        );
+        console.log("Save data initialized:", initialSaveData);
+    };
+
     // Handle player name confirmation
     const handleNameConfirmed = () => {
         setTimeout(() => {
@@ -76,6 +104,10 @@ function GameIntroComponent({ onCompleteIntro }) {
         } else {
             // Intro completed - don't show dialog again, just start transition
             setCurrentStage("completed");
+
+            // Initialize save data before transitioning
+            initializeSaveData();
+
             setTimeout(() => {
                 // Use the EventBus to call scene methods
                 EventBus.callSceneMethod("goToHubScreen");
@@ -87,6 +119,10 @@ function GameIntroComponent({ onCompleteIntro }) {
     // Handle skip request
     const handleSkip = () => {
         setCurrentStage("completed");
+
+        // Initialize save data before transitioning
+        initializeSaveData();
+
         setTimeout(() => {
             // Use the EventBus to call scene methods
             EventBus.callSceneMethod("goToHubScreen");

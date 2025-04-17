@@ -66,9 +66,11 @@ function MainMenuComponent({
                 </h1>
 
                 <div className="menu-buttons">
-                    <MenuButton onClick={handleNewGameClick}>
-                        New Game
-                    </MenuButton>
+                    {!hasSaveData && (
+                        <MenuButton onClick={handleNewGameClick}>
+                            New Game
+                        </MenuButton>
+                    )}
 
                     {hasSaveData && (
                         <MenuButton onClick={handleContinueClick}>

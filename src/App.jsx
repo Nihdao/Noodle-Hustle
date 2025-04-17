@@ -46,6 +46,27 @@ function App() {
 
     const handleContinueGame = () => {
         console.log("App: Continue Game");
+
+        // Get save data from localStorage
+        const saveData = localStorage.getItem("noodleBalanceSave");
+        if (saveData) {
+            try {
+                // Parse the save data
+                const parsedSaveData = JSON.parse(saveData);
+                console.log("Loaded save data:", parsedSaveData);
+
+                // Set the player name in localStorage to maintain consistency
+                if (parsedSaveData.playerName) {
+                    localStorage.setItem(
+                        "playerName",
+                        parsedSaveData.playerName
+                    );
+                }
+            } catch (error) {
+                console.error("Error parsing save data:", error);
+            }
+        }
+
         const scene = phaserRef.current?.scene;
         if (scene?.scene.key === "MainMenu") {
             console.log("Directly to HubScreen...");
