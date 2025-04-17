@@ -16,7 +16,7 @@ const config = {
     pixelArt: true,
     scene: [Boot, Preloader, MainMenu, Game, GameOver],
     scale: {
-        mode: Phaser.Scale.FIT, // Phaser s'adapte automatiquement à la taille du viewport
+        mode: Phaser.Scale.RESIZE,
         autoCenter: Phaser.Scale.CENTER_BOTH, // Centrage automatique du canvas
     },
     fps: {

@@ -22,7 +22,7 @@ export class MainMenu extends Phaser.Scene {
         this.noodlesPattern = this.add
             .tileSprite(0, 0, width, height, "noodles")
             .setOrigin(0)
-            .setAlpha(0.6); // Add some transparency
+            .setAlpha(0.3); // Add some transparency
 
         EventBus.emit("current-scene-ready", this);
     }

@@ -1,5 +1,5 @@
 import PropTypes from "prop-types";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import OptionsModal from "./OptionsModal";
 import CreditsModal from "./CreditsModal";
 // import "../styles/OptionsModal.css";
@@ -16,8 +16,20 @@ function MainMenuComponent({
 }) {
     const [isOptionsModalOpen, setIsOptionsModalOpen] = useState(false);
     const [isCreditsModalOpen, setIsCreditsModalOpen] = useState(false);
+    // Animation state
+    const [animationState, setAnimationState] = useState("hidden");
     // Check if save data exists (placeholder logic, might need refinement)
     const hasSaveData = localStorage.getItem("noodleBalanceSave") !== null;
+
+    // Trigger entrance animation after component mounts
+    useEffect(() => {
+        // Short delay to ensure animation works properly
+        const timer = setTimeout(() => {
+            setAnimationState("visible");
+        }, 100);
+
+        return () => clearTimeout(timer);
+    }, []);
 
     const handleNewGameClick = () => {
         // TODO: Prompt for company name (implement modal or input later)
@@ -45,6 +57,12 @@ function MainMenuComponent({
         // TODO: Implement Credits Modal/Page logic
     };
 
+    const getSlateTransform = () => {
+        return animationState === "visible"
+            ? "rotate(-1deg) translateY(0)"
+            : "rotate(-1deg) translateY(50vh)";
+    };
+
     const japaneseSlateStyle = {
         backgroundColor: "#f9f3e5", // Light cream color
         border: "8px solid #ecdbc5", // Light wood color
@@ -54,7 +72,10 @@ function MainMenuComponent({
         position: "relative",
         maxWidth: "400px",
         margin: "0 auto",
-        transform: "rotate(-1deg)",
+        transform: getSlateTransform(),
+        transition:
+            "transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.8s ease-out",
+        opacity: animationState === "visible" ? 1 : 0,
     };
 
     const beforeSlateStyle = {
