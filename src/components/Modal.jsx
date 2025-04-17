@@ -4,21 +4,21 @@ function Modal({ isOpen, onClose, title, children, className = "" }) {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-[#2c3e50]/90 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
+        <div className="fixed inset-0 bg-[#f8f1e3]/90 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
             <div
                 className={`
-                bg-gradient-to-br from-[#2c3e50] to-[#233140]
-                text-[#ecf0f1] rounded-xl
+                bg-gradient-to-br from-[#f9f3e5] to-[#eee5d3]
+                text-[#8b5d33] rounded-xl
                 w-full max-w-xl
-                shadow-lg shadow-[#d35400]/20
-                border border-[#d35400]/20
+                shadow-lg shadow-[#c17a0f]/20
+                border border-[#e1d1b3]
                 animate-modalAppear
                 relative
                 flex flex-col
                 ${className}
             `}
             >
-                <h2 className="text-2xl font-bold text-center text-white tracking-wide drop-shadow-[0_0_10px_rgba(211,84,0,0.5)] px-6 pt-6 pb-3">
+                <h2 className="text-2xl font-bold text-center text-[#8b5d33] tracking-wide drop-shadow-[0_0_10px_rgba(193,122,15,0.2)] px-6 pt-6 pb-3">
                     {title}
                 </h2>
 
@@ -28,7 +28,7 @@ function Modal({ isOpen, onClose, title, children, className = "" }) {
 
                 <button
                     onClick={onClose}
-                    className="absolute top-2 right-2 text-[#e67e22] hover:text-[#d35400] w-8 h-8 flex items-center justify-center rounded-full transition-all duration-200 hover:bg-[#d35400]/10 hover:rotate-90 text-2xl leading-none"
+                    className="absolute top-2 right-2 text-[#c17a0f] hover:text-[#a36508] w-8 h-8 flex items-center justify-center rounded-full transition-all duration-200 hover:bg-[#c17a0f]/10 hover:rotate-90 text-2xl leading-none"
                 >
                     &times;
                 </button>

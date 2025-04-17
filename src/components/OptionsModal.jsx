@@ -76,13 +76,13 @@ function OptionsModal({ isOpen, onClose, isMainMenu = false }) {
             className="options-modal"
         >
             <div className="space-y-8">
-                <section className="bg-[#2c3e50]/30 rounded-lg p-6">
-                    <h3 className="text-xl font-bold text-[#d35400] border-b border-[#d35400]/30 pb-2 mb-4">
+                <section className="bg-[#f9f3e5]/70 rounded-lg p-6 border border-[#e1d1b3]">
+                    <h3 className="text-xl font-bold text-[#c17a0f] border-b border-[#c17a0f]/30 pb-2 mb-4">
                         Audio
                     </h3>
                     <div className="space-y-4">
                         <label className="block">
-                            <span className="text-sm font-medium text-[#e67e22] uppercase tracking-wide block mb-2">
+                            <span className="text-sm font-medium text-[#8b5d33] uppercase tracking-wide block mb-2">
                                 Master Volume
                             </span>
                             <div className="flex items-center gap-4 mt-2">
@@ -94,15 +94,15 @@ function OptionsModal({ isOpen, onClose, isMainMenu = false }) {
                                     onChange={(e) =>
                                         setMasterVolume(Number(e.target.value))
                                     }
-                                    className="flex-1 h-2 rounded bg-gradient-to-r from-[#d35400] to-[#34495e] appearance-none cursor-pointer"
+                                    className="flex-1 h-2 rounded bg-gradient-to-r from-[#c17a0f] to-[#e1d1b3] appearance-none cursor-pointer"
                                 />
-                                <span className="text-white font-medium w-14 text-right">
+                                <span className="text-[#8b5d33] font-medium w-14 text-right">
                                     {masterVolume}%
                                 </span>
                             </div>
                         </label>
                         <label className="block">
-                            <span className="text-sm font-medium text-[#e67e22] uppercase tracking-wide block mb-2">
+                            <span className="text-sm font-medium text-[#8b5d33] uppercase tracking-wide block mb-2">
                                 Music Volume
                             </span>
                             <div className="flex items-center gap-4 mt-2">
@@ -114,15 +114,15 @@ function OptionsModal({ isOpen, onClose, isMainMenu = false }) {
                                     onChange={(e) =>
                                         setMusicVolume(Number(e.target.value))
                                     }
-                                    className="flex-1 h-2 rounded bg-gradient-to-r from-[#d35400] to-[#34495e] appearance-none cursor-pointer"
+                                    className="flex-1 h-2 rounded bg-gradient-to-r from-[#c17a0f] to-[#e1d1b3] appearance-none cursor-pointer"
                                 />
-                                <span className="text-white font-medium w-14 text-right">
+                                <span className="text-[#8b5d33] font-medium w-14 text-right">
                                     {musicVolume}%
                                 </span>
                             </div>
                         </label>
                         <label className="block">
-                            <span className="text-sm font-medium text-[#e67e22] uppercase tracking-wide block mb-2">
+                            <span className="text-sm font-medium text-[#8b5d33] uppercase tracking-wide block mb-2">
                                 SFX Volume
                             </span>
                             <div className="flex items-center gap-4 mt-2">
@@ -134,9 +134,9 @@ function OptionsModal({ isOpen, onClose, isMainMenu = false }) {
                                     onChange={(e) =>
                                         setSfxVolume(Number(e.target.value))
                                     }
-                                    className="flex-1 h-2 rounded bg-gradient-to-r from-[#d35400] to-[#34495e] appearance-none cursor-pointer"
+                                    className="flex-1 h-2 rounded bg-gradient-to-r from-[#c17a0f] to-[#e1d1b3] appearance-none cursor-pointer"
                                 />
-                                <span className="text-white font-medium w-14 text-right">
+                                <span className="text-[#8b5d33] font-medium w-14 text-right">
                                     {sfxVolume}%
                                 </span>
                             </div>
@@ -182,20 +182,20 @@ function OptionsModal({ isOpen, onClose, isMainMenu = false }) {
                 </section> */}
 
                 {!isMainMenu && (
-                    <section className="bg-[#2c3e50]/30 rounded-lg p-6">
-                        <h3 className="text-xl font-bold text-[#d35400] border-b border-[#d35400]/30 pb-2 mb-4">
+                    <section className="bg-[#f9f3e5]/70 rounded-lg p-6 border border-[#e1d1b3]">
+                        <h3 className="text-xl font-bold text-[#c17a0f] border-b border-[#c17a0f]/30 pb-2 mb-4">
                             Save & Load
                         </h3>
                         <div className="flex gap-4 flex-wrap">
                             <button
                                 onClick={handleManualSave}
-                                className="bg-gradient-to-br from-[#e67e22] to-[#d35400] text-white px-6 py-3 rounded-lg font-medium uppercase tracking-wide text-sm hover:from-[#f39c12] hover:to-[#e67e22] transition-all hover:-translate-y-0.5 hover:shadow-lg"
+                                className="bg-gradient-to-br from-[#c17a0f] to-[#8b5d33] text-white px-6 py-3 rounded-lg font-medium uppercase tracking-wide text-sm hover:from-[#d68c18] hover:to-[#c17a0f] transition-all hover:-translate-y-0.5 hover:shadow-lg"
                             >
                                 Manual Save
                             </button>
                             <button
                                 onClick={handleLoadLastSave}
-                                className="bg-gradient-to-br from-[#e67e22] to-[#d35400] text-white px-6 py-3 rounded-lg font-medium uppercase tracking-wide text-sm hover:from-[#f39c12] hover:to-[#e67e22] transition-all hover:-translate-y-0.5 hover:shadow-lg"
+                                className="bg-gradient-to-br from-[#c17a0f] to-[#8b5d33] text-white px-6 py-3 rounded-lg font-medium uppercase tracking-wide text-sm hover:from-[#d68c18] hover:to-[#c17a0f] transition-all hover:-translate-y-0.5 hover:shadow-lg"
                             >
                                 Load Last Save
                             </button>
@@ -203,13 +203,13 @@ function OptionsModal({ isOpen, onClose, isMainMenu = false }) {
                     </section>
                 )}
 
-                <section className="bg-[#2c3e50]/30 rounded-lg p-6">
-                    <h3 className="text-xl font-bold text-[#d35400] border-b border-[#d35400]/30 pb-2 mb-4">
+                <section className="bg-[#f9f3e5]/70 rounded-lg p-6 border border-[#e1d1b3]">
+                    <h3 className="text-xl font-bold text-[#c17a0f] border-b border-[#c17a0f]/30 pb-2 mb-4">
                         Reset
                     </h3>
                     <button
                         onClick={handleClearData}
-                        className="bg-gradient-to-br from-[#c0392b] to-[#e74c3c] text-white px-6 py-3 rounded-lg font-medium uppercase tracking-wide text-sm hover:from-[#e74c3c] hover:to-[#c0392b] transition-all hover:-translate-y-0.5 hover:shadow-lg"
+                        className="bg-gradient-to-br from-[#d63031] to-[#e84393] text-white px-6 py-3 rounded-lg font-medium uppercase tracking-wide text-sm hover:from-[#ff7675] hover:to-[#fd79a8] transition-all hover:-translate-y-0.5 hover:shadow-lg"
                     >
                         Clear Save Data
                     </button>

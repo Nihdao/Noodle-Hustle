@@ -10,36 +10,36 @@ function CreditsModal({ isOpen, onClose }) {
             className="credits-modal"
         >
             <div className="space-y-6 text-center">
-                <section className="bg-[#2c3e50]/30 rounded-lg p-6">
-                    <h3 className="text-xl font-bold text-[#d35400] border-b border-[#d35400]/30 pb-2 mb-4">
+                <section className="bg-[#f9f3e5]/70 rounded-lg p-6 border border-[#e1d1b3]">
+                    <h3 className="text-xl font-bold text-[#c17a0f] border-b border-[#c17a0f]/30 pb-2 mb-4">
                         Game Information
                     </h3>
-                    <p className="text-[#ecf0f1] text-lg leading-relaxed">
+                    <p className="text-[#8b5d33] text-lg leading-relaxed">
                         Created for GameDevJS 2025 Game Jam
                     </p>
                 </section>
 
-                <section className="bg-[#2c3e50]/30 rounded-lg p-6">
-                    <h3 className="text-xl font-bold text-[#d35400] border-b border-[#d35400]/30 pb-2 mb-4">
+                <section className="bg-[#f9f3e5]/70 rounded-lg p-6 border border-[#e1d1b3]">
+                    <h3 className="text-xl font-bold text-[#c17a0f] border-b border-[#c17a0f]/30 pb-2 mb-4">
                         Development Team
                     </h3>
                     <div className="space-y-4">
                         <div className="flex flex-col gap-2">
-                            <span className="text-sm font-medium text-[#e67e22] uppercase tracking-wide">
+                            <span className="text-sm font-medium text-[#8b5d33] uppercase tracking-wide">
                                 Game Design & Development
                             </span>
-                            <span className="text-xl font-semibold text-white">
+                            <span className="text-xl font-semibold text-[#8b5d33]">
                                 Your Name
                             </span>
                         </div>
                     </div>
                 </section>
 
-                <section className="bg-[#2c3e50]/30 rounded-lg p-6">
-                    <h3 className="text-xl font-bold text-[#d35400] border-b border-[#d35400]/30 pb-2 mb-4">
+                <section className="bg-[#f9f3e5]/70 rounded-lg p-6 border border-[#e1d1b3]">
+                    <h3 className="text-xl font-bold text-[#c17a0f] border-b border-[#c17a0f]/30 pb-2 mb-4">
                         Special Thanks
                     </h3>
-                    <p className="text-[#ecf0f1] text-lg leading-relaxed">
+                    <p className="text-[#8b5d33] text-lg leading-relaxed">
                         GameDevJS 2025 organizers and community
                     </p>
                 </section>

@@ -7,32 +7,36 @@ export class MainMenu extends Phaser.Scene {
     }
 
     preload() {
-        // TODO: Load background image, logo, and button assets based on 2-HomePage.mdc
-        // Example placeholders:
-        this.load.setPath("assets");
-        this.load.image("background", "bg.png");
-        // this.load.image('logo', 'assets/logo.png');
+        this.load.image("noodles", "noodles.png");
     }
 
     create() {
-        // TODO: Display background image and logo based on 2-HomePage.mdc
-        // Example placeholders:
-        this.add
-            .image(
-                this.cameras.main.centerX,
-                this.cameras.main.centerY * 0.8, // Dezooming the image by adjusting the Y position
-                "background"
-            )
-            .setScale(0.9); // Optionally scale down the image for a zoom-out effect
-        // this.add.image(this.cameras.main.centerX, this.cameras.main.centerY / 2, 'logo');
+        // Create an orange background
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+
+        // Add orange background
+        this.add.rectangle(0, 0, width, height, 0xe67e22).setOrigin(0);
+
+        // Add repeating noodles pattern with diagonal scrolling
+        this.noodlesPattern = this.add
+            .tileSprite(0, 0, width, height, "noodles")
+            .setOrigin(0)
+            .setAlpha(0.6); // Add some transparency
 
         EventBus.emit("current-scene-ready", this);
     }
 
+    update() {
+        // Make the pattern scroll diagonally (top-left to bottom-right)
+        if (this.noodlesPattern) {
+            this.noodlesPattern.tilePositionX += 0.5;
+            this.noodlesPattern.tilePositionY += 0.5;
+        }
+    }
+
     // Placeholder for scene change logic, can be triggered by React component
     changeScene() {
-        // Example: Transition to the main game hub scene
-        // this.scene.start('HubScreen');
         console.log("Change scene requested from MainMenu");
     }
 }
