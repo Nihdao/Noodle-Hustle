@@ -1,6 +1,9 @@
 import PropTypes from "prop-types";
 import { useState, useEffect } from "react";
 
+/**
+ * A reusable modal component with smooth transitions
+ */
 function Modal({ isOpen, onClose, title, children, className = "" }) {
     const [animationState, setAnimationState] = useState("closed");
 
@@ -67,7 +70,7 @@ function Modal({ isOpen, onClose, title, children, className = "" }) {
 
     return (
         <div
-            className="fixed inset-0 bg-[#f8f1e3]/90 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4"
+            className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4"
             style={overlayStyle}
             onClick={handleOverlayClick}
         >
@@ -108,10 +111,15 @@ function Modal({ isOpen, onClose, title, children, className = "" }) {
 }
 
 Modal.propTypes = {
+    /** Controls whether the modal is displayed */
     isOpen: PropTypes.bool.isRequired,
+    /** Function to call when modal should close */
     onClose: PropTypes.func.isRequired,
+    /** Modal title */
     title: PropTypes.string.isRequired,
+    /** Modal content */
     children: PropTypes.node.isRequired,
+    /** Additional CSS class */
     className: PropTypes.string,
 };
 

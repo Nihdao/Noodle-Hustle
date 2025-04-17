@@ -1,6 +1,6 @@
 import PropTypes from "prop-types";
 import { useState, useEffect } from "react";
-import Modal from "./Modal";
+import Modal from "../common/Modal";
 
 function OptionsModal({ isOpen, onClose, isMainMenu = false }) {
     // State for volume controls
@@ -101,85 +101,8 @@ function OptionsModal({ isOpen, onClose, isMainMenu = false }) {
                                 </span>
                             </div>
                         </label>
-                        <label className="block">
-                            <span className="text-sm font-medium text-[#8b5d33] uppercase tracking-wide block mb-2">
-                                Music Volume
-                            </span>
-                            <div className="flex items-center gap-4 mt-2">
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="100"
-                                    value={musicVolume}
-                                    onChange={(e) =>
-                                        setMusicVolume(Number(e.target.value))
-                                    }
-                                    className="flex-1 h-2 rounded bg-gradient-to-r from-[#c17a0f] to-[#e1d1b3] appearance-none cursor-pointer"
-                                />
-                                <span className="text-[#8b5d33] font-medium w-14 text-right">
-                                    {musicVolume}%
-                                </span>
-                            </div>
-                        </label>
-                        <label className="block">
-                            <span className="text-sm font-medium text-[#8b5d33] uppercase tracking-wide block mb-2">
-                                SFX Volume
-                            </span>
-                            <div className="flex items-center gap-4 mt-2">
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="100"
-                                    value={sfxVolume}
-                                    onChange={(e) =>
-                                        setSfxVolume(Number(e.target.value))
-                                    }
-                                    className="flex-1 h-2 rounded bg-gradient-to-r from-[#c17a0f] to-[#e1d1b3] appearance-none cursor-pointer"
-                                />
-                                <span className="text-[#8b5d33] font-medium w-14 text-right">
-                                    {sfxVolume}%
-                                </span>
-                            </div>
-                        </label>
                     </div>
                 </section>
-
-                {/* <section className="bg-[#2c3e50]/30 rounded-lg p-4">
-                    <h3 className="text-lg font-semibold text-[#d35400] border-b border-[#d35400]/30 pb-2 mb-3">
-                        Display
-                    </h3>
-                    <div className="space-y-3">
-                        <label className="block">
-                            <span className="text-sm text-[#e67e22] uppercase tracking-wide">
-                                Window Size
-                            </span>
-                            <select
-                                value={windowSize}
-                                onChange={(e) => setWindowSize(e.target.value)}
-                                className="mt-1 block w-full bg-[#34495e] text-white p-2 rounded-lg border border-[#d35400]/30 hover:border-[#d35400] transition-colors"
-                            >
-                                <option value="fit">Fit to window</option>
-                                <option value="1280x720">1280×720 (HD)</option>
-                                <option value="1920x1080">
-                                    1920×1080 (Full HD)
-                                </option>
-                            </select>
-                        </label>
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                checked={isFullscreen}
-                                onChange={(e) =>
-                                    setIsFullscreen(e.target.checked)
-                                }
-                                className="w-5 h-5 rounded-md border-2 border-[#d35400]/30 bg-[#34495e] checked:bg-[#d35400] checked:border-[#d35400] transition-colors"
-                            />
-                            <span className="text-sm text-[#e67e22] uppercase tracking-wide">
-                                Fullscreen
-                            </span>
-                        </label>
-                    </div>
-                </section> */}
 
                 {!isMainMenu && (
                     <section className="bg-[#f9f3e5]/70 rounded-lg p-6 border border-[#e1d1b3]">
@@ -220,8 +143,11 @@ function OptionsModal({ isOpen, onClose, isMainMenu = false }) {
 }
 
 OptionsModal.propTypes = {
+    /** Controls whether the modal is displayed */
     isOpen: PropTypes.bool.isRequired,
+    /** Function to call when modal should close */
     onClose: PropTypes.func.isRequired,
+    /** Whether this is shown from the main menu */
     isMainMenu: PropTypes.bool,
 };
 

@@ -1,0 +1,92 @@
+/**
+ * Menu styles
+ * Styles for the main menu and related components
+ */
+
+/* Menu overlay - covers the entire screen */
+.main-menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 40;
+}
+
+/* Menu title styles */
+.menu-title {
+    color: #c17a0f;
+    font-size: 2.8rem;
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+/* Menu subtitle (Japanese text) */
+.menu-subtitle {
+    display: block;
+    font-size: 0.9rem;
+    font-family: sans-serif;
+    margin-top: 0.5rem;
+    color: #c17a0f;
+    letter-spacing: 1px;
+}
+
+/* Button container */
+.menu-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Custom scrollbar for modals */
+.custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #c17a0f transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(241, 233, 222, 0.3);
+    border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #c17a0f;
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: #8b5d33;
+}
+
+/* Modal appear animation */
+@keyframes modalAppear {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+    .menu-title {
+        font-size: 2.5rem;
+    }
+
+    .menu-buttons {
+        gap: 10px;
+    }
+}
+

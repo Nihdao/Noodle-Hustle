@@ -35,6 +35,8 @@ export class MainMenu extends Phaser.Scene {
         }
     }
 
+    onResize() {}
+
     // Placeholder for scene change logic, can be triggered by React component
     changeScene() {
         console.log("Change scene requested from MainMenu");

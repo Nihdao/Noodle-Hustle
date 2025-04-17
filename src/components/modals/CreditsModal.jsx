@@ -1,6 +1,9 @@
 import PropTypes from "prop-types";
-import Modal from "./Modal";
+import Modal from "../common/Modal";
 
+/**
+ * Modal showing game credits and attribution
+ */
 function CreditsModal({ isOpen, onClose }) {
     return (
         <Modal
@@ -49,7 +52,9 @@ function CreditsModal({ isOpen, onClose }) {
 }
 
 CreditsModal.propTypes = {
+    /** Controls whether the modal is displayed */
     isOpen: PropTypes.bool.isRequired,
+    /** Function to call when modal should close */
     onClose: PropTypes.func.isRequired,
 };
 
