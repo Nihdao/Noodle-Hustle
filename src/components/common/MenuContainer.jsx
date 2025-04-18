@@ -7,30 +7,49 @@ function MenuContainer({
     children,
     animationState = "visible",
     className = "",
+    scrollable = false,
+    maxHeight = null,
+    title = null,
 }) {
-    const getTransform = () => {
-        return animationState === "visible"
-            ? "rotate(-1deg) translateY(0)"
-            : "rotate(-1deg) translateY(50vh)";
-    };
+    // Use Tailwind classes instead of inline styles where possible
+    const containerBaseClasses = `
+        relative rounded-lg overflow-hidden transition-all duration-700
+        ${scrollable ? "" : "max-w-4xl mx-auto"}
+        ${
+            animationState === "visible"
+                ? "opacity-100"
+                : "opacity-0 translate-y-[50vh]"
+        }
+        ${className}
+    `;
 
     const containerStyle = {
-        backgroundColor: "#f9f3e5",
-        border: "8px solid #ecdbc5",
-        borderRadius: "8px",
-        boxShadow: "0 10px 25px rgba(0, 0, 0, 0.2)",
-        padding: "6px",
-        position: "relative",
-        maxWidth: "900px",
-        margin: "0 auto",
-        transform: getTransform(),
+        backgroundColor: "var(--color-whiteCream, #f9f3e5)",
+        boxShadow: "0 12px 30px rgba(0, 0, 0, 0.25)",
+        transform:
+            animationState === "visible"
+                ? "rotate(-1deg)"
+                : "rotate(-1deg) translateY(50vh)",
         transition:
-            "transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.8s ease-out",
-        opacity: animationState === "visible" ? 1 : 0,
+            "transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.7s ease-out",
     };
 
+    const borderStyle = {
+        border: "8px solid var(--color-yellowWhite, #ecdbc5)",
+        borderRadius: "8px",
+        padding: "6px",
+    };
+
+    const innerStyle = {
+        backgroundColor: "var(--color-whiteCream, #f9f3e5)",
+        border: "2px solid var(--color-yellowWhite-dark, #e1d1b3)",
+        borderRadius: "4px",
+        position: "relative",
+        padding: scrollable ? "0" : "20px",
+    };
+
+    // Background patterns
     const patternStyle = {
-        content: "",
         position: "absolute",
         top: 0,
         left: 0,
@@ -41,17 +60,7 @@ function MenuContainer({
         pointerEvents: "none",
     };
 
-    const innerStyle = {
-        backgroundColor: "#f9f3e5",
-        border: "2px solid #e1d1b3",
-        borderRadius: "4px",
-        padding: "20px",
-        position: "relative",
-        textAlign: "center",
-    };
-
     const textureStyle = {
-        content: "",
         position: "absolute",
         top: 0,
         left: 0,
@@ -64,11 +73,34 @@ function MenuContainer({
     };
 
     return (
-        <div style={containerStyle} className={className}>
+        <div
+            style={{ ...containerStyle, ...borderStyle }}
+            className={containerBaseClasses}
+        >
             <div style={patternStyle} />
-            <div style={innerStyle}>
+
+            <div
+                style={innerStyle}
+                className={`${
+                    scrollable ? "overflow-hidden flex flex-col" : ""
+                }`}
+            >
                 <div style={textureStyle} />
-                {children}
+
+                {title && (
+                    <div className="sticky top-0 z-10 border-b-2 border-[color:var(--color-yellowWhite-dark)] bg-[color:var(--color-whiteCream)] bg-opacity-95 p-3 text-center font-bold text-lg text-[color:var(--color-principalBrown)]">
+                        {title}
+                    </div>
+                )}
+
+                <div
+                    className={`
+                    ${scrollable ? "overflow-y-auto overflow-x-hidden p-4" : ""}
+                    ${scrollable && maxHeight ? `max-h-${maxHeight}` : ""}
+                `}
+                >
+                    {children}
+                </div>
             </div>
         </div>
     );
@@ -81,6 +113,12 @@ MenuContainer.propTypes = {
     animationState: PropTypes.oneOf(["visible", "hidden"]),
     /** Additional CSS classes */
     className: PropTypes.string,
+    /** Whether the container should allow scrolling for overflow content */
+    scrollable: PropTypes.bool,
+    /** Max height for scrollable containers (Tailwind size value) */
+    maxHeight: PropTypes.string,
+    /** Optional title to display at the top of the container */
+    title: PropTypes.string,
 };
 
 export default MenuContainer;

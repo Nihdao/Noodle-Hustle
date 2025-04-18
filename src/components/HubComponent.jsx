@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import NoodleBarActions from "./noodleBars/NoodleBarActions";
+import NoodleBarAssign from "./noodleBars/NoodleBarAssign";
 
 const HubComponent = () => {
     const [gameData, setGameData] = React.useState({
@@ -24,10 +25,10 @@ const HubComponent = () => {
         forecastProfit: 2172,
     });
 
-    // État pour gérer les hover des éléments du menu
+    // State for the selected submenu in the sidebar
+    const [activeSubmenu, setActiveSubmenu] = useState("Home");
     const [hoveredMenuItem, setHoveredMenuItem] = useState(null);
-    // État pour gérer la section active
-    const [activeSection, setActiveSection] = useState(null);
+    const [activeNoodleBarSection, setActiveNoodleBarSection] = useState(null);
 
     useEffect(() => {
         if (window.gameRef) {
@@ -85,27 +86,21 @@ const HubComponent = () => {
         }
     };
 
-    const handleMenuClick = (section) => {
-        console.log(`Selected section: ${section}`);
-        setActiveSection(section);
-        if (window.gameRef && window.gameRef[`open${section}Panel`]) {
-            window.gameRef[`open${section}Panel`]();
+    // Handle main menu clicks
+    const handleMenuClick = (menu) => {
+        setActiveSubmenu(menu);
+    };
+
+    // Handle noodle bar actions
+    const handleNoodleBarAction = (action) => {
+        if (action === "Assign") {
+            setActiveNoodleBarSection("assign");
         }
     };
 
-    const handleBackClick = () => {
-        setActiveSection(null);
-    };
-
-    const handleSubMenuClick = (action) => {
-        console.log(`Selected action: ${action}`);
-        if (window.gameRef && window.gameRef[`handleNoddleBars${action}`]) {
-            window.gameRef[`handleNoddleBars${action}`]();
-        } else {
-            console.error(
-                `Cannot handle ${action}: gameRef.handleNoddleBars${action} is not available`
-            );
-        }
+    // Handle noodle bar back button
+    const handleNoodleBarBack = () => {
+        setActiveNoodleBarSection(null);
     };
 
     // Styles communs pour réutilisation
@@ -295,34 +290,23 @@ const HubComponent = () => {
         },
     };
 
-    // Rendu du menu principal ou du sous-menu de NoodleBars
-    const renderSidebarContent = () => {
-        if (activeSection === "NoddleBars") {
-            return (
-                <NoodleBarActions
-                    onActionSelect={handleSubMenuClick}
-                    onBack={handleBackClick}
-                    forecastedProfit={gameData.noddleBars.forecastedProfit}
-                />
-            );
-        }
-
-        // Menu principal par défaut
+    // Main sidebar rendering function
+    const renderHomeSidebar = () => {
         return (
             <div className="flex flex-col h-full py-4 pb-40 overflow-auto">
                 {/* Noddle Bars */}
                 <div style={styles.menuItemWrapper}>
                     <button
-                        onClick={() => handleMenuClick("NoddleBars")}
-                        onMouseEnter={() => setHoveredMenuItem("NoddleBars")}
+                        onClick={() => handleMenuClick("NoodleBars")}
+                        onMouseEnter={() => setHoveredMenuItem("NoodleBars")}
                         onMouseLeave={() => setHoveredMenuItem(null)}
                         style={styles.menuItem(
-                            hoveredMenuItem === "NoddleBars"
+                            hoveredMenuItem === "NoodleBars"
                         )}
                     >
                         <div
                             style={styles.menuItemIcon(
-                                hoveredMenuItem === "NoddleBars"
+                                hoveredMenuItem === "NoodleBars"
                             )}
                         >
                             <img
@@ -332,7 +316,7 @@ const HubComponent = () => {
                                     width: "2rem",
                                     height: "2rem",
                                     filter:
-                                        hoveredMenuItem === "NoddleBars"
+                                        hoveredMenuItem === "NoodleBars"
                                             ? "brightness(2)"
                                             : "none",
                                 }}
@@ -357,17 +341,17 @@ const HubComponent = () => {
                     </button>
                 </div>
 
-                {/* Employees */}
+                {/* Staff */}
                 <div style={styles.menuItemWrapper}>
                     <button
-                        onClick={() => handleMenuClick("Employees")}
-                        onMouseEnter={() => setHoveredMenuItem("Employees")}
+                        onClick={() => handleMenuClick("Staff")}
+                        onMouseEnter={() => setHoveredMenuItem("Staff")}
                         onMouseLeave={() => setHoveredMenuItem(null)}
-                        style={styles.menuItem(hoveredMenuItem === "Employees")}
+                        style={styles.menuItem(hoveredMenuItem === "Staff")}
                     >
                         <div
                             style={styles.menuItemIcon(
-                                hoveredMenuItem === "Employees"
+                                hoveredMenuItem === "Staff"
                             )}
                         >
                             <img
@@ -377,14 +361,14 @@ const HubComponent = () => {
                                     width: "2rem",
                                     height: "2rem",
                                     filter:
-                                        hoveredMenuItem === "Employees"
+                                        hoveredMenuItem === "Staff"
                                             ? "brightness(2)"
                                             : "none",
                                 }}
                             />
                         </div>
                         <div>
-                            <h2 style={styles.menuItemTitle}>Employees</h2>
+                            <h2 style={styles.menuItemTitle}>Staff</h2>
                             <p style={styles.menuItemText}>
                                 Labor Cost:{" "}
                                 <span
@@ -402,43 +386,43 @@ const HubComponent = () => {
                     </button>
                 </div>
 
-                {/* Debts */}
+                {/* Academy */}
                 <div style={styles.menuItemWrapper}>
                     <button
-                        onClick={() => handleMenuClick("Debts")}
-                        onMouseEnter={() => setHoveredMenuItem("Debts")}
+                        onClick={() => handleMenuClick("Academy")}
+                        onMouseEnter={() => setHoveredMenuItem("Academy")}
                         onMouseLeave={() => setHoveredMenuItem(null)}
-                        style={styles.menuItem(hoveredMenuItem === "Debts")}
+                        style={styles.menuItem(hoveredMenuItem === "Academy")}
                     >
                         <div
                             style={styles.menuItemIcon(
-                                hoveredMenuItem === "Debts"
+                                hoveredMenuItem === "Academy"
                             )}
                         >
                             <img
                                 src="/assets/hub/DebtIcon.svg"
-                                alt="Debt Icon"
+                                alt="Academy Icon"
                                 style={{
                                     width: "2rem",
                                     height: "2rem",
                                     filter:
-                                        hoveredMenuItem === "Debts"
+                                        hoveredMenuItem === "Academy"
                                             ? "brightness(2)"
                                             : "none",
                                 }}
                             />
                         </div>
                         <div>
-                            <h2 style={styles.menuItemTitle}>Debts</h2>
+                            <h2 style={styles.menuItemTitle}>Academy</h2>
                             <p style={styles.menuItemText}>
-                                Repayment:{" "}
+                                Training:{" "}
                                 <span
                                     style={{
-                                        color: "#EF4444",
+                                        color: "#3B82F6",
                                         fontWeight: "600",
                                     }}
                                 >
-                                    {formatCurrency(gameData.debts.repayment)}
+                                    Available
                                 </span>
                             </p>
                         </div>
@@ -491,6 +475,152 @@ const HubComponent = () => {
                 </div>
             </div>
         );
+    };
+
+    // Staff sidebar content
+    const renderStaffSidebar = () => {
+        return (
+            <div className="flex flex-col h-full p-4 pb-40 overflow-auto animate-fade-in">
+                <div className="mb-6 ml-2 animate-slide-in-left">
+                    <h2 className="text-2xl font-bold text-[var(--color-principalBrown)]">
+                        Staff Management
+                    </h2>
+                    <div
+                        className="text-[var(--color-principalBrown)] flex items-center mt-1 font-medium animate-slide-in-left"
+                        style={{ animationDelay: "30ms" }}
+                    >
+                        <span>Labor Cost: </span>
+                        <span className="ml-2 text-lg font-semibold text-red-500">
+                            {formatCurrency(gameData.employees.laborCost)}
+                        </span>
+                    </div>
+                </div>
+
+                <button
+                    onClick={() => handleMenuClick("Home")}
+                    onMouseEnter={() => setHoveredMenuItem("Back")}
+                    onMouseLeave={() => setHoveredMenuItem(null)}
+                    className="animate-slide-in-left mt-auto"
+                    style={{
+                        padding: "1.5rem",
+                        transition: "all 0.3s ease",
+                        cursor: "pointer",
+                        backgroundColor:
+                            hoveredMenuItem === "Back"
+                                ? "var(--color-principalBrown)"
+                                : "var(--color-yellowWhite)",
+                        color:
+                            hoveredMenuItem === "Back"
+                                ? "var(--color-whiteCream)"
+                                : "var(--color-principalBrown)",
+                        borderRadius: "0.5rem",
+                        margin: "0.5rem",
+                        fontWeight: "bold",
+                        fontSize: "1.5rem",
+                        boxShadow:
+                            hoveredMenuItem === "Back"
+                                ? "0 4px 6px rgba(0, 0, 0, 0.2)"
+                                : "0 2px 4px rgba(0, 0, 0, 0.1)",
+                        border: "none",
+                        outline: "none",
+                        animationDelay: "200ms",
+                    }}
+                >
+                    Back
+                </button>
+            </div>
+        );
+    };
+
+    // Academy sidebar content
+    const renderAcademySidebar = () => {
+        return (
+            <div className="flex flex-col h-full p-4 pb-40 overflow-auto animate-fade-in">
+                <div className="mb-6 ml-2 animate-slide-in-left">
+                    <h2 className="text-2xl font-bold text-[var(--color-principalBrown)]">
+                        Academy
+                    </h2>
+                    <div
+                        className="text-[var(--color-principalBrown)] flex items-center mt-1 font-medium animate-slide-in-left"
+                        style={{ animationDelay: "30ms" }}
+                    >
+                        <span>Training Status: </span>
+                        <span className="ml-2 text-lg font-semibold text-blue-500">
+                            Available
+                        </span>
+                    </div>
+                </div>
+
+                <button
+                    onClick={() => handleMenuClick("Home")}
+                    onMouseEnter={() => setHoveredMenuItem("Back")}
+                    onMouseLeave={() => setHoveredMenuItem(null)}
+                    className="animate-slide-in-left mt-auto"
+                    style={{
+                        padding: "1.5rem",
+                        transition: "all 0.3s ease",
+                        cursor: "pointer",
+                        backgroundColor:
+                            hoveredMenuItem === "Back"
+                                ? "var(--color-principalBrown)"
+                                : "var(--color-yellowWhite)",
+                        color:
+                            hoveredMenuItem === "Back"
+                                ? "var(--color-whiteCream)"
+                                : "var(--color-principalBrown)",
+                        borderRadius: "0.5rem",
+                        margin: "0.5rem",
+                        fontWeight: "bold",
+                        fontSize: "1.5rem",
+                        boxShadow:
+                            hoveredMenuItem === "Back"
+                                ? "0 4px 6px rgba(0, 0, 0, 0.2)"
+                                : "0 2px 4px rgba(0, 0, 0, 0.1)",
+                        border: "none",
+                        outline: "none",
+                        animationDelay: "200ms",
+                    }}
+                >
+                    Back
+                </button>
+            </div>
+        );
+    };
+
+    // NoodleBars sidebar content
+    const renderNoodleBarsSidebar = () => {
+        if (activeNoodleBarSection === "assign") {
+            return (
+                <NoodleBarAssign
+                    onBack={handleNoodleBarBack}
+                    playerRank={gameData.rank || 0}
+                />
+            );
+        }
+
+        return (
+            <NoodleBarActions
+                onActionSelect={handleNoodleBarAction}
+                onBack={() => handleMenuClick("Home")}
+                forecastedProfit={gameData.noddleBars.forecastedProfit}
+            />
+        );
+    };
+
+    // Determine sidebar content based on activeSection
+    const renderSidebarContent = () => {
+        switch (activeSubmenu) {
+            case "Home":
+                return renderHomeSidebar();
+            case "NoodleBars":
+                return renderNoodleBarsSidebar();
+            case "Staff":
+                return renderStaffSidebar();
+            case "Academy":
+                return renderAcademySidebar();
+            default:
+                return renderHomeSidebar();
+        }
     };
 
     return (
@@ -564,7 +694,7 @@ const HubComponent = () => {
                         style={styles.startPeriodButton}
                         onClick={handleStartPeriod}
                         className={
-                            activeSection
+                            activeSubmenu
                                 ? "opacity-0 pointer-events-none transition-opacity duration-300"
                                 : "opacity-100 transition-opacity duration-300"
                         }
