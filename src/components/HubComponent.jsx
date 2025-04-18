@@ -148,8 +148,6 @@ const HubComponent = () => {
                 : "transparent",
             marginLeft: isHovered ? "-10px" : "-30px",
             marginRight: isHovered ? "-20px" : "0",
-            borderTopRightRadius: "20px",
-            borderBottomRightRadius: "20px",
             position: "relative",
             outline: "none",
             border: "none",
@@ -159,8 +157,6 @@ const HubComponent = () => {
         menuItemWrapper: {
             backgroundColor: "var(--color-whiteCream)",
             margin: "10px 0",
-            borderTopRightRadius: "20px",
-            borderBottomRightRadius: "20px",
         },
         menuItemIcon: (isHovered) => ({
             width: "4rem",
@@ -197,7 +193,6 @@ const HubComponent = () => {
             left: "-15px",
             width: "calc(100% + 50px)",
             borderTopRightRadius: "40px",
-            borderTopLeftRadius: "20px",
             overflow: "hidden",
             transform: "perspective(500px) rotateX(5deg)",
             transformOrigin: "bottom",
@@ -673,3 +668,4 @@ const HubComponent = () => {
 };
 
 export default HubComponent;
+
