@@ -6,6 +6,7 @@ import { PhaserGame } from "./game/PhaserGame";
 // Update import path
 import MainMenuComponent from "./components/MainMenuComponent";
 import GameIntroComponent from "./components/GameIntroComponent";
+import HubComponent from "./components/HubComponent";
 
 function App() {
     // References to the PhaserGame component (game and scene are exposed)
@@ -109,8 +110,10 @@ function App() {
                 <GameIntroComponent onCompleteIntro={handleCompleteIntro} />
             )}
 
+            {/* Conditionally render the HubComponent */}
+            {currentSceneKey === "HubScreen" && <HubComponent />}
+
             {/* Example: Conditionally render other components based on scene key */}
-            {/* {currentSceneKey === 'HubScreen' && <HubComponent />} */}
             {/* {currentSceneKey === 'Game' && <GameOverlayComponent />} */}
         </div>
     );
