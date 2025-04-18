@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import NoodleBarActions from "./noodleBars/NoodleBarActions";
 
 const HubComponent = () => {
     const [gameData, setGameData] = React.useState({
@@ -25,6 +26,8 @@ const HubComponent = () => {
 
     // État pour gérer les hover des éléments du menu
     const [hoveredMenuItem, setHoveredMenuItem] = useState(null);
+    // État pour gérer la section active
+    const [activeSection, setActiveSection] = useState(null);
 
     useEffect(() => {
         if (window.gameRef) {
@@ -84,8 +87,24 @@ const HubComponent = () => {
 
     const handleMenuClick = (section) => {
         console.log(`Selected section: ${section}`);
+        setActiveSection(section);
         if (window.gameRef && window.gameRef[`open${section}Panel`]) {
             window.gameRef[`open${section}Panel`]();
+        }
+    };
+
+    const handleBackClick = () => {
+        setActiveSection(null);
+    };
+
+    const handleSubMenuClick = (action) => {
+        console.log(`Selected action: ${action}`);
+        if (window.gameRef && window.gameRef[`handleNoddleBars${action}`]) {
+            window.gameRef[`handleNoddleBars${action}`]();
+        } else {
+            console.error(
+                `Cannot handle ${action}: gameRef.handleNoddleBars${action} is not available`
+            );
         }
     };
 
@@ -276,6 +295,203 @@ const HubComponent = () => {
         },
     };
 
+    // Rendu du menu principal ou du sous-menu de NoodleBars
+    const renderSidebarContent = () => {
+        if (activeSection === "NoddleBars") {
+            return (
+                <NoodleBarActions
+                    onActionSelect={handleSubMenuClick}
+                    onBack={handleBackClick}
+                />
+            );
+        }
+
+        // Menu principal par défaut
+        return (
+            <div className="flex flex-col h-full py-4 pb-40 overflow-auto">
+                {/* Noddle Bars */}
+                <div style={styles.menuItemWrapper}>
+                    <button
+                        onClick={() => handleMenuClick("NoddleBars")}
+                        onMouseEnter={() => setHoveredMenuItem("NoddleBars")}
+                        onMouseLeave={() => setHoveredMenuItem(null)}
+                        style={styles.menuItem(
+                            hoveredMenuItem === "NoddleBars"
+                        )}
+                    >
+                        <div
+                            style={styles.menuItemIcon(
+                                hoveredMenuItem === "NoddleBars"
+                            )}
+                        >
+                            <img
+                                src="/assets/hub/NoodleIcon.svg"
+                                alt="Noodle Icon"
+                                style={{
+                                    width: "2rem",
+                                    height: "2rem",
+                                    filter:
+                                        hoveredMenuItem === "NoddleBars"
+                                            ? "brightness(2)"
+                                            : "none",
+                                }}
+                            />
+                        </div>
+                        <div>
+                            <h2 style={styles.menuItemTitle}>Noddle Bars</h2>
+                            <p style={styles.menuItemText}>
+                                Forecasted profit:{" "}
+                                <span
+                                    style={{
+                                        color: "#10B981",
+                                        fontWeight: "600",
+                                    }}
+                                >
+                                    {formatCurrency(
+                                        gameData.noddleBars.forecastedProfit
+                                    )}
+                                </span>
+                            </p>
+                        </div>
+                    </button>
+                </div>
+
+                {/* Employees */}
+                <div style={styles.menuItemWrapper}>
+                    <button
+                        onClick={() => handleMenuClick("Employees")}
+                        onMouseEnter={() => setHoveredMenuItem("Employees")}
+                        onMouseLeave={() => setHoveredMenuItem(null)}
+                        style={styles.menuItem(hoveredMenuItem === "Employees")}
+                    >
+                        <div
+                            style={styles.menuItemIcon(
+                                hoveredMenuItem === "Employees"
+                            )}
+                        >
+                            <img
+                                src="/assets/hub/EmployeeIcon.svg"
+                                alt="Employee Icon"
+                                style={{
+                                    width: "2rem",
+                                    height: "2rem",
+                                    filter:
+                                        hoveredMenuItem === "Employees"
+                                            ? "brightness(2)"
+                                            : "none",
+                                }}
+                            />
+                        </div>
+                        <div>
+                            <h2 style={styles.menuItemTitle}>Employees</h2>
+                            <p style={styles.menuItemText}>
+                                Labor Cost:{" "}
+                                <span
+                                    style={{
+                                        color: "#EF4444",
+                                        fontWeight: "600",
+                                    }}
+                                >
+                                    {formatCurrency(
+                                        gameData.employees.laborCost
+                                    )}
+                                </span>
+                            </p>
+                        </div>
+                    </button>
+                </div>
+
+                {/* Debts */}
+                <div style={styles.menuItemWrapper}>
+                    <button
+                        onClick={() => handleMenuClick("Debts")}
+                        onMouseEnter={() => setHoveredMenuItem("Debts")}
+                        onMouseLeave={() => setHoveredMenuItem(null)}
+                        style={styles.menuItem(hoveredMenuItem === "Debts")}
+                    >
+                        <div
+                            style={styles.menuItemIcon(
+                                hoveredMenuItem === "Debts"
+                            )}
+                        >
+                            <img
+                                src="/assets/hub/DebtIcon.svg"
+                                alt="Debt Icon"
+                                style={{
+                                    width: "2rem",
+                                    height: "2rem",
+                                    filter:
+                                        hoveredMenuItem === "Debts"
+                                            ? "brightness(2)"
+                                            : "none",
+                                }}
+                            />
+                        </div>
+                        <div>
+                            <h2 style={styles.menuItemTitle}>Debts</h2>
+                            <p style={styles.menuItemText}>
+                                Repayment:{" "}
+                                <span
+                                    style={{
+                                        color: "#EF4444",
+                                        fontWeight: "600",
+                                    }}
+                                >
+                                    {formatCurrency(gameData.debts.repayment)}
+                                </span>
+                            </p>
+                        </div>
+                    </button>
+                </div>
+
+                {/* Personal Time */}
+                <div style={styles.menuItemWrapper}>
+                    <button
+                        onClick={() => handleMenuClick("PersonalTime")}
+                        onMouseEnter={() => setHoveredMenuItem("PersonalTime")}
+                        onMouseLeave={() => setHoveredMenuItem(null)}
+                        style={styles.menuItem(
+                            hoveredMenuItem === "PersonalTime"
+                        )}
+                    >
+                        <div
+                            style={styles.menuItemIcon(
+                                hoveredMenuItem === "PersonalTime"
+                            )}
+                        >
+                            <img
+                                src="/assets/hub/PersonalIcon.svg"
+                                alt="Personal Time Icon"
+                                style={{
+                                    width: "2rem",
+                                    height: "2rem",
+                                    filter:
+                                        hoveredMenuItem === "PersonalTime"
+                                            ? "brightness(2)"
+                                            : "none",
+                                }}
+                            />
+                        </div>
+                        <div>
+                            <h2 style={styles.menuItemTitle}>Personal Time</h2>
+                            <p style={styles.menuItemText}>
+                                Planned:{" "}
+                                <span
+                                    style={{
+                                        color: "#3B82F6",
+                                        fontWeight: "600",
+                                    }}
+                                >
+                                    {gameData.personalTime.planned}
+                                </span>
+                            </p>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        );
+    };
+
     return (
         <div style={styles.container}>
             {/* Main Content Area */}
@@ -339,222 +555,18 @@ const HubComponent = () => {
                         </div>
                     </div>
 
-                    {/* Sidebar Menu Items */}
-                    <div
-                        style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            height: "100%",
-                            padding: "1rem 0",
-                            paddingBottom: "10rem",
-                            overflow: "auto",
-                        }}
-                    >
-                        {/* Noddle Bars */}
-                        <div style={styles.menuItemWrapper}>
-                            <button
-                                onClick={() => handleMenuClick("NoddleBars")}
-                                onMouseEnter={() =>
-                                    setHoveredMenuItem("NoddleBars")
-                                }
-                                onMouseLeave={() => setHoveredMenuItem(null)}
-                                style={styles.menuItem(
-                                    hoveredMenuItem === "NoddleBars"
-                                )}
-                            >
-                                <div
-                                    style={styles.menuItemIcon(
-                                        hoveredMenuItem === "NoddleBars"
-                                    )}
-                                >
-                                    <img
-                                        src="/assets/hub/NoodleIcon.svg"
-                                        alt="Noodle Icon"
-                                        style={{
-                                            width: "2rem",
-                                            height: "2rem",
-                                            filter:
-                                                hoveredMenuItem === "NoddleBars"
-                                                    ? "brightness(2)"
-                                                    : "none",
-                                        }}
-                                    />
-                                </div>
-                                <div>
-                                    <h2 style={styles.menuItemTitle}>
-                                        Noddle Bars
-                                    </h2>
-                                    <p style={styles.menuItemText}>
-                                        Forecasted profit:{" "}
-                                        <span
-                                            style={{
-                                                color: "#10B981",
-                                                fontWeight: "600",
-                                            }}
-                                        >
-                                            {formatCurrency(
-                                                gameData.noddleBars
-                                                    .forecastedProfit
-                                            )}
-                                        </span>
-                                    </p>
-                                </div>
-                            </button>
-                        </div>
-
-                        {/* Employees */}
-                        <div style={styles.menuItemWrapper}>
-                            <button
-                                onClick={() => handleMenuClick("Employees")}
-                                onMouseEnter={() =>
-                                    setHoveredMenuItem("Employees")
-                                }
-                                onMouseLeave={() => setHoveredMenuItem(null)}
-                                style={styles.menuItem(
-                                    hoveredMenuItem === "Employees"
-                                )}
-                            >
-                                <div
-                                    style={styles.menuItemIcon(
-                                        hoveredMenuItem === "Employees"
-                                    )}
-                                >
-                                    <img
-                                        src="/assets/hub/EmployeeIcon.svg"
-                                        alt="Employee Icon"
-                                        style={{
-                                            width: "2rem",
-                                            height: "2rem",
-                                            filter:
-                                                hoveredMenuItem === "Employees"
-                                                    ? "brightness(2)"
-                                                    : "none",
-                                        }}
-                                    />
-                                </div>
-                                <div>
-                                    <h2 style={styles.menuItemTitle}>
-                                        Employees
-                                    </h2>
-                                    <p style={styles.menuItemText}>
-                                        Labor Cost:{" "}
-                                        <span
-                                            style={{
-                                                color: "#EF4444",
-                                                fontWeight: "600",
-                                            }}
-                                        >
-                                            {formatCurrency(
-                                                gameData.employees.laborCost
-                                            )}
-                                        </span>
-                                    </p>
-                                </div>
-                            </button>
-                        </div>
-
-                        {/* Debts */}
-                        <div style={styles.menuItemWrapper}>
-                            <button
-                                onClick={() => handleMenuClick("Debts")}
-                                onMouseEnter={() => setHoveredMenuItem("Debts")}
-                                onMouseLeave={() => setHoveredMenuItem(null)}
-                                style={styles.menuItem(
-                                    hoveredMenuItem === "Debts"
-                                )}
-                            >
-                                <div
-                                    style={styles.menuItemIcon(
-                                        hoveredMenuItem === "Debts"
-                                    )}
-                                >
-                                    <img
-                                        src="/assets/hub/DebtIcon.svg"
-                                        alt="Debt Icon"
-                                        style={{
-                                            width: "2rem",
-                                            height: "2rem",
-                                            filter:
-                                                hoveredMenuItem === "Debts"
-                                                    ? "brightness(2)"
-                                                    : "none",
-                                        }}
-                                    />
-                                </div>
-                                <div>
-                                    <h2 style={styles.menuItemTitle}>Debts</h2>
-                                    <p style={styles.menuItemText}>
-                                        Repayment:{" "}
-                                        <span
-                                            style={{
-                                                color: "#EF4444",
-                                                fontWeight: "600",
-                                            }}
-                                        >
-                                            {formatCurrency(
-                                                gameData.debts.repayment
-                                            )}
-                                        </span>
-                                    </p>
-                                </div>
-                            </button>
-                        </div>
-
-                        {/* Personal Time */}
-                        <div style={styles.menuItemWrapper}>
-                            <button
-                                onClick={() => handleMenuClick("PersonalTime")}
-                                onMouseEnter={() =>
-                                    setHoveredMenuItem("PersonalTime")
-                                }
-                                onMouseLeave={() => setHoveredMenuItem(null)}
-                                style={styles.menuItem(
-                                    hoveredMenuItem === "PersonalTime"
-                                )}
-                            >
-                                <div
-                                    style={styles.menuItemIcon(
-                                        hoveredMenuItem === "PersonalTime"
-                                    )}
-                                >
-                                    <img
-                                        src="/assets/hub/PersonalIcon.svg"
-                                        alt="Personal Time Icon"
-                                        style={{
-                                            width: "2rem",
-                                            height: "2rem",
-                                            filter:
-                                                hoveredMenuItem ===
-                                                "PersonalTime"
-                                                    ? "brightness(2)"
-                                                    : "none",
-                                        }}
-                                    />
-                                </div>
-                                <div>
-                                    <h2 style={styles.menuItemTitle}>
-                                        Personal Time
-                                    </h2>
-                                    <p style={styles.menuItemText}>
-                                        Planned:{" "}
-                                        <span
-                                            style={{
-                                                color: "#3B82F6",
-                                                fontWeight: "600",
-                                            }}
-                                        >
-                                            {gameData.personalTime.planned}
-                                        </span>
-                                    </p>
-                                </div>
-                            </button>
-                        </div>
-                    </div>
+                    {/* Sidebar Menu Items - conditionally render main menu or NoodleBars submenu */}
+                    {renderSidebarContent()}
 
                     {/* START PERIOD Button at bottom of sidebar but wider than sidebar */}
                     <button
                         style={styles.startPeriodButton}
                         onClick={handleStartPeriod}
+                        className={
+                            activeSection
+                                ? "opacity-0 pointer-events-none transition-opacity duration-300"
+                                : "opacity-100 transition-opacity duration-300"
+                        }
                     >
                         <div style={styles.startPeriodTop}>
                             <span>START PERIOD</span>
