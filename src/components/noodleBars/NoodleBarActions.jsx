@@ -1,8 +1,12 @@
 import { useState } from "react";
 import PropTypes from "prop-types";
 
-const NoodleBarActions = ({ onActionSelect, onBack }) => {
+const NoodleBarActions = ({ onActionSelect, onBack, forecastedProfit }) => {
     const [hoveredAction, setHoveredAction] = useState(null);
+
+    const formatCurrency = (value) => {
+        return new Intl.NumberFormat("fr-FR").format(value) + " ¥";
+    };
 
     const actionButtonStyle = (isHovered) => ({
         display: "flex",
@@ -30,8 +34,19 @@ const NoodleBarActions = ({ onActionSelect, onBack }) => {
 
     return (
         <div className="flex flex-col h-full p-4 pb-40 overflow-auto animate-fade-in">
-            <div className="text-2xl font-bold text-[var(--color-principalBrown)] mb-6 ml-2 animate-slide-in-left">
-                Noodle Bars Management
+            <div className="mb-6 ml-2 animate-slide-in-left">
+                <h2 className="text-2xl font-bold text-[var(--color-principalBrown)]">
+                    Noodle Bars Management
+                </h2>
+                <div
+                    className="text-[var(--color-principalBrown)] flex items-center mt-1 font-medium animate-slide-in-left"
+                    style={{ animationDelay: "30ms" }}
+                >
+                    <span>Forecasted profit: </span>
+                    <span className="ml-2 text-lg font-semibold text-emerald-600">
+                        {formatCurrency(forecastedProfit)}
+                    </span>
+                </div>
             </div>
 
             <button
@@ -96,6 +111,7 @@ const NoodleBarActions = ({ onActionSelect, onBack }) => {
 NoodleBarActions.propTypes = {
     onActionSelect: PropTypes.func.isRequired,
     onBack: PropTypes.func.isRequired,
+    forecastedProfit: PropTypes.number.isRequired,
 };
 
 export default NoodleBarActions;

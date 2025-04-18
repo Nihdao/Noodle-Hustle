@@ -302,6 +302,7 @@ const HubComponent = () => {
                 <NoodleBarActions
                     onActionSelect={handleSubMenuClick}
                     onBack={handleBackClick}
+                    forecastedProfit={gameData.noddleBars.forecastedProfit}
                 />
             );
         }
