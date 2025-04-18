@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import NoodleBarActions from "./noodleBars/NoodleBarActions";
 import NoodleBarAssign from "./noodleBars/NoodleBarAssign";
+import OptionsModal from "./modals/OptionsModal";
 
 const HubComponent = () => {
     const [gameData, setGameData] = React.useState({
@@ -29,6 +30,7 @@ const HubComponent = () => {
     const [activeSubmenu, setActiveSubmenu] = useState("Home");
     const [hoveredMenuItem, setHoveredMenuItem] = useState(null);
     const [activeNoodleBarSection, setActiveNoodleBarSection] = useState(null);
+    const [isOptionsModalOpen, setIsOptionsModalOpen] = useState(false);
 
     useEffect(() => {
         if (window.gameRef) {
@@ -77,13 +79,7 @@ const HubComponent = () => {
     };
 
     const handleOptions = () => {
-        if (window.gameRef && window.gameRef.openOptionsPanel) {
-            window.gameRef.openOptionsPanel();
-        } else {
-            console.error(
-                "Cannot open options: gameRef.openOptionsPanel is not available"
-            );
-        }
+        setIsOptionsModalOpen(true);
     };
 
     // Handle main menu clicks
@@ -262,14 +258,55 @@ const HubComponent = () => {
             top: "1rem",
             right: "1rem",
             display: "flex",
-            flexDirection: "column",
+            flexDirection: "row",
             gap: "0.75rem",
             zIndex: 20,
-            alignItems: "flex-end",
+            alignItems: "center",
+            background: "rgba(255, 255, 255, 0.85)",
+            backdropFilter: "blur(8px)",
+            borderRadius: "1rem",
+            padding: "0.5rem 1rem",
+            boxShadow: "0 4px 15px rgba(0, 0, 0, 0.1)",
+            border: "1px solid rgba(255, 255, 255, 0.5)",
+            transition: "all 0.3s ease",
+            transform: "translateY(0)",
+            animation: "float 5s ease-in-out infinite",
         },
-        statsRow: {
+        statsItem: {
             display: "flex",
-            gap: "1rem",
+            alignItems: "center",
+            padding: "0.25rem 0.75rem",
+            borderRadius: "0.75rem",
+            position: "relative",
+            transition: "all 0.3s ease",
+            transform: "scale(1)",
+            cursor: "default",
+            "&:hover": {
+                transform: "scale(1.05)",
+            },
+        },
+        statsLabel: {
+            fontSize: "0.75rem",
+            fontWeight: "bold",
+            color: "var(--color-principalBrown)",
+            marginRight: "0.5rem",
+            opacity: 0.8,
+        },
+        statsValue: {
+            fontSize: "1.15rem",
+            fontWeight: "bold",
+            color: "var(--color-principalBrown)",
+        },
+        fundsValue: {
+            fontSize: "1.15rem",
+            fontWeight: "bold",
+            color: "#10B981",
+        },
+        divider: {
+            width: "1px",
+            height: "2rem",
+            background: "rgba(49, 34, 24, 0.2)",
+            margin: "0 0.25rem",
         },
         actionButton: {
             backgroundColor: "var(--color-yellowWhite)",
@@ -278,9 +315,50 @@ const HubComponent = () => {
             borderRadius: "0.375rem",
             fontWeight: "bold",
             boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-            transition: "background-color 0.2s",
+            transition: "background-color 0.2s, transform 0.3s",
             border: "none",
             cursor: "pointer",
+            transform: "scale(1)",
+            "&:hover": {
+                transform: "scale(1.05)",
+                backgroundColor: "var(--color-whiteCream)",
+            },
+        },
+        actionButtonsContainer: {
+            position: "absolute",
+            bottom: "1.5rem",
+            right: "1.5rem",
+            display: "flex",
+            gap: "1rem",
+            zIndex: 20,
+        },
+        actionButtonStyled: {
+            backgroundColor: "rgba(255, 255, 255, 0.85)",
+            color: "var(--color-principalBrown)",
+            padding: "0.85rem 1.5rem",
+            borderRadius: "1rem",
+            fontWeight: "bold",
+            boxShadow: "0 4px 15px rgba(0, 0, 0, 0.15)",
+            border: "1px solid rgba(255, 255, 255, 0.6)",
+            transition: "all 0.3s ease",
+            backdropFilter: "blur(5px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "0.5rem",
+            cursor: "pointer",
+            transform: "translateY(0)",
+            fontSize: "1rem",
+        },
+        buffsButton: {
+            background: "linear-gradient(135deg, #74EBD5 0%, #9FACE6 100%)",
+            color: "#fff",
+            textShadow: "0 1px 2px rgba(0, 0, 0, 0.1)",
+        },
+        optionsButton: {
+            background: "linear-gradient(135deg, #FFD1FF 0%, #FAD0C4 100%)",
+            color: "#8B5D33",
+            textShadow: "0 1px 2px rgba(255, 255, 255, 0.3)",
         },
         mainContent: {
             flex: 1,
@@ -789,80 +867,127 @@ const HubComponent = () => {
 
                 {/* Rank, Funds and Burnout - Absolute positioned in top right */}
                 <div style={styles.statsPanelTopRight}>
-                    <div style={styles.statsRow}>
-                        <div style={styles.statsBox}>
-                            <div style={{ fontWeight: "bold" }}>Rank</div>
-                            <div style={{ fontSize: "1.25rem" }}>
-                                {gameData.rank}
-                            </div>
-                        </div>
-                        <div style={styles.statsBox}>
-                            <div style={{ fontWeight: "bold" }}>Funds</div>
-                            <div style={{ fontSize: "1.25rem" }}>
-                                {formatCurrency(gameData.funds)}
-                            </div>
-                        </div>
+                    <div style={styles.statsItem}>
+                        <span style={styles.statsLabel}>RANK</span>
+                        <span style={styles.statsValue}>{gameData.rank}</span>
                     </div>
-                    <div
-                        style={{
-                            ...styles.statsBox,
-                            display: "flex",
-                            flexDirection: "row",
-                            alignItems: "center",
-                        }}
-                    >
-                        <span
-                            style={{
-                                fontWeight: "bold",
-                                marginRight: "0.75rem",
-                            }}
-                        >
-                            Burnout
+
+                    <div style={styles.divider}></div>
+
+                    <div style={styles.statsItem}>
+                        <span style={styles.statsLabel}>FUNDS</span>
+                        <span style={styles.fundsValue}>
+                            {formatCurrency(gameData.funds)}
                         </span>
+                    </div>
+
+                    <div style={styles.divider}></div>
+
+                    <div style={{ ...styles.statsItem, marginRight: "0.5rem" }}>
+                        <span style={styles.statsLabel}>BURNOUT</span>
                         <div
                             style={{
-                                width: "8rem",
-                                height: "1rem",
-                                backgroundColor: "#D1D5DB",
+                                width: "5rem",
+                                height: "0.65rem",
+                                backgroundColor: "#F3F4F6",
                                 borderRadius: "9999px",
                                 overflow: "hidden",
+                                border: "1px solid rgba(49, 34, 24, 0.1)",
+                                marginLeft: "0.5rem",
+                                position: "relative",
                             }}
                         >
                             <div
                                 style={{
                                     height: "100%",
                                     backgroundColor:
-                                        "var(--color-principalRed)",
+                                        gameData.burnout > 70
+                                            ? "#EF4444"
+                                            : gameData.burnout > 40
+                                            ? "#F59E0B"
+                                            : "#10B981",
                                     borderRadius: "9999px",
                                     width: `${gameData.burnout}%`,
+                                    transition:
+                                        "width 0.5s ease-in-out, background-color 0.5s ease-in-out",
                                 }}
                             ></div>
                         </div>
-                        <span style={{ marginLeft: "0.75rem" }}>
+                        <span
+                            style={{
+                                marginLeft: "0.5rem",
+                                fontWeight: "bold",
+                                fontSize: "1.1rem",
+                                color:
+                                    gameData.burnout > 70
+                                        ? "#EF4444"
+                                        : gameData.burnout > 40
+                                        ? "#F59E0B"
+                                        : "#10B981",
+                            }}
+                        >
                             {gameData.burnout}%
                         </span>
                     </div>
                 </div>
 
                 {/* Buffs and Options - Absolute positioned in bottom right */}
-                <div
-                    style={{
-                        position: "absolute",
-                        bottom: "1rem",
-                        right: "1rem",
-                        display: "flex",
-                        gap: "1rem",
-                        zIndex: 20,
-                    }}
-                >
-                    <button style={styles.actionButton} onClick={handleBuffs}>
+                <div style={styles.actionButtonsContainer}>
+                    <button
+                        style={{
+                            ...styles.actionButtonStyled,
+                            ...styles.buffsButton,
+                        }}
+                        onClick={handleBuffs}
+                        className="hover:scale-105 hover:shadow-xl active:scale-95 transition-all"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                        >
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                        </svg>
                         Buffs
                     </button>
-                    <button style={styles.actionButton} onClick={handleOptions}>
+                    <button
+                        style={{
+                            ...styles.actionButtonStyled,
+                            ...styles.optionsButton,
+                        }}
+                        onClick={handleOptions}
+                        className="hover:scale-105 hover:shadow-xl active:scale-95 transition-all"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                        >
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        </svg>
                         Options
                     </button>
                 </div>
             </div>
+
+            {/* Options Modal */}
+            <OptionsModal
+                isOpen={isOptionsModalOpen}
+                onClose={() => setIsOptionsModalOpen(false)}
+            />
         </div>
     );
 };
