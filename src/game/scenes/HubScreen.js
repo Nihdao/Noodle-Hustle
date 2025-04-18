@@ -27,6 +27,54 @@ export class HubScreen extends Phaser.Scene {
             },
             forecastProfit: 2172,
         };
+
+        // Fairy dialogue system
+        this.fairyMessages = [
+            "Welcome to Noodle Balance! I'm Miso, your fairy helper!",
+            "Remember to keep your burnout level low. Take breaks!",
+            "Assign your employees wisely to maximize profits!",
+            "Investors want to see growth. Prepare for the meetings!",
+            "Balancing profits and quality is key to success!",
+            "Upgrade your noodle bars to attract more customers!",
+            "You can check your current profit forecast at any time.",
+            "Need help? Click on me for some tips!",
+            "Managing your personal time is important for success!",
+            "Your rank increases as your business grows. Aim high!",
+        ];
+
+        // Menu-specific fairy messages
+        this.menuMessages = {
+            NoodleBars: [
+                "Your noodle bars are the heart of your business!",
+                "Assign skilled employees to boost sales!",
+                "Consider upgrades to increase profit margins.",
+                "Location matters! Premium spots mean more customers.",
+            ],
+            Employees: [
+                "Happy employees are productive employees!",
+                "Look for skilled candidates to join your team.",
+                "Balance salary costs with employee skills.",
+                "Training can improve your staff's performance!",
+            ],
+            Debts: [
+                "Managing debts is crucial for long-term success.",
+                "Loans can help expand, but watch the interest!",
+                "Pay off high-interest debts first when possible.",
+                "Your credit rating affects future loan options.",
+            ],
+            PersonalTime: [
+                "Don't forget to take care of yourself!",
+                "Balance work and personal time to reduce burnout.",
+                "Different activities provide different benefits.",
+                "Your wellbeing affects your business decisions!",
+            ],
+        };
+
+        this.currentMessageIndex = 0;
+        this.messageTimer = null;
+        this.speechBubble = null;
+        this.speechText = null;
+        this.isShowingMessage = false;
     }
 
     preload() {
@@ -56,8 +104,9 @@ export class HubScreen extends Phaser.Scene {
         // Create the fairy sprite (just for Phaser side visuals in the game area)
         if (this.textures.exists("fairy")) {
             this.fairy = this.add
-                .sprite(width * 0.65, height * 0.5, "fairy")
-                .setScale(0.2);
+                .sprite(width * 0.75, height * 0.5, "fairy")
+                .setScale(0.2)
+                .setInteractive({ useHandCursor: true });
 
             // Simple animation to make the fairy float
             this.tweens.add({
@@ -68,14 +117,196 @@ export class HubScreen extends Phaser.Scene {
                 yoyo: true,
                 repeat: -1,
             });
+
+            // Add subtle rotation animation
+            this.tweens.add({
+                targets: this.fairy,
+                angle: { from: -5, to: 5 },
+                duration: 5000,
+                ease: "Sine.easeInOut",
+                yoyo: true,
+                repeat: -1,
+            });
+
+            // Create speech bubble (initially hidden)
+            this.createSpeechBubble();
+
+            // Setup fairy click interaction
+            this.fairy.on("pointerdown", () => {
+                this.showRandomMessage();
+            });
+
+            // Setup random message timer (every 10 seconds)
+            this.messageTimer = this.time.addEvent({
+                delay: 10000,
+                callback: this.showRandomMessage,
+                callbackScope: this,
+                loop: true,
+            });
+
+            // Show initial welcome message
+            this.time.delayedCall(1000, () => {
+                this.showMessage(this.fairyMessages[0]);
+            });
         }
 
         // Register this scene with the event bus for React components to access
         console.log("HubScreen: Registering scene with EventBus");
         EventBus.registerScene(this);
 
+        // Listen for menu changes from React
+        EventBus.on("menuChanged", this.handleMenuChange, this);
+
         // Set up methods for React to call
         this.setupReactInteractions();
+    }
+
+    createSpeechBubble() {
+        // Create text object for fairy dialogue with better visibility
+        this.speechText = this.add
+            .text(this.fairy.x - 180, this.fairy.y, "", {
+                fontFamily: "Arial",
+                fontSize: "20px",
+                fontWeight: "bold",
+                color: "#000000",
+                align: "center",
+                wordWrap: { width: 240 },
+                padding: {
+                    left: 15,
+                    right: 15,
+                    top: 10,
+                    bottom: 10,
+                },
+            })
+            .setOrigin(1, 0.5)
+            .setDepth(100)
+            .setAlpha(0);
+
+        // Create decorative background for text with rounded corners
+        this.speechBackground = this.add.graphics();
+        this.speechBackground.setDepth(99);
+        this.speechBackground.setAlpha(0);
+
+        // Add small triangle pointer towards fairy (now pointing right)
+        this.speechPointer = this.add.graphics();
+        this.speechPointer.setDepth(99);
+        this.speechPointer.setAlpha(0);
+    }
+
+    showMessage(message) {
+        // If already showing a message, hide it first
+        if (this.isShowingMessage) {
+            this.hideSpeechBubble(() => {
+                this.displayNewMessage(message);
+            });
+        } else {
+            this.displayNewMessage(message);
+        }
+    }
+
+    displayNewMessage(message) {
+        // Update text
+        this.speechText.setText(message);
+
+        // Show speech text with animation
+        this.isShowingMessage = true;
+
+        // Calculate background size based on text bounds
+        const bounds = this.speechText.getBounds();
+
+        // Draw white background
+        this.speechBackground.clear();
+        this.speechBackground.fillStyle(0xffffff, 0.9);
+        this.speechBackground.fillRoundedRect(
+            bounds.x - 15,
+            bounds.y - 10,
+            bounds.width + 30,
+            bounds.height + 20,
+            16
+        );
+
+        // Draw pointer triangle towards fairy (pointing right)
+        this.speechPointer.clear();
+        this.speechPointer.fillStyle(0xffffff, 0.9);
+        this.speechPointer.beginPath();
+        this.speechPointer.moveTo(
+            bounds.x + bounds.width + 15,
+            bounds.y + bounds.height / 2 - 10
+        );
+        this.speechPointer.lineTo(
+            bounds.x + bounds.width + 35,
+            bounds.y + bounds.height / 2
+        );
+        this.speechPointer.lineTo(
+            bounds.x + bounds.width + 15,
+            bounds.y + bounds.height / 2 + 10
+        );
+        this.speechPointer.closePath();
+        this.speechPointer.fillPath();
+
+        // Fade in animation
+        this.tweens.add({
+            targets: [
+                this.speechText,
+                this.speechBackground,
+                this.speechPointer,
+            ],
+            alpha: { from: 0, to: 1 },
+            duration: 400,
+            ease: "Sine.easeOut",
+            onComplete: () => {
+                // Hide after 5 seconds
+                this.time.delayedCall(5000, () => {
+                    this.hideSpeechBubble();
+                });
+            },
+        });
+
+        // Add slight bounce animation to fairy
+        this.tweens.add({
+            targets: this.fairy,
+            y: this.fairy.y - 15,
+            duration: 300,
+            yoyo: true,
+            ease: "Bounce.easeOut",
+        });
+    }
+
+    hideSpeechBubble(callback) {
+        // Hide with fade animation
+        this.tweens.add({
+            targets: [
+                this.speechText,
+                this.speechBackground,
+                this.speechPointer,
+            ],
+            alpha: { from: 1, to: 0 },
+            duration: 300,
+            ease: "Sine.easeIn",
+            onComplete: () => {
+                this.isShowingMessage = false;
+                if (callback) callback();
+            },
+        });
+    }
+
+    showRandomMessage() {
+        if (!this.isShowingMessage) {
+            const randomIndex = Phaser.Math.Between(
+                0,
+                this.fairyMessages.length - 1
+            );
+            this.showMessage(this.fairyMessages[randomIndex]);
+        }
+    }
+
+    handleMenuChange(menuName) {
+        // Show menu-specific message when user changes menus
+        if (this.menuMessages[menuName]) {
+            const messages = this.menuMessages[menuName];
+            const randomIndex = Phaser.Math.Between(0, messages.length - 1);
+            this.showMessage(messages[randomIndex]);
+        }
     }
 
     setupReactInteractions() {
@@ -89,6 +320,13 @@ export class HubScreen extends Phaser.Scene {
                 // Handle investor clash event
                 console.log("Investor clash triggered!");
                 this.gameState.investorClashIn = 3;
+                this.showMessage(
+                    "Investor meeting coming up! Make sure your business is looking profitable!"
+                );
+            } else {
+                this.showMessage(
+                    `Starting Period ${this.gameState.period}! Let's make this a profitable one!`
+                );
             }
 
             // Update funds
@@ -102,6 +340,15 @@ export class HubScreen extends Phaser.Scene {
                 100
             );
 
+            // Show burnout warning if too high
+            if (this.gameState.burnout > 70) {
+                this.time.delayedCall(1500, () => {
+                    this.showMessage(
+                        "Your burnout is too high! Take some personal time to recover."
+                    );
+                });
+            }
+
             // Recalculate profits
             this.recalculateProfits();
 
@@ -112,13 +359,24 @@ export class HubScreen extends Phaser.Scene {
         // Method to open buffs panel
         this.openBuffsPanel = () => {
             console.log("Opening buffs panel in Phaser scene");
-            // Implement buffs logic
+            this.showMessage(
+                "Buffs can give you temporary advantages. Choose wisely!"
+            );
         };
 
         // Method to open options panel
         this.openOptionsPanel = () => {
             console.log("Opening options panel in Phaser scene");
-            // Implement options logic
+            this.showMessage("You can adjust your game settings here!");
+        };
+
+        // Method for React to make fairy speak
+        this.fairySpeak = (message) => {
+            if (message && typeof message === "string") {
+                this.showMessage(message);
+                return true;
+            }
+            return false;
         };
     }
 
@@ -147,6 +405,48 @@ export class HubScreen extends Phaser.Scene {
         if (this.noodlesPattern) {
             this.noodlesPattern.tilePositionX += 0.5;
             this.noodlesPattern.tilePositionY += 0.5;
+        }
+
+        // Update speech text position to follow fairy
+        if (this.speechText && this.fairy) {
+            const bounds = this.speechText.getBounds();
+            // Position to the left of the fairy
+            this.speechText.x = this.fairy.x - 100;
+            this.speechText.y = this.fairy.y - 50;
+
+            // Update background position
+            if (this.speechBackground && this.speechBackground.clear) {
+                this.speechBackground.clear();
+                this.speechBackground.fillStyle(0xffffff, 0.9);
+                this.speechBackground.fillRoundedRect(
+                    this.speechText.x - bounds.width - 15,
+                    this.speechText.y - bounds.height / 2 - 10,
+                    bounds.width + 30,
+                    bounds.height + 20,
+                    16
+                );
+            }
+
+            // Update pointer position (pointing right)
+            if (this.speechPointer && this.speechPointer.clear) {
+                this.speechPointer.clear();
+                this.speechPointer.fillStyle(0xffffff, 0.9);
+                this.speechPointer.beginPath();
+                this.speechPointer.moveTo(
+                    this.speechText.x + 15,
+                    this.speechText.y - 10
+                );
+                this.speechPointer.lineTo(
+                    this.speechText.x + 35,
+                    this.speechText.y
+                );
+                this.speechPointer.lineTo(
+                    this.speechText.x + 15,
+                    this.speechText.y + 10
+                );
+                this.speechPointer.closePath();
+                this.speechPointer.fillPath();
+            }
         }
     }
 }

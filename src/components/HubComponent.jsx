@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import NoodleBarActions from "./noodleBars/NoodleBarActions";
 import NoodleBarAssign from "./noodleBars/NoodleBarAssign";
 import OptionsModal from "./modals/OptionsModal";
+import { EventBus } from "../game/EventBus";
 
 const HubComponent = () => {
     const [gameData, setGameData] = React.useState({
@@ -85,6 +86,11 @@ const HubComponent = () => {
     // Handle main menu clicks
     const handleMenuClick = (menu) => {
         setActiveSubmenu(menu);
+
+        // Notify Phaser about menu change for fairy interaction
+        if (window.gameRef) {
+            EventBus.emit("menuChanged", menu);
+        }
     };
 
     // Handle noodle bar actions
