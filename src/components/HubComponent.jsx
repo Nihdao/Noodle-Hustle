@@ -53,7 +53,7 @@ const HubComponent = () => {
     }, []);
 
     const formatCurrency = (value) => {
-        return new Intl.NumberFormat("fr-FR").format(value) + " ¥";
+        return new Intl.NumberFormat("en-US").format(value) + " ¥";
     };
 
     const handleStartPeriod = () => {
@@ -341,17 +341,17 @@ const HubComponent = () => {
                     </button>
                 </div>
 
-                {/* Staff */}
+                {/* Employees */}
                 <div style={styles.menuItemWrapper}>
                     <button
-                        onClick={() => handleMenuClick("Staff")}
-                        onMouseEnter={() => setHoveredMenuItem("Staff")}
+                        onClick={() => handleMenuClick("Employees")}
+                        onMouseEnter={() => setHoveredMenuItem("Employees")}
                         onMouseLeave={() => setHoveredMenuItem(null)}
-                        style={styles.menuItem(hoveredMenuItem === "Staff")}
+                        style={styles.menuItem(hoveredMenuItem === "Employees")}
                     >
                         <div
                             style={styles.menuItemIcon(
-                                hoveredMenuItem === "Staff"
+                                hoveredMenuItem === "Employees"
                             )}
                         >
                             <img
@@ -361,14 +361,14 @@ const HubComponent = () => {
                                     width: "2rem",
                                     height: "2rem",
                                     filter:
-                                        hoveredMenuItem === "Staff"
+                                        hoveredMenuItem === "Employees"
                                             ? "brightness(2)"
                                             : "none",
                                 }}
                             />
                         </div>
                         <div>
-                            <h2 style={styles.menuItemTitle}>Staff</h2>
+                            <h2 style={styles.menuItemTitle}>Employees</h2>
                             <p style={styles.menuItemText}>
                                 Labor Cost:{" "}
                                 <span
@@ -386,43 +386,43 @@ const HubComponent = () => {
                     </button>
                 </div>
 
-                {/* Academy */}
+                {/* Debts */}
                 <div style={styles.menuItemWrapper}>
                     <button
-                        onClick={() => handleMenuClick("Academy")}
-                        onMouseEnter={() => setHoveredMenuItem("Academy")}
+                        onClick={() => handleMenuClick("Debts")}
+                        onMouseEnter={() => setHoveredMenuItem("Debts")}
                         onMouseLeave={() => setHoveredMenuItem(null)}
-                        style={styles.menuItem(hoveredMenuItem === "Academy")}
+                        style={styles.menuItem(hoveredMenuItem === "Debts")}
                     >
                         <div
                             style={styles.menuItemIcon(
-                                hoveredMenuItem === "Academy"
+                                hoveredMenuItem === "Debts"
                             )}
                         >
                             <img
                                 src="/assets/hub/DebtIcon.svg"
-                                alt="Academy Icon"
+                                alt="Debt Icon"
                                 style={{
                                     width: "2rem",
                                     height: "2rem",
                                     filter:
-                                        hoveredMenuItem === "Academy"
+                                        hoveredMenuItem === "Debts"
                                             ? "brightness(2)"
                                             : "none",
                                 }}
                             />
                         </div>
                         <div>
-                            <h2 style={styles.menuItemTitle}>Academy</h2>
+                            <h2 style={styles.menuItemTitle}>Debts</h2>
                             <p style={styles.menuItemText}>
-                                Training:{" "}
+                                Repayment:{" "}
                                 <span
                                     style={{
-                                        color: "#3B82F6",
+                                        color: "#EF4444",
                                         fontWeight: "600",
                                     }}
                                 >
-                                    Available
+                                    {formatCurrency(gameData.debts.repayment)}
                                 </span>
                             </p>
                         </div>
@@ -532,21 +532,59 @@ const HubComponent = () => {
         );
     };
 
-    // Academy sidebar content
-    const renderAcademySidebar = () => {
+    // NoodleBars sidebar content
+    const renderNoodleBarsSidebar = () => {
+        if (activeNoodleBarSection === "assign") {
+            return (
+                <NoodleBarAssign
+                    onBack={handleNoodleBarBack}
+                    playerRank={gameData.rank || 0}
+                />
+            );
+        }
+
+        return (
+            <NoodleBarActions
+                onActionSelect={handleNoodleBarAction}
+                onBack={() => handleMenuClick("Home")}
+                forecastedProfit={gameData.noddleBars.forecastedProfit}
+            />
+        );
+    };
+
+    // Determine sidebar content based on activeSection
+    const renderSidebarContent = () => {
+        switch (activeSubmenu) {
+            case "Home":
+                return renderHomeSidebar();
+            case "NoodleBars":
+                return renderNoodleBarsSidebar();
+            case "Employees":
+                return renderStaffSidebar();
+            case "Debts":
+                return renderDebtsSidebar();
+            case "PersonalTime":
+                return renderPersonalTimeSidebar();
+            default:
+                return renderHomeSidebar();
+        }
+    };
+
+    // Placeholder for Debts sidebar
+    const renderDebtsSidebar = () => {
         return (
             <div className="flex flex-col h-full p-4 pb-40 overflow-auto animate-fade-in">
                 <div className="mb-6 ml-2 animate-slide-in-left">
                     <h2 className="text-2xl font-bold text-[var(--color-principalBrown)]">
-                        Academy
+                        Debts Management
                     </h2>
                     <div
                         className="text-[var(--color-principalBrown)] flex items-center mt-1 font-medium animate-slide-in-left"
                         style={{ animationDelay: "30ms" }}
                     >
-                        <span>Training Status: </span>
-                        <span className="ml-2 text-lg font-semibold text-blue-500">
-                            Available
+                        <span>Repayment: </span>
+                        <span className="ml-2 text-lg font-semibold text-red-500">
+                            {formatCurrency(gameData.debts.repayment)}
                         </span>
                     </div>
                 </div>
@@ -587,40 +625,59 @@ const HubComponent = () => {
         );
     };
 
-    // NoodleBars sidebar content
-    const renderNoodleBarsSidebar = () => {
-        if (activeNoodleBarSection === "assign") {
-            return (
-                <NoodleBarAssign
-                    onBack={handleNoodleBarBack}
-                    playerRank={gameData.rank || 0}
-                />
-            );
-        }
-
+    // Placeholder for Personal Time sidebar
+    const renderPersonalTimeSidebar = () => {
         return (
-            <NoodleBarActions
-                onActionSelect={handleNoodleBarAction}
-                onBack={() => handleMenuClick("Home")}
-                forecastedProfit={gameData.noddleBars.forecastedProfit}
-            />
-        );
-    };
+            <div className="flex flex-col h-full p-4 pb-40 overflow-auto animate-fade-in">
+                <div className="mb-6 ml-2 animate-slide-in-left">
+                    <h2 className="text-2xl font-bold text-[var(--color-principalBrown)]">
+                        Personal Time
+                    </h2>
+                    <div
+                        className="text-[var(--color-principalBrown)] flex items-center mt-1 font-medium animate-slide-in-left"
+                        style={{ animationDelay: "30ms" }}
+                    >
+                        <span>Planned: </span>
+                        <span className="ml-2 text-lg font-semibold text-blue-500">
+                            {gameData.personalTime.planned}
+                        </span>
+                    </div>
+                </div>
 
-    // Determine sidebar content based on activeSection
-    const renderSidebarContent = () => {
-        switch (activeSubmenu) {
-            case "Home":
-                return renderHomeSidebar();
-            case "NoodleBars":
-                return renderNoodleBarsSidebar();
-            case "Staff":
-                return renderStaffSidebar();
-            case "Academy":
-                return renderAcademySidebar();
-            default:
-                return renderHomeSidebar();
-        }
+                <button
+                    onClick={() => handleMenuClick("Home")}
+                    onMouseEnter={() => setHoveredMenuItem("Back")}
+                    onMouseLeave={() => setHoveredMenuItem(null)}
+                    className="animate-slide-in-left mt-auto"
+                    style={{
+                        padding: "1.5rem",
+                        transition: "all 0.3s ease",
+                        cursor: "pointer",
+                        backgroundColor:
+                            hoveredMenuItem === "Back"
+                                ? "var(--color-principalBrown)"
+                                : "var(--color-yellowWhite)",
+                        color:
+                            hoveredMenuItem === "Back"
+                                ? "var(--color-whiteCream)"
+                                : "var(--color-principalBrown)",
+                        borderRadius: "0.5rem",
+                        margin: "0.5rem",
+                        fontWeight: "bold",
+                        fontSize: "1.5rem",
+                        boxShadow:
+                            hoveredMenuItem === "Back"
+                                ? "0 4px 6px rgba(0, 0, 0, 0.2)"
+                                : "0 2px 4px rgba(0, 0, 0, 0.1)",
+                        border: "none",
+                        outline: "none",
+                        animationDelay: "200ms",
+                    }}
+                >
+                    Back
+                </button>
+            </div>
+        );
     };
 
     return (
@@ -694,7 +751,7 @@ const HubComponent = () => {
                         style={styles.startPeriodButton}
                         onClick={handleStartPeriod}
                         className={
-                            activeSubmenu
+                            activeSubmenu !== "Home"
                                 ? "opacity-0 pointer-events-none transition-opacity duration-300"
                                 : "opacity-100 transition-opacity duration-300"
                         }
