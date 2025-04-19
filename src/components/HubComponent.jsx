@@ -3,6 +3,9 @@ import NoodleBarActions from "./noodleBars/NoodleBarActions";
 import NoodleBarAssign from "./noodleBars/NoodleBarAssign";
 import NoodleBarUpgrade from "./noodleBars/NoodleBarUpgrade";
 import NoodleBarBuySell from "./noodleBars/NoodleBarBuySell";
+import EmployeeActions from "./employee/EmployeeActions";
+import EmployeeManagement from "./employee/EmployeeManagement";
+import EmployeeRecruitment from "./employee/EmployeeRecruitment";
 import OptionsModal from "./modals/OptionsModal";
 import { EventBus } from "../game/EventBus";
 
@@ -33,6 +36,7 @@ const HubComponent = () => {
     const [activeSubmenu, setActiveSubmenu] = useState("Home");
     const [hoveredMenuItem, setHoveredMenuItem] = useState(null);
     const [activeNoodleBarSection, setActiveNoodleBarSection] = useState(null);
+    const [activeEmployeeSection, setActiveEmployeeSection] = useState(null);
     const [isOptionsModalOpen, setIsOptionsModalOpen] = useState(false);
 
     useEffect(() => {
@@ -109,6 +113,20 @@ const HubComponent = () => {
     // Handle noodle bar back button
     const handleNoodleBarBack = () => {
         setActiveNoodleBarSection(null);
+    };
+
+    // Handle employee actions
+    const handleEmployeeAction = (action) => {
+        if (action === "Management") {
+            setActiveEmployeeSection("management");
+        } else if (action === "Recruitment") {
+            setActiveEmployeeSection("recruitment");
+        }
+    };
+
+    // Handle employee back button
+    const handleEmployeeBack = () => {
+        setActiveEmployeeSection(null);
     };
 
     // Styles communs pour réutilisation
@@ -569,56 +587,28 @@ const HubComponent = () => {
 
     // Staff sidebar content
     const renderStaffSidebar = () => {
-        return (
-            <div className="flex flex-col h-full p-4 pb-40 overflow-auto animate-fade-in">
-                <div className="mb-6 ml-2 animate-slide-in-left">
-                    <h2 className="text-2xl font-bold text-[var(--color-principalBrown)]">
-                        Staff Management
-                    </h2>
-                    <div
-                        className="text-[var(--color-principalBrown)] flex items-center mt-1 font-medium animate-slide-in-left"
-                        style={{ animationDelay: "30ms" }}
-                    >
-                        <span>Labor Cost: </span>
-                        <span className="ml-2 text-lg font-semibold text-red-500">
-                            {formatCurrency(gameData.employees.laborCost)}
-                        </span>
-                    </div>
-                </div>
+        if (activeEmployeeSection === "management") {
+            return (
+                <EmployeeManagement
+                    onBack={handleEmployeeBack}
+                    laborCost={gameData.employees.laborCost}
+                />
+            );
+        } else if (activeEmployeeSection === "recruitment") {
+            return (
+                <EmployeeRecruitment
+                    onBack={handleEmployeeBack}
+                    funds={gameData.funds}
+                />
+            );
+        }
 
-                <button
-                    onClick={() => handleMenuClick("Home")}
-                    onMouseEnter={() => setHoveredMenuItem("Back")}
-                    onMouseLeave={() => setHoveredMenuItem(null)}
-                    className="animate-slide-in-left mt-auto"
-                    style={{
-                        padding: "1.5rem",
-                        transition: "all 0.3s ease",
-                        cursor: "pointer",
-                        backgroundColor:
-                            hoveredMenuItem === "Back"
-                                ? "var(--color-principalBrown)"
-                                : "var(--color-yellowWhite)",
-                        color:
-                            hoveredMenuItem === "Back"
-                                ? "var(--color-whiteCream)"
-                                : "var(--color-principalBrown)",
-                        borderRadius: "0.5rem",
-                        margin: "0.5rem",
-                        fontWeight: "bold",
-                        fontSize: "1.5rem",
-                        boxShadow:
-                            hoveredMenuItem === "Back"
-                                ? "0 4px 6px rgba(0, 0, 0, 0.2)"
-                                : "0 2px 4px rgba(0, 0, 0, 0.1)",
-                        border: "none",
-                        outline: "none",
-                        animationDelay: "200ms",
-                    }}
-                >
-                    Back
-                </button>
-            </div>
+        return (
+            <EmployeeActions
+                onActionSelect={handleEmployeeAction}
+                onBack={() => handleMenuClick("Home")}
+                laborCost={gameData.employees.laborCost}
+            />
         );
     };
 
