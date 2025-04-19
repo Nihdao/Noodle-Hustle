@@ -7,6 +7,7 @@ const ConfirmationModal = ({
     onConfirm,
     employeeToReassign,
     upgradeDetails,
+    buySellDetails,
     title,
 }) => {
     if (!show) return null;
@@ -116,6 +117,56 @@ const ConfirmationModal = ({
                     </div>
                 </>
             );
+        } else if (buySellDetails) {
+            const { barName, price, action, currentFunds } = buySellDetails;
+            const isBuy = action === "buy";
+            const resultingFunds = isBuy
+                ? currentFunds - price
+                : currentFunds + price;
+
+            return (
+                <>
+                    <h3 className="text-xl font-bold text-[color:var(--color-principalBrown)] mb-3">
+                        {title || (isBuy ? "Confirm Purchase" : "Confirm Sale")}
+                    </h3>
+                    <p className="text-[color:var(--color-principalBrown)] mb-4">
+                        Are you sure you want to {isBuy ? "purchase" : "sell"}{" "}
+                        <span className="font-bold">{barName}</span>?
+                    </p>
+                    <div className="text-sm text-[color:var(--color-principalBrown)] mb-6">
+                        <div className="flex justify-between border-b pb-2 mb-2">
+                            <span>{isBuy ? "Cost" : "Sell price"}:</span>
+                            <span
+                                className={`font-bold ${
+                                    isBuy ? "text-red-500" : "text-emerald-600"
+                                }`}
+                            >
+                                {formatCurrency(price)}
+                            </span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>Funds after transaction:</span>
+                            <span className="font-bold text-emerald-600">
+                                {formatCurrency(resultingFunds)}
+                            </span>
+                        </div>
+                    </div>
+                    <div className="flex justify-end gap-3">
+                        <button
+                            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md font-medium transition-colors"
+                            onClick={onCancel}
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            className="px-4 py-2 bg-[color:var(--color-principalRed)] hover:bg-[color:var(--color-principalRed-light)] text-white rounded-md font-medium transition-colors"
+                            onClick={onConfirm}
+                        >
+                            {isBuy ? "Purchase" : "Sell"}
+                        </button>
+                    </div>
+                </>
+            );
         }
     };
 
@@ -154,6 +205,12 @@ ConfirmationModal.propTypes = {
         currentLevel: PropTypes.number.isRequired,
         newLevel: PropTypes.number.isRequired,
         cost: PropTypes.number.isRequired,
+        currentFunds: PropTypes.number.isRequired,
+    }),
+    buySellDetails: PropTypes.shape({
+        barName: PropTypes.string.isRequired,
+        price: PropTypes.number.isRequired,
+        action: PropTypes.oneOf(["buy", "sell"]).isRequired,
         currentFunds: PropTypes.number.isRequired,
     }),
 };

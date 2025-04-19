@@ -1,3 +1,8 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
 # 5.3 – Buy/Sell Noodle Bars
 
 ## 🧭 Purpose
@@ -48,8 +53,6 @@ From the **Noodle Bars** menu, clicking on **Buy/Sell** opens a screen similar t
 
 ## ⚠️ Rules & Limits
 
-- You can only buy/sell when **not in an active delivery period**
-- Some properties may be **limited time offers** (optional)
 - Selling cannot be undone unless repurchased later
 
 ---
