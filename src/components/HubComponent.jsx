@@ -7,6 +7,7 @@ import EmployeeActions from "./employee/EmployeeActions";
 import EmployeeManagement from "./employee/EmployeeManagement";
 import EmployeeRecruitment from "./employee/EmployeeRecruitment";
 import DebtsManagement from "./debts/DebtsManagement";
+import SocialManagement from "./social/SocialManagement";
 import OptionsModal from "./modals/OptionsModal";
 import { EventBus } from "../game/EventBus";
 
@@ -576,7 +577,22 @@ const HubComponent = () => {
             case "Debts":
                 return renderDebtsSidebar();
             case "PersonalTime":
-                return renderPersonalTimeSidebar();
+                return (
+                    <SocialManagement
+                        onBack={() => handleMenuClick("Home")}
+                        funds={gameData.funds}
+                        currentPlanned={gameData.personalTime.planned}
+                        onLocationSelect={(location) => {
+                            setGameData((prev) => ({
+                                ...prev,
+                                personalTime: {
+                                    ...prev.personalTime,
+                                    planned: location,
+                                },
+                            }));
+                        }}
+                    />
+                );
             default:
                 return renderHomeSidebar();
         }
@@ -589,61 +605,6 @@ const HubComponent = () => {
                 onBack={() => handleMenuClick("Home")}
                 funds={gameData.funds}
             />
-        );
-    };
-
-    // Placeholder for Personal Time sidebar
-    const renderPersonalTimeSidebar = () => {
-        return (
-            <div className="flex flex-col h-full p-4 pb-40 overflow-y-auto animate-fade-in">
-                <div className="mb-4 ml-2 animate-slide-in-left">
-                    <h2 className="text-xl font-bold text-[color:var(--color-principalBrown)]">
-                        Personal Time
-                    </h2>
-                    <div
-                        className="text-[color:var(--color-principalBrown)] flex items-center mt-1 font-medium animate-slide-in-left"
-                        style={{ animationDelay: "30ms" }}
-                    >
-                        <span>Planned: </span>
-                        <span className="ml-2 text-base font-semibold text-blue-500">
-                            {gameData.personalTime.planned}
-                        </span>
-                    </div>
-                </div>
-
-                <button
-                    onClick={() => handleMenuClick("Home")}
-                    onMouseEnter={() => setHoveredMenuItem("Back")}
-                    onMouseLeave={() => setHoveredMenuItem(null)}
-                    className="animate-slide-in-left mt-auto"
-                    style={{
-                        padding: "1.25rem",
-                        transition: "all 0.3s ease",
-                        cursor: "pointer",
-                        backgroundColor:
-                            hoveredMenuItem === "Back"
-                                ? "var(--color-principalBrown)"
-                                : "var(--color-yellowWhite)",
-                        color:
-                            hoveredMenuItem === "Back"
-                                ? "var(--color-whiteCream)"
-                                : "var(--color-principalBrown)",
-                        borderRadius: "0.5rem",
-                        margin: "0.5rem",
-                        fontWeight: "bold",
-                        fontSize: "1.25rem",
-                        boxShadow:
-                            hoveredMenuItem === "Back"
-                                ? "0 4px 6px rgba(0, 0, 0, 0.2)"
-                                : "0 2px 4px rgba(0, 0, 0, 0.1)",
-                        border: "none",
-                        outline: "none",
-                        animationDelay: "200ms",
-                    }}
-                >
-                    Back
-                </button>
-            </div>
         );
     };
 

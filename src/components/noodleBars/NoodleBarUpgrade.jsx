@@ -326,15 +326,6 @@ const NoodleBarUpgrade = ({ onBack, funds = 500000 }) => {
                             );
                         })}
                 </div>
-
-                <div className="text-center mt-6">
-                    <button
-                        className="px-4 py-2 bg-[color:var(--color-principalRed)] text-white rounded font-medium hover:bg-[color:var(--color-principalRed-light)] transition-colors"
-                        onClick={() => handleSelectBar(selectedBar)}
-                    >
-                        View Upgrades
-                    </button>
-                </div>
             </div>
 
             {/* Upgrade details modal */}

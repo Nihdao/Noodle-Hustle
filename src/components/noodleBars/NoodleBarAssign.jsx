@@ -322,7 +322,7 @@ const NoodleBarAssign = ({ onBack, playerRank = 200 }) => {
             </div>
 
             {/* Restaurant Slots Section */}
-            <div className="border-b border-[color:var(--color-principalBrown)] border-opacity-20 p-4">
+            <div className=" p-4">
                 <h3
                     className="text-lg font-semibold mb-3"
                     style={{ color: "var(--color-principalBrown)" }}

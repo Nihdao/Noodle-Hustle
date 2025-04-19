@@ -484,13 +484,17 @@ const EmployeeManagement = ({ onBack, laborCost, funds = 50000 }) => {
                 </p>
                 <div className="mt-2 flex justify-between items-center">
                     <div className="flex items-center">
-                        <span className="font-medium">Labor Cost: </span>
+                        <span className="font-medium text-[color:var(--color-principalBrown)]">
+                            Labor Cost:{" "}
+                        </span>
                         <span className="ml-2 text-lg font-semibold text-red-500">
                             {formatCurrency(laborCost)}
                         </span>
                     </div>
                     <div className="flex items-center">
-                        <span className="font-medium">Available Funds: </span>
+                        <span className="font-medium text-[color:var(--color-principalBrown)]">
+                            Available Funds:{" "}
+                        </span>
                         <span className="ml-2 text-lg font-semibold text-emerald-600">
                             {formatCurrency(funds)}
                         </span>
