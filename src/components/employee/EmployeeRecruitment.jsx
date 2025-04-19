@@ -105,7 +105,7 @@ const EmployeeRecruitment = ({ onBack, funds }) => {
                 handleRecruitmentComplete
             );
         };
-    }, []);
+    });
 
     // Position details modal when candidate is selected
     useEffect(() => {
@@ -869,7 +869,7 @@ const EmployeeRecruitment = ({ onBack, funds }) => {
                                             <span className="font-medium">
                                                 Total Hire Cost:
                                             </span>
-                                            <span className="text-red-500 font-medium font-bold">
+                                            <span className="text-red-500 font-bold">
                                                 {formatCurrency(
                                                     selectedCandidate.salary +
                                                         selectedCandidate.contractFee
