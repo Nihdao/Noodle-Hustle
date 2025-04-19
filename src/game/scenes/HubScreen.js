@@ -91,6 +91,7 @@ export class HubScreen extends Phaser.Scene {
         // Load hub assets
         this.load.image("fairy", "assets/hub/fairynoddle.png");
         this.load.image("noodles", "noodles.png");
+        this.load.image("bgtest", "assets/hub/bgtest.png");
         this.load.image("particle", "assets/hub/particle.png");
         this.load.image("star", "assets/hub/star.png");
     }
@@ -100,14 +101,22 @@ export class HubScreen extends Phaser.Scene {
         const width = this.cameras.main.width;
         const height = this.cameras.main.height;
 
-        // Add orange background (same as MainMenu for consistency)
-        this.add.rectangle(0, 0, width, height, 0xe67e22).setOrigin(0);
+        // // Add orange background (same as MainMenu for consistency)
+        // this.add.rectangle(0, 0, width, height, 0xe67e22).setOrigin(0);
 
-        // Add repeating noodles pattern with diagonal scrolling (same as MainMenu)
-        this.noodlesPattern = this.add
-            .tileSprite(0, 0, width, height, "noodles")
+        // // Add repeating noodles pattern with diagonal scrolling (same as MainMenu)
+        // this.noodlesPattern = this.add
+        //     .tileSprite(0, 0, width, height, "noodles")
+        //     .setOrigin(0)
+        //     .setAlpha(0.3); // Add some transparency
+
+        // Add background image
+        this.background = this.add.image(width * 0.3, 0, "bgtest").setOrigin(0);
+        this.background.setDisplaySize(width * 0.7, height);
+        this.add
+            .rectangle(0, 0, width, height, 0x000000)
             .setOrigin(0)
-            .setAlpha(0.3); // Add some transparency
+            .setAlpha(0.5);
 
         // Get player name from localStorage
         this.gameState.playerName =
@@ -606,10 +615,10 @@ export class HubScreen extends Phaser.Scene {
 
     update() {
         // Hub scene update logic goes here
-        if (this.noodlesPattern) {
-            this.noodlesPattern.tilePositionX += 0.5;
-            this.noodlesPattern.tilePositionY += 0.5;
-        }
+        // if (this.noodlesPattern) {
+        //     this.noodlesPattern.tilePositionX += 0.5;
+        //     this.noodlesPattern.tilePositionY += 0.5;
+        // }
 
         // Update speech text position to follow fairy
         if (this.speechText && this.fairy) {

@@ -6,6 +6,7 @@ import NoodleBarBuySell from "./noodleBars/NoodleBarBuySell";
 import EmployeeActions from "./employee/EmployeeActions";
 import EmployeeManagement from "./employee/EmployeeManagement";
 import EmployeeRecruitment from "./employee/EmployeeRecruitment";
+import DebtsManagement from "./debts/DebtsManagement";
 import OptionsModal from "./modals/OptionsModal";
 import { EventBus } from "../game/EventBus";
 
@@ -131,13 +132,6 @@ const HubComponent = () => {
 
     // Styles communs pour réutilisation
     const styles = {
-        container: {
-            position: "absolute",
-            inset: 0,
-            display: "flex",
-            flexDirection: "column",
-            overflow: "hidden",
-        },
         headerTitle: {
             fontSize: "2.5rem",
             fontWeight: "bold",
@@ -151,34 +145,10 @@ const HubComponent = () => {
             overflow: "hidden",
             textOverflow: "ellipsis",
         },
-        header: {
-            padding: "1rem",
-            display: "flex",
-            alignItems: "center",
-            width: "100%",
-        },
-        periodIndicator: {
-            backgroundColor: "var(--color-principalRed)",
-            color: "var(--color-whiteCream)",
-            padding: "0.5rem",
-            display: "flex",
-            boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-            zIndex: 10,
-            width: "100%",
-        },
-        sidebar: {
-            width: "33.333%",
-            backgroundColor: "var(--color-yellowWhite)",
-            boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-            position: "relative",
-            display: "flex",
-            flexDirection: "column",
-            zIndex: 30,
-        },
         menuItem: (isHovered) => ({
             display: "flex",
             alignItems: "center",
-            padding: "1.25rem 1.5rem",
+            padding: "1rem 1.5rem",
             paddingLeft: "2.5rem",
             borderBottom: "1px solid rgba(49, 34, 24, 0.1)",
             transition: "all 0.3s ease",
@@ -194,13 +164,9 @@ const HubComponent = () => {
             textAlign: "left",
             width: "calc(100% + 20px)",
         }),
-        menuItemWrapper: {
-            backgroundColor: "var(--color-whiteCream)",
-            margin: "10px 0",
-        },
         menuItemIcon: (isHovered) => ({
-            width: "4rem",
-            height: "4rem",
+            width: "3.5rem",
+            height: "3.5rem",
             backgroundColor: isHovered
                 ? "var(--color-principalRed)"
                 : "var(--color-principalBrown)",
@@ -212,14 +178,6 @@ const HubComponent = () => {
             boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
             transition: "background-color 0.3s ease",
         }),
-        menuItemTitle: {
-            fontSize: "1.5rem",
-            fontWeight: "bold",
-            color: "var(--color-principalBrown)",
-        },
-        menuItemText: {
-            color: "var(--color-principalBrown)",
-        },
         startPeriodButton: {
             display: "flex",
             flexDirection: "column",
@@ -239,8 +197,8 @@ const HubComponent = () => {
         },
         startPeriodTop: {
             width: "100%",
-            padding: "1.5rem 0",
-            fontSize: "2rem",
+            padding: "1.25rem 0",
+            fontSize: "1.75rem",
             fontWeight: "bold",
             textTransform: "uppercase",
             display: "flex",
@@ -252,15 +210,15 @@ const HubComponent = () => {
             zIndex: 2,
         },
         startPeriodBottom: {
-            fontSize: "1rem",
-            padding: "0.75rem",
+            fontSize: "0.9rem",
+            padding: "0.5rem",
             width: "100%",
             textAlign: "center",
             backgroundColor: "rgba(49, 34, 24, 0.3)",
             borderTop: "1px solid rgba(255, 255, 255, 0.1)",
         },
         forecastProfit: {
-            fontSize: "1rem",
+            fontSize: "0.9rem",
             fontWeight: "600",
             color: "var(--color-whiteCream)",
             display: "flex",
@@ -269,19 +227,9 @@ const HubComponent = () => {
         },
         forecastNumber: {
             marginLeft: "8px",
-            fontSize: "1.1rem",
+            fontSize: "1rem",
             fontWeight: "bold",
             color: "#10B981",
-        },
-        statsBox: {
-            backgroundColor: "var(--color-yellowWhite)",
-            color: "var(--color-principalBrown)",
-            padding: "0.5rem 1.25rem",
-            borderRadius: "0.5rem",
-            boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
         },
         statsPanelTopRight: {
             position: "absolute",
@@ -338,22 +286,6 @@ const HubComponent = () => {
             background: "rgba(49, 34, 24, 0.2)",
             margin: "0 0.25rem",
         },
-        actionButton: {
-            backgroundColor: "var(--color-yellowWhite)",
-            color: "var(--color-principalBrown)",
-            padding: "0.75rem 2rem",
-            borderRadius: "0.375rem",
-            fontWeight: "bold",
-            boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-            transition: "background-color 0.2s, transform 0.3s",
-            border: "none",
-            cursor: "pointer",
-            transform: "scale(1)",
-            "&:hover": {
-                transform: "scale(1.05)",
-                backgroundColor: "var(--color-whiteCream)",
-            },
-        },
         actionButtonsContainer: {
             position: "absolute",
             bottom: "1.5rem",
@@ -401,9 +333,9 @@ const HubComponent = () => {
     // Main sidebar rendering function
     const renderHomeSidebar = () => {
         return (
-            <div className="flex flex-col h-full py-4 pb-40 overflow-auto">
+            <div className="flex flex-col h-full py-3 pb-40 overflow-y-auto">
                 {/* Noddle Bars */}
-                <div style={styles.menuItemWrapper}>
+                <div className="bg-[color:var(--color-whiteCream)] my-2">
                     <button
                         onClick={() => handleMenuClick("NoodleBars")}
                         onMouseEnter={() => setHoveredMenuItem("NoodleBars")}
@@ -420,9 +352,8 @@ const HubComponent = () => {
                             <img
                                 src="/assets/hub/NoodleIcon.svg"
                                 alt="Noodle Icon"
+                                className="w-6 h-6"
                                 style={{
-                                    width: "2rem",
-                                    height: "2rem",
                                     filter:
                                         hoveredMenuItem === "NoodleBars"
                                             ? "brightness(2)"
@@ -431,15 +362,12 @@ const HubComponent = () => {
                             />
                         </div>
                         <div>
-                            <h2 style={styles.menuItemTitle}>Noddle Bars</h2>
-                            <p style={styles.menuItemText}>
-                                Forecasted profit:{" "}
-                                <span
-                                    style={{
-                                        color: "#10B981",
-                                        fontWeight: "600",
-                                    }}
-                                >
+                            <h2 className="text-lg font-bold text-[color:var(--color-principalBrown)]">
+                                Noddle Bars
+                            </h2>
+                            <p className="text-sm text-[color:var(--color-principalBrown)]">
+                                Profit:{" "}
+                                <span className="text-emerald-600 font-semibold">
                                     {formatCurrency(
                                         gameData.noddleBars.forecastedProfit
                                     )}
@@ -450,7 +378,7 @@ const HubComponent = () => {
                 </div>
 
                 {/* Employees */}
-                <div style={styles.menuItemWrapper}>
+                <div className="bg-[color:var(--color-whiteCream)] my-2">
                     <button
                         onClick={() => handleMenuClick("Employees")}
                         onMouseEnter={() => setHoveredMenuItem("Employees")}
@@ -465,9 +393,8 @@ const HubComponent = () => {
                             <img
                                 src="/assets/hub/EmployeeIcon.svg"
                                 alt="Employee Icon"
+                                className="w-6 h-6"
                                 style={{
-                                    width: "2rem",
-                                    height: "2rem",
                                     filter:
                                         hoveredMenuItem === "Employees"
                                             ? "brightness(2)"
@@ -476,15 +403,12 @@ const HubComponent = () => {
                             />
                         </div>
                         <div>
-                            <h2 style={styles.menuItemTitle}>Employees</h2>
-                            <p style={styles.menuItemText}>
-                                Labor Cost:{" "}
-                                <span
-                                    style={{
-                                        color: "#EF4444",
-                                        fontWeight: "600",
-                                    }}
-                                >
+                            <h2 className="text-lg font-bold text-[color:var(--color-principalBrown)]">
+                                Employees
+                            </h2>
+                            <p className="text-sm text-[color:var(--color-principalBrown)]">
+                                Cost:{" "}
+                                <span className="text-red-500 font-semibold">
                                     {formatCurrency(
                                         gameData.employees.laborCost
                                     )}
@@ -495,7 +419,7 @@ const HubComponent = () => {
                 </div>
 
                 {/* Debts */}
-                <div style={styles.menuItemWrapper}>
+                <div className="bg-[color:var(--color-whiteCream)] my-2">
                     <button
                         onClick={() => handleMenuClick("Debts")}
                         onMouseEnter={() => setHoveredMenuItem("Debts")}
@@ -510,9 +434,8 @@ const HubComponent = () => {
                             <img
                                 src="/assets/hub/DebtIcon.svg"
                                 alt="Debt Icon"
+                                className="w-6 h-6"
                                 style={{
-                                    width: "2rem",
-                                    height: "2rem",
                                     filter:
                                         hoveredMenuItem === "Debts"
                                             ? "brightness(2)"
@@ -521,15 +444,12 @@ const HubComponent = () => {
                             />
                         </div>
                         <div>
-                            <h2 style={styles.menuItemTitle}>Debts</h2>
-                            <p style={styles.menuItemText}>
+                            <h2 className="text-lg font-bold text-[color:var(--color-principalBrown)]">
+                                Debts
+                            </h2>
+                            <p className="text-sm text-[color:var(--color-principalBrown)]">
                                 Repayment:{" "}
-                                <span
-                                    style={{
-                                        color: "#EF4444",
-                                        fontWeight: "600",
-                                    }}
-                                >
+                                <span className="text-red-500 font-semibold">
                                     {formatCurrency(gameData.debts.repayment)}
                                 </span>
                             </p>
@@ -538,7 +458,7 @@ const HubComponent = () => {
                 </div>
 
                 {/* Personal Time */}
-                <div style={styles.menuItemWrapper}>
+                <div className="bg-[color:var(--color-whiteCream)] my-2">
                     <button
                         onClick={() => handleMenuClick("PersonalTime")}
                         onMouseEnter={() => setHoveredMenuItem("PersonalTime")}
@@ -555,9 +475,8 @@ const HubComponent = () => {
                             <img
                                 src="/assets/hub/PersonalIcon.svg"
                                 alt="Personal Time Icon"
+                                className="w-6 h-6"
                                 style={{
-                                    width: "2rem",
-                                    height: "2rem",
                                     filter:
                                         hoveredMenuItem === "PersonalTime"
                                             ? "brightness(2)"
@@ -566,15 +485,12 @@ const HubComponent = () => {
                             />
                         </div>
                         <div>
-                            <h2 style={styles.menuItemTitle}>Personal Time</h2>
-                            <p style={styles.menuItemText}>
+                            <h2 className="text-lg font-bold text-[color:var(--color-principalBrown)]">
+                                Personal Time
+                            </h2>
+                            <p className="text-sm text-[color:var(--color-principalBrown)]">
                                 Planned:{" "}
-                                <span
-                                    style={{
-                                        color: "#3B82F6",
-                                        fontWeight: "600",
-                                    }}
-                                >
+                                <span className="text-blue-500 font-semibold">
                                     {gameData.personalTime.planned}
                                 </span>
                             </p>
@@ -666,75 +582,30 @@ const HubComponent = () => {
         }
     };
 
-    // Placeholder for Debts sidebar
+    // Placeholder for Debts sidebar - replaced with the new DebtsManagement component
     const renderDebtsSidebar = () => {
         return (
-            <div className="flex flex-col h-full p-4 pb-40 overflow-auto animate-fade-in">
-                <div className="mb-6 ml-2 animate-slide-in-left">
-                    <h2 className="text-2xl font-bold text-[var(--color-principalBrown)]">
-                        Debts Management
-                    </h2>
-                    <div
-                        className="text-[var(--color-principalBrown)] flex items-center mt-1 font-medium animate-slide-in-left"
-                        style={{ animationDelay: "30ms" }}
-                    >
-                        <span>Repayment: </span>
-                        <span className="ml-2 text-lg font-semibold text-red-500">
-                            {formatCurrency(gameData.debts.repayment)}
-                        </span>
-                    </div>
-                </div>
-
-                <button
-                    onClick={() => handleMenuClick("Home")}
-                    onMouseEnter={() => setHoveredMenuItem("Back")}
-                    onMouseLeave={() => setHoveredMenuItem(null)}
-                    className="animate-slide-in-left mt-auto"
-                    style={{
-                        padding: "1.5rem",
-                        transition: "all 0.3s ease",
-                        cursor: "pointer",
-                        backgroundColor:
-                            hoveredMenuItem === "Back"
-                                ? "var(--color-principalBrown)"
-                                : "var(--color-yellowWhite)",
-                        color:
-                            hoveredMenuItem === "Back"
-                                ? "var(--color-whiteCream)"
-                                : "var(--color-principalBrown)",
-                        borderRadius: "0.5rem",
-                        margin: "0.5rem",
-                        fontWeight: "bold",
-                        fontSize: "1.5rem",
-                        boxShadow:
-                            hoveredMenuItem === "Back"
-                                ? "0 4px 6px rgba(0, 0, 0, 0.2)"
-                                : "0 2px 4px rgba(0, 0, 0, 0.1)",
-                        border: "none",
-                        outline: "none",
-                        animationDelay: "200ms",
-                    }}
-                >
-                    Back
-                </button>
-            </div>
+            <DebtsManagement
+                onBack={() => handleMenuClick("Home")}
+                funds={gameData.funds}
+            />
         );
     };
 
     // Placeholder for Personal Time sidebar
     const renderPersonalTimeSidebar = () => {
         return (
-            <div className="flex flex-col h-full p-4 pb-40 overflow-auto animate-fade-in">
-                <div className="mb-6 ml-2 animate-slide-in-left">
-                    <h2 className="text-2xl font-bold text-[var(--color-principalBrown)]">
+            <div className="flex flex-col h-full p-4 pb-40 overflow-y-auto animate-fade-in">
+                <div className="mb-4 ml-2 animate-slide-in-left">
+                    <h2 className="text-xl font-bold text-[color:var(--color-principalBrown)]">
                         Personal Time
                     </h2>
                     <div
-                        className="text-[var(--color-principalBrown)] flex items-center mt-1 font-medium animate-slide-in-left"
+                        className="text-[color:var(--color-principalBrown)] flex items-center mt-1 font-medium animate-slide-in-left"
                         style={{ animationDelay: "30ms" }}
                     >
                         <span>Planned: </span>
-                        <span className="ml-2 text-lg font-semibold text-blue-500">
+                        <span className="ml-2 text-base font-semibold text-blue-500">
                             {gameData.personalTime.planned}
                         </span>
                     </div>
@@ -746,7 +617,7 @@ const HubComponent = () => {
                     onMouseLeave={() => setHoveredMenuItem(null)}
                     className="animate-slide-in-left mt-auto"
                     style={{
-                        padding: "1.5rem",
+                        padding: "1.25rem",
                         transition: "all 0.3s ease",
                         cursor: "pointer",
                         backgroundColor:
@@ -760,7 +631,7 @@ const HubComponent = () => {
                         borderRadius: "0.5rem",
                         margin: "0.5rem",
                         fontWeight: "bold",
-                        fontSize: "1.5rem",
+                        fontSize: "1.25rem",
                         boxShadow:
                             hoveredMenuItem === "Back"
                                 ? "0 4px 6px rgba(0, 0, 0, 0.2)"
@@ -777,36 +648,18 @@ const HubComponent = () => {
     };
 
     return (
-        <div style={styles.container}>
+        <div className="absolute inset-0 flex flex-col overflow-hidden">
             {/* Main Content Area */}
-            <div
-                style={{
-                    display: "flex",
-                    flex: "1",
-                    position: "relative",
-                    overflow: "hidden",
-                }}
-            >
+            <div className="flex flex-1 relative overflow-hidden">
                 {/* Left Sidebar with header and period indicator inside */}
-                <div style={styles.sidebar}>
+                <div className="w-1/3 bg-[color:var(--color-yellowWhite)] shadow-md relative z-30 flex flex-col">
                     {/* Header moved inside sidebar */}
-                    <header style={styles.header}>
-                        <div
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                maxWidth: "100%",
-                            }}
-                        >
+                    <header className="p-3 flex items-center w-full">
+                        <div className="flex items-center max-w-full">
                             <img
                                 src="/noodles.png"
                                 alt="Noodle Icon"
-                                style={{
-                                    height: "2.5rem",
-                                    width: "2.5rem",
-                                    marginRight: "0.5rem",
-                                    flexShrink: 0,
-                                }}
+                                className="h-10 w-10 mr-2 flex-shrink-0"
                             />
                             <h1 style={styles.headerTitle}>
                                 {gameData.playerName}&apos;s Noodles
@@ -815,32 +668,23 @@ const HubComponent = () => {
                     </header>
 
                     {/* Period Indicator - inside sidebar */}
-                    <div style={styles.periodIndicator}>
-                        <div
-                            style={{
-                                padding: "0.25rem 1.5rem",
-                                borderRight:
-                                    "1px solid rgba(255, 255, 255, 0.3)",
-                            }}
-                        >
-                            <span
-                                style={{
-                                    fontWeight: "bold",
-                                    fontSize: "1.125rem",
-                                }}
-                            >
+                    <div className="bg-[color:var(--color-principalRed)] text-[color:var(--color-whiteCream)] p-2 flex shadow-md z-10 w-full">
+                        <div className="px-6 border-r border-white/30">
+                            <span className="font-bold text-base">
                                 Period {gameData.period}
                             </span>
                         </div>
-                        <div style={{ padding: "0.25rem 1.5rem" }}>
-                            <span style={{ fontSize: "1.125rem" }}>
+                        <div className="px-6">
+                            <span className="text-base">
                                 Investor Clash in {gameData.investorClashIn}
                             </span>
                         </div>
                     </div>
 
-                    {/* Sidebar Menu Items - conditionally render main menu or NoodleBars submenu */}
-                    {renderSidebarContent()}
+                    {/* Sidebar Menu Items - with overflow-y-auto */}
+                    <div className="flex-1 overflow-y-auto">
+                        {renderSidebarContent()}
+                    </div>
 
                     {/* START PERIOD Button at bottom of sidebar but wider than sidebar */}
                     <button
@@ -856,7 +700,7 @@ const HubComponent = () => {
                             <span>START PERIOD</span>
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
-                                style={{ height: "2rem", width: "2rem" }}
+                                className="h-7 w-7"
                                 fill="none"
                                 viewBox="0 0 24 24"
                                 stroke="currentColor"
