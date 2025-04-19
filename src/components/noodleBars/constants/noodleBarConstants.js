@@ -43,6 +43,12 @@ export const mockNoodleBars = [
                 ambiance: 34,
             },
         ],
+        currentUpgrades: {
+            cuisine: 1,
+            service: 1,
+            ambiance: 1,
+            salesVolume: 1,
+        },
     },
 ];
 
@@ -108,4 +114,60 @@ export const mockRestaurantSlots = [
     { id: 4, purchased: false, name: null, barId: null },
     { id: 5, purchased: false, name: null, barId: null },
 ];
+
+// Upgrade categories and options for Noodle Bars
+export const UPGRADE_CATEGORIES = [
+    {
+        id: "cuisine",
+        name: "Cuisine Quality",
+        description:
+            "Improve your food quality to attract more customers and charge higher prices.",
+        icon: "🍜",
+        maxLevel: 5,
+        baseMultiplier: 1.2, // Each level increases profit by 20%
+    },
+    {
+        id: "service",
+        name: "Customer Service",
+        description:
+            "Better service means happier customers and more repeat business.",
+        icon: "💖",
+        maxLevel: 5,
+        baseMultiplier: 1.15, // Each level increases profit by 15%
+    },
+    {
+        id: "ambiance",
+        name: "Restaurant Ambiance",
+        description:
+            "Improve the atmosphere to enhance customer experience and satisfaction.",
+        icon: "🎭",
+        maxLevel: 5,
+        baseMultiplier: 1.1, // Each level increases profit by 10%
+    },
+    {
+        id: "salesVolume",
+        name: "Sales Volume",
+        description:
+            "Expand your restaurant's capacity to serve more customers per period.",
+        icon: "💹",
+        maxLevel: 5,
+        baseMultiplier: 1.25, // Each level increases profit by 25%
+    },
+];
+
+// Cost scaling for upgrades (increases with level)
+export const UPGRADE_COST_MULTIPLIER = {
+    1: 1, // Level 1 to 2: Base cost
+    2: 1.5, // Level 2 to 3: 1.5x base cost
+    3: 2.25, // Level 3 to 4: 2.25x base cost
+    4: 3.5, // Level 4 to 5: 3.5x base cost
+};
+
+// Base costs for each upgrade category
+export const UPGRADE_BASE_COSTS = {
+    cuisine: 15000,
+    service: 10000,
+    ambiance: 8000,
+    salesVolume: 20000,
+};
 

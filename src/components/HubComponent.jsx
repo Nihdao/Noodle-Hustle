@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import NoodleBarActions from "./noodleBars/NoodleBarActions";
 import NoodleBarAssign from "./noodleBars/NoodleBarAssign";
+import NoodleBarUpgrade from "./noodleBars/NoodleBarUpgrade";
 import OptionsModal from "./modals/OptionsModal";
 import { EventBus } from "../game/EventBus";
 
@@ -97,6 +98,8 @@ const HubComponent = () => {
     const handleNoodleBarAction = (action) => {
         if (action === "Assign") {
             setActiveNoodleBarSection("assign");
+        } else if (action === "Upgrade") {
+            setActiveNoodleBarSection("upgrade");
         }
     };
 
@@ -623,6 +626,14 @@ const HubComponent = () => {
                 <NoodleBarAssign
                     onBack={handleNoodleBarBack}
                     playerRank={gameData.rank || 0}
+                />
+            );
+        } else if (activeNoodleBarSection === "upgrade") {
+            return (
+                <NoodleBarUpgrade
+                    onBack={handleNoodleBarBack}
+                    playerRank={gameData.rank || 0}
+                    funds={gameData.funds}
                 />
             );
         }
