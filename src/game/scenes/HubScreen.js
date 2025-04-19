@@ -70,17 +70,29 @@ export class HubScreen extends Phaser.Scene {
             ],
         };
 
+        // Recruitment fairy messages
+        this.recruitmentMessages = [
+            "Let's find some talented employees for your noodle bars!",
+            "I'll help you find the best staff for your business!",
+            "Hmm, who should join our noodle empire today?",
+            "Searching for culinary talent in Tokyo!",
+            "Let's see who's looking for work in the restaurant business...",
+        ];
+
         this.currentMessageIndex = 0;
         this.messageTimer = null;
         this.speechBubble = null;
         this.speechText = null;
         this.isShowingMessage = false;
+        this.isPerformingRecruitment = false;
     }
 
     preload() {
         // Load hub assets
         this.load.image("fairy", "assets/hub/fairynoddle.png");
         this.load.image("noodles", "noodles.png");
+        this.load.image("particle", "assets/hub/particle.png");
+        this.load.image("star", "assets/hub/star.png");
     }
 
     create() {
@@ -133,13 +145,19 @@ export class HubScreen extends Phaser.Scene {
 
             // Setup fairy click interaction
             this.fairy.on("pointerdown", () => {
-                this.showRandomMessage();
+                if (!this.isPerformingRecruitment) {
+                    this.showRandomMessage();
+                }
             });
 
             // Setup random message timer (every 10 seconds)
             this.messageTimer = this.time.addEvent({
                 delay: 10000,
-                callback: this.showRandomMessage,
+                callback: () => {
+                    if (!this.isPerformingRecruitment) {
+                        this.showRandomMessage();
+                    }
+                },
                 callbackScope: this,
                 loop: true,
             });
@@ -156,6 +174,9 @@ export class HubScreen extends Phaser.Scene {
 
         // Listen for menu changes from React
         EventBus.on("menuChanged", this.handleMenuChange, this);
+
+        // Listen for recruitment start
+        EventBus.on("startRecruitment", this.handleStartRecruitment, this);
 
         // Set up methods for React to call
         this.setupReactInteractions();
@@ -291,7 +312,7 @@ export class HubScreen extends Phaser.Scene {
     }
 
     showRandomMessage() {
-        if (!this.isShowingMessage) {
+        if (!this.isShowingMessage && !this.isPerformingRecruitment) {
             const randomIndex = Phaser.Math.Between(
                 0,
                 this.fairyMessages.length - 1
@@ -302,11 +323,178 @@ export class HubScreen extends Phaser.Scene {
 
     handleMenuChange(menuName) {
         // Show menu-specific message when user changes menus
-        if (this.menuMessages[menuName]) {
+        if (this.menuMessages[menuName] && !this.isPerformingRecruitment) {
             const messages = this.menuMessages[menuName];
             const randomIndex = Phaser.Math.Between(0, messages.length - 1);
             this.showMessage(messages[randomIndex]);
         }
+    }
+
+    handleStartRecruitment() {
+        // Set flag to prevent random messages
+        this.isPerformingRecruitment = true;
+
+        // Get random recruitment message
+        const randomIndex = Phaser.Math.Between(
+            0,
+            this.recruitmentMessages.length - 1
+        );
+        const message = this.recruitmentMessages[randomIndex];
+
+        // Show the message with fairy animation
+        this.showRecruitmentAnimation(message);
+    }
+
+    showRecruitmentAnimation(message) {
+        // Hide any existing message
+        this.hideSpeechBubble(() => {
+            // Show the recruitment message
+            this.showMessage(message);
+
+            // Add fairy animation - a more dramatic bounce and spin
+            this.tweens.add({
+                targets: this.fairy,
+                y: this.fairy.y - 50,
+                angle: { from: -15, to: 15 },
+                duration: 800,
+                yoyo: true,
+                repeat: 1,
+                ease: "Sine.easeInOut",
+                onComplete: () => {
+                    // Create particle effects
+                    this.createRecruitmentParticles();
+
+                    // Add a sparkle effect (simple scale pulse)
+                    this.tweens.add({
+                        targets: this.fairy,
+                        scaleX: { from: 0.2, to: 0.26 },
+                        scaleY: { from: 0.2, to: 0.26 },
+                        duration: 300,
+                        yoyo: true,
+                        repeat: 2,
+                        ease: "Sine.easeInOut",
+                        onComplete: () => {
+                            // Reset fairy scale
+                            this.fairy.setScale(0.2);
+
+                            // Delay then complete the recruitment process
+                            this.time.delayedCall(1000, () => {
+                                // Reset the flag
+                                this.isPerformingRecruitment = false;
+
+                                // Fire the completion event to show candidates
+                                EventBus.emit("recruitmentAnimationComplete");
+
+                                // Show completion message
+                                this.showMessage(
+                                    "I found some potential employees! Take a look!"
+                                );
+                            });
+                        },
+                    });
+                },
+            });
+        });
+    }
+
+    createRecruitmentParticles() {
+        // Clean up any existing particles first
+        if (this.circleParticles) {
+            this.circleParticles.destroy();
+        }
+        if (this.starParticles) {
+            this.starParticles.destroy();
+        }
+        if (this.glowParticles) {
+            this.glowParticles.destroy();
+        }
+
+        // Create particles with the new Phaser 3.60+ syntax
+        // Each particle emitter is now its own Game Object
+
+        // Circle particles emitter
+        this.circleParticles = this.add.particles(
+            this.fairy.x,
+            this.fairy.y,
+            "particle",
+            {
+                speed: { min: 50, max: 200 },
+                angle: { min: 0, max: 360 },
+                scale: { start: 0.6, end: 0 },
+                blendMode: "ADD",
+                lifespan: 1000,
+                gravityY: 0,
+                quantity: 1,
+                tint: [0xff9ff5, 0x96f7d2, 0xf9f871],
+            }
+        );
+
+        // Stars particles emitter
+        this.starParticles = this.add.particles(
+            this.fairy.x,
+            this.fairy.y,
+            "star",
+            {
+                speed: { min: 100, max: 300 },
+                angle: { min: 0, max: 360 },
+                scale: { start: 0.4, end: 0 },
+                blendMode: "NORMAL",
+                lifespan: 2000,
+                gravityY: 200,
+                frequency: 200,
+                quantity: 3,
+            }
+        );
+
+        // Magic circle particles
+        this.glowParticles = this.add.particles(
+            this.fairy.x,
+            this.fairy.y,
+            "particle",
+            {
+                speed: 0,
+                scale: { start: 0.4, end: 0 },
+                blendMode: "ADD",
+                lifespan: 1500,
+                emitting: false,
+                tint: [0xffbe0b, 0xfb5607, 0x3a86ff, 0x8338ec],
+            }
+        );
+
+        // Manually emit particles in a circle pattern
+        for (let i = 0; i < 20; i++) {
+            const angle = (i / 20) * Math.PI * 2;
+            const radius = 50;
+            const x = this.fairy.x + radius * Math.cos(angle);
+            const y = this.fairy.y + radius * Math.sin(angle);
+
+            this.glowParticles.emitParticleAt(x, y);
+        }
+
+        // Flash effect
+        this.cameras.main.flash(500, 255, 255, 255, 0.5);
+
+        // Stop particles after a delay
+        this.time.delayedCall(2500, () => {
+            this.circleParticles.stop();
+            this.starParticles.stop();
+
+            // Clean up particles after they finish
+            this.time.delayedCall(2000, () => {
+                if (this.circleParticles) {
+                    this.circleParticles.destroy();
+                    this.circleParticles = null;
+                }
+                if (this.starParticles) {
+                    this.starParticles.destroy();
+                    this.starParticles = null;
+                }
+                if (this.glowParticles) {
+                    this.glowParticles.destroy();
+                    this.glowParticles = null;
+                }
+            });
+        });
     }
 
     setupReactInteractions() {
@@ -354,6 +542,22 @@ export class HubScreen extends Phaser.Scene {
 
             // Dispatch event so React UI can update
             this.events.emit("gameStateUpdated", this.gameState);
+
+            // Reset the recruitment flag for new period
+            const currentRecruitmentPeriod = localStorage.getItem(
+                "recruitmentDoneInPeriod"
+            );
+            if (
+                currentRecruitmentPeriod &&
+                parseInt(currentRecruitmentPeriod) < this.gameState.period
+            ) {
+                // We don't need to set the item to the current period, just ensure it's not equal
+                // This allows the recruitment component to reset its state naturally
+                console.log("Recruitment flag should reset for new period");
+
+                // Clean up recruitment candidates from localStorage
+                localStorage.removeItem("periodRecruitmentCandidates");
+            }
         };
 
         // Method to open buffs panel
