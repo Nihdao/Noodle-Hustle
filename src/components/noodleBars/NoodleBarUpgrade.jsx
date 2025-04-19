@@ -9,6 +9,7 @@ import {
     UPGRADE_BASE_COSTS,
 } from "./constants/noodleBarConstants";
 import { formatCurrency } from "./utils/restaurantUtils";
+import ConfirmationModal from "./components/ConfirmationModal";
 
 const NoodleBarUpgrade = ({ onBack, funds = 500000 }) => {
     const [noodleBars, setNoodleBars] = useState([...mockNoodleBars]);
@@ -577,60 +578,22 @@ const NoodleBarUpgrade = ({ onBack, funds = 500000 }) => {
             )}
 
             {/* Confirmation Modal */}
-            {confirmationModal.show && confirmationModal.upgrade && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-                    <div className="bg-white rounded-lg p-6 max-w-md w-full animate-fade-in">
-                        <h3 className="text-xl font-bold text-[color:var(--color-principalBrown)] mb-3">
-                            Confirm Upgrade
-                        </h3>
-                        <p className="text-[color:var(--color-principalBrown)] mb-4">
-                            Are you sure you want to upgrade{" "}
-                            <span className="font-bold">
-                                {confirmationModal.upgrade.categoryName}
-                            </span>{" "}
-                            from level {confirmationModal.upgrade.currentLevel}{" "}
-                            to level {confirmationModal.upgrade.newLevel}?
-                        </p>
-                        <div className="text-sm text-[color:var(--color-principalBrown)] mb-6">
-                            <div className="flex justify-between border-b pb-2 mb-2">
-                                <span>Cost:</span>
-                                <span className="font-bold text-red-500">
-                                    {formatCurrency(
-                                        confirmationModal.upgrade.cost
-                                    )}
-                                </span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span>Remaining funds:</span>
-                                <span className="font-bold text-emerald-600">
-                                    {formatCurrency(
-                                        funds - confirmationModal.upgrade.cost
-                                    )}
-                                </span>
-                            </div>
-                        </div>
-                        <div className="flex justify-end gap-3">
-                            <button
-                                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md font-medium transition-colors"
-                                onClick={() =>
-                                    setConfirmationModal({
-                                        show: false,
-                                        upgrade: null,
-                                    })
-                                }
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                className="px-4 py-2 bg-[color:var(--color-principalRed)] hover:bg-[color:var(--color-principalRed-light)] text-white rounded-md font-medium transition-colors"
-                                onClick={handleConfirmUpgrade}
-                            >
-                                Confirm
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <ConfirmationModal
+                show={confirmationModal.show}
+                onCancel={() =>
+                    setConfirmationModal({ show: false, upgrade: null })
+                }
+                onConfirm={handleConfirmUpgrade}
+                upgradeDetails={
+                    confirmationModal.upgrade
+                        ? {
+                              ...confirmationModal.upgrade,
+                              currentFunds: funds,
+                          }
+                        : null
+                }
+                title="Confirm Upgrade"
+            />
 
             {/* Back Button */}
             <div className="fixed bottom-0 left-0 w-1/3 p-4 border-t border-[color:var(--color-principalBrown)] border-opacity-20 bg-[color:var(--color-yellowWhite)] flex justify-between z-10">
