@@ -111,8 +111,10 @@ export class HubScreen extends Phaser.Scene {
         //     .setAlpha(0.3); // Add some transparency
 
         // Add background image
-        this.background = this.add.image(width * 0.3, 0, "bgtest").setOrigin(0);
-        this.background.setDisplaySize(width * 0.7, height);
+        this.background = this.add
+            .image(width * 0.25, 0, "bgtest")
+            .setOrigin(0);
+        this.background.setDisplaySize(width * 0.8, height);
         this.add
             .rectangle(0, 0, width, height, 0x000000)
             .setOrigin(0)

@@ -8,6 +8,7 @@ import EmployeeManagement from "./employee/EmployeeManagement";
 import EmployeeRecruitment from "./employee/EmployeeRecruitment";
 import DebtsManagement from "./debts/DebtsManagement";
 import SocialManagement from "./social/SocialManagement";
+import MeetingRoom from "./meeting/MeetingRoom";
 import OptionsModal from "./modals/OptionsModal";
 import { EventBus } from "../game/EventBus";
 
@@ -30,6 +31,9 @@ const HubComponent = () => {
         },
         personalTime: {
             planned: "Home",
+        },
+        meeting: {
+            supportGauge: 50,
         },
         forecastProfit: 2172,
     });
@@ -458,6 +462,47 @@ const HubComponent = () => {
                     </button>
                 </div>
 
+                {/* Meeting Room */}
+                <div className="bg-[color:var(--color-whiteCream)] my-2">
+                    <button
+                        onClick={() => handleMenuClick("MeetingRoom")}
+                        onMouseEnter={() => setHoveredMenuItem("MeetingRoom")}
+                        onMouseLeave={() => setHoveredMenuItem(null)}
+                        style={styles.menuItem(
+                            hoveredMenuItem === "MeetingRoom"
+                        )}
+                    >
+                        <div
+                            style={styles.menuItemIcon(
+                                hoveredMenuItem === "MeetingRoom"
+                            )}
+                        >
+                            <img
+                                src="/assets/hub/meeting.svg"
+                                alt="Meeting Room Icon"
+                                className="w-6 h-6"
+                                style={{
+                                    filter:
+                                        hoveredMenuItem === "MeetingRoom"
+                                            ? "brightness(2)"
+                                            : "none",
+                                }}
+                            />
+                        </div>
+                        <div>
+                            <h2 className="text-lg font-bold text-[color:var(--color-principalBrown)]">
+                                Meeting Room
+                            </h2>
+                            <p className="text-sm text-[color:var(--color-principalBrown)]">
+                                Support:{" "}
+                                <span className="text-blue-500 font-semibold">
+                                    {gameData.meeting?.supportGauge || 50}%
+                                </span>
+                            </p>
+                        </div>
+                    </button>
+                </div>
+
                 {/* Personal Time */}
                 <div className="bg-[color:var(--color-whiteCream)] my-2">
                     <button
@@ -576,11 +621,12 @@ const HubComponent = () => {
                 return renderStaffSidebar();
             case "Debts":
                 return renderDebtsSidebar();
+            case "MeetingRoom":
+                return <MeetingRoom onBack={() => handleMenuClick("Home")} />;
             case "PersonalTime":
                 return (
                     <SocialManagement
                         onBack={() => handleMenuClick("Home")}
-                        funds={gameData.funds}
                         currentPlanned={gameData.personalTime.planned}
                         onLocationSelect={(location) => {
                             setGameData((prev) => ({
