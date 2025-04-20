@@ -11,6 +11,7 @@ import SocialManagement from "./social/SocialManagement";
 import MeetingRoom from "./meeting/MeetingRoom";
 import OptionsModal from "./modals/OptionsModal";
 import { EventBus } from "../game/EventBus";
+import { useSound } from "../hooks/useSound";
 
 const HubComponent = () => {
     const [gameData, setGameData] = React.useState({
@@ -45,6 +46,9 @@ const HubComponent = () => {
     const [activeEmployeeSection, setActiveEmployeeSection] = useState(null);
     const [isOptionsModalOpen, setIsOptionsModalOpen] = useState(false);
 
+    // Sons
+    const { playClickSound, playBackSound } = useSound();
+
     useEffect(() => {
         if (window.gameRef) {
             const gameState = window.gameRef.getGameState();
@@ -72,6 +76,7 @@ const HubComponent = () => {
     };
 
     const handleStartPeriod = () => {
+        playClickSound();
         if (window.gameRef && window.gameRef.startPeriod) {
             window.gameRef.startPeriod();
         } else {
@@ -82,6 +87,7 @@ const HubComponent = () => {
     };
 
     const handleBuffs = () => {
+        playClickSound();
         if (window.gameRef && window.gameRef.openBuffsPanel) {
             window.gameRef.openBuffsPanel();
         } else {
@@ -92,11 +98,13 @@ const HubComponent = () => {
     };
 
     const handleOptions = () => {
+        playClickSound();
         setIsOptionsModalOpen(true);
     };
 
     // Handle main menu clicks
     const handleMenuClick = (menu) => {
+        playClickSound();
         setActiveSubmenu(menu);
 
         // Notify Phaser about menu change for fairy interaction
@@ -107,6 +115,7 @@ const HubComponent = () => {
 
     // Handle noodle bar actions
     const handleNoodleBarAction = (action) => {
+        playClickSound();
         if (action === "Assign") {
             setActiveNoodleBarSection("assign");
         } else if (action === "Upgrade") {
@@ -118,11 +127,13 @@ const HubComponent = () => {
 
     // Handle noodle bar back button
     const handleNoodleBarBack = () => {
+        playBackSound();
         setActiveNoodleBarSection(null);
     };
 
     // Handle employee actions
     const handleEmployeeAction = (action) => {
+        playClickSound();
         if (action === "Management") {
             setActiveEmployeeSection("management");
         } else if (action === "Recruitment") {
@@ -132,7 +143,13 @@ const HubComponent = () => {
 
     // Handle employee back button
     const handleEmployeeBack = () => {
+        playBackSound();
         setActiveEmployeeSection(null);
+    };
+
+    const handleCloseOptions = () => {
+        playBackSound();
+        setIsOptionsModalOpen(false);
     };
 
     // Styles communs pour réutilisation
@@ -855,7 +872,7 @@ const HubComponent = () => {
             {/* Options Modal */}
             <OptionsModal
                 isOpen={isOptionsModalOpen}
-                onClose={() => setIsOptionsModalOpen(false)}
+                onClose={handleCloseOptions}
             />
         </div>
     );

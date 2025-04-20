@@ -4,6 +4,7 @@ import OptionsModal from "./modals/OptionsModal";
 import CreditsModal from "./modals/CreditsModal";
 import MenuButton from "./common/MenuButton";
 import MenuContainer from "./common/MenuContainer";
+import { useSound } from "../hooks/useSound";
 import "../styles/menu.css";
 // import "../styles/OptionsModal.css";
 // Import the styles - make sure the path is correct
@@ -23,6 +24,8 @@ function MainMenuComponent({
     const [animationState, setAnimationState] = useState("hidden");
     // Check if save data exists (placeholder logic, might need refinement)
     const hasSaveData = localStorage.getItem("noodleBalanceSave") !== null;
+    // Son
+    const { playClickSound, playBackSound } = useSound();
 
     // Trigger entrance animation after component mounts
     useEffect(() => {
@@ -36,25 +39,41 @@ function MainMenuComponent({
 
     const handleNewGameClick = () => {
         console.log("Starting new game...");
+        playClickSound();
         localStorage.removeItem("noodleBalanceSave");
         if (onStartNewGame) onStartNewGame();
     };
 
     const handleContinueClick = () => {
         console.log("Continuing game...");
+        playClickSound();
         if (onContinueGame) onContinueGame();
     };
 
     const handleOptionsClick = () => {
         console.log("Opening options...");
+        playClickSound();
         setIsOptionsModalOpen(true);
         if (onOptions) onOptions();
     };
 
     const handleCreditsClick = () => {
         console.log("Showing credits...");
+        playClickSound();
         setIsCreditsModalOpen(true);
         if (onCredits) onCredits();
+    };
+
+    const handleCloseOptions = () => {
+        console.log("Closing options...");
+        playBackSound();
+        setIsOptionsModalOpen(false);
+    };
+
+    const handleCloseCredits = () => {
+        console.log("Closing credits...");
+        playBackSound();
+        setIsCreditsModalOpen(false);
     };
 
     return (
@@ -88,16 +107,17 @@ function MainMenuComponent({
                 </div>
             </MenuContainer>
 
-            <OptionsModal
-                isOpen={isOptionsModalOpen}
-                onClose={() => setIsOptionsModalOpen(false)}
-                isMainMenu={true}
-            />
+            {isOptionsModalOpen && (
+                <OptionsModal
+                    isOpen={true}
+                    onClose={handleCloseOptions}
+                    isMainMenu={true}
+                />
+            )}
 
-            <CreditsModal
-                isOpen={isCreditsModalOpen}
-                onClose={() => setIsCreditsModalOpen(false)}
-            />
+            {isCreditsModalOpen && (
+                <CreditsModal isOpen={true} onClose={handleCloseCredits} />
+            )}
             {/* Phaser background will be visible behind this overlay */}
         </div>
     );

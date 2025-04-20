@@ -1,4 +1,5 @@
 import { Scene } from "phaser";
+import { AudioManager } from "../AudioManager";
 
 export class Preloader extends Scene {
     constructor() {
@@ -25,6 +26,7 @@ export class Preloader extends Scene {
     preload() {
         //  Load the assets for the game - Replace with your own assets
         this.load.setPath("assets");
+        AudioManager.preloadAll(this);
     }
 
     create() {

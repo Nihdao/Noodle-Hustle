@@ -1,51 +1,69 @@
 import PropTypes from "prop-types";
 import { useState } from "react";
+import { useSound } from "../../hooks/useSound";
 
 /**
  * A stylized button component used in menu interfaces
  */
-function MenuButton({ onClick, children, className = "", disabled = false }) {
+function MenuButton({
+    onClick,
+    children,
+    isBack = false,
+    disabled = false,
+    className = "",
+    ...props
+}) {
     const [isHovered, setIsHovered] = useState(false);
+    const { playClickSound, playBackSound } = useSound();
 
-    const handleMouseEnter = () => {
+    const handleClick = (e) => {
+        // Play appropriate sound effect
         if (!disabled) {
-            setIsHovered(true);
+            if (isBack) {
+                playBackSound();
+            } else {
+                playClickSound();
+            }
+
+            // Call the original onClick handler
+            if (onClick) {
+                onClick(e);
+            }
         }
     };
 
-    const handleMouseLeave = () => {
-        if (!disabled) {
-            setIsHovered(false);
-        }
-    };
-
-    const baseStyle = {
-        backgroundColor: disabled
-            ? "#adadad"
-            : isHovered
-            ? "#e69426"
-            : "#c17a0f",
-        color: "white",
-        border: "none",
-        padding: "10px 20px",
-        fontSize: "1rem",
-        borderRadius: "4px",
+    const buttonStyle = {
+        opacity: disabled ? 0.5 : 1,
         cursor: disabled ? "not-allowed" : "pointer",
-        transition: "all 0.2s",
-        textShadow: "1px 1px 1px rgba(0,0,0,0.3)",
-        boxShadow: "inset 0 -3px 0 rgba(0,0,0,0.2)",
-        transform: isHovered ? "translateY(-2px)" : "translateY(0)",
-        opacity: disabled ? 0.7 : 1,
+        transform: isHovered && !disabled ? "scale(1.05)" : "scale(1)",
+        backgroundColor: isBack
+            ? isHovered && !disabled
+                ? "#b7813f"
+                : "#CD7F32"
+            : isHovered && !disabled
+            ? "#e67e22"
+            : "#d35400",
+        color: "white",
+        padding: "0.75rem 1.5rem",
+        margin: "0.5rem 0",
+        border: "none",
+        borderRadius: "0.375rem",
+        fontWeight: "bold",
+        transition: "all 0.3s ease",
+        width: "100%",
+        textAlign: "center",
+        fontSize: "1.125rem",
     };
 
     return (
         <button
-            style={baseStyle}
-            onClick={disabled ? undefined : onClick}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
+            style={buttonStyle}
+            onClick={handleClick}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
             disabled={disabled}
             className={className}
+            {...props}
         >
             {children}
         </button>
@@ -54,13 +72,15 @@ function MenuButton({ onClick, children, className = "", disabled = false }) {
 
 MenuButton.propTypes = {
     /** Click handler function */
-    onClick: PropTypes.func.isRequired,
+    onClick: PropTypes.func,
     /** Button content/label */
     children: PropTypes.node.isRequired,
-    /** Additional CSS classes */
-    className: PropTypes.string,
+    /** Whether the button is a back button */
+    isBack: PropTypes.bool,
     /** Whether the button is disabled */
     disabled: PropTypes.bool,
+    /** Additional CSS classes */
+    className: PropTypes.string,
 };
 
 export default MenuButton;

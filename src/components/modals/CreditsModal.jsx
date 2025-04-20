@@ -1,14 +1,23 @@
 import PropTypes from "prop-types";
 import Modal from "../common/Modal";
+import { useSound } from "../../hooks/useSound";
 
 /**
  * Modal showing game credits and attribution
  */
 function CreditsModal({ isOpen, onClose }) {
+    const { playBackSound } = useSound();
+
+    const handleClose = () => {
+        // On s'assure que le son est joué lors de la fermeture
+        playBackSound();
+        onClose();
+    };
+
     return (
         <Modal
             isOpen={isOpen}
-            onClose={onClose}
+            onClose={handleClose}
             title="Credits"
             className="credits-modal"
         >

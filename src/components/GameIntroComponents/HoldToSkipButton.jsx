@@ -1,120 +1,83 @@
 import PropTypes from "prop-types";
 import { useState, useEffect, useRef } from "react";
 import "../../styles/intro.css";
+import { useSound } from "../../hooks/useSound";
 
-function HoldToSkipButton({ onSkip, visible }) {
-    const [isHolding, setIsHolding] = useState(false);
+function HoldToSkipButton({ onSkip, visible = false }) {
     const [progress, setProgress] = useState(0);
-    const [isSkipTriggered, setIsSkipTriggered] = useState(false);
-    const holdTimeoutRef = useRef(null);
-    const progressIntervalRef = useRef(null);
-    const holdDuration = 1500; // ms to hold to skip
-    const progressIncrement = 10; // update progress every X ms
+    const [isHolding, setIsHolding] = useState(false);
+    const requestRef = useRef(null);
+    const startTimeRef = useRef(null);
+    const { playBackSound } = useSound();
 
-    // Reset when visibility changes
-    useEffect(() => {
-        if (!visible) {
-            resetState();
-        }
-    }, [visible]);
+    // Settings
+    const holdDuration = 2000; // Time in ms needed to hold to skip
 
-    // Handle progress updates when holding
-    useEffect(() => {
-        if (isHolding) {
-            // Define triggerSkip inside useEffect to avoid dependency issues
-            const triggerSkip = () => {
-                if (!isSkipTriggered) {
-                    setIsSkipTriggered(true);
-                    setIsHolding(false);
-                    setProgress(100);
-                    console.log("Skip triggered!");
-                    // Add a small delay to ensure visual feedback before skipping
-                    setTimeout(() => {
-                        onSkip();
-                    }, 50);
-                }
-            };
-
-            // Set up progress interval
-            progressIntervalRef.current = setInterval(() => {
-                setProgress((prev) => {
-                    const newProgress =
-                        prev + (progressIncrement / holdDuration) * 100;
-
-                    // If progress reaches or exceeds 100%, trigger skip
-                    if (newProgress >= 100 && !isSkipTriggered) {
-                        triggerSkip();
-                    }
-
-                    return Math.min(newProgress, 100); // Cap at 100%
-                });
-            }, progressIncrement);
-
-            // Set up completion timeout
-            holdTimeoutRef.current = setTimeout(() => {
-                triggerSkip();
-            }, holdDuration);
-
-            return () => {
-                clearInterval(progressIntervalRef.current);
-                clearTimeout(holdTimeoutRef.current);
-            };
-        } else {
-            // Reset progress when not holding
-            if (progress !== 0 && progress !== 100) {
-                const fadeTimeout = setTimeout(() => {
-                    setProgress(0);
-                }, 300);
-
-                return () => clearTimeout(fadeTimeout);
-            }
-        }
-    }, [isHolding, onSkip, progress, isSkipTriggered, holdDuration]);
-
-    const handleMouseDown = () => {
+    // Start the progress animation
+    const startHolding = () => {
         setIsHolding(true);
-        setIsSkipTriggered(false);
+        startTimeRef.current = Date.now();
+
+        // Start animation frame loop
+        cancelAnimationFrame(requestRef.current);
+        requestRef.current = requestAnimationFrame(updateProgress);
     };
 
-    const handleMouseUp = () => {
-        resetState();
+    // Update progress based on how long button has been held
+    const updateProgress = () => {
+        const elapsed = Date.now() - startTimeRef.current;
+        const newProgress = Math.min((elapsed / holdDuration) * 100, 100);
+        setProgress(newProgress);
+
+        // If we've reached 100%, trigger the skip
+        if (newProgress >= 100) {
+            // Play the back/skip sound
+            playBackSound();
+
+            stopHolding();
+            if (onSkip) onSkip();
+            return;
+        }
+
+        // Continue the animation loop
+        requestRef.current = requestAnimationFrame(updateProgress);
     };
 
-    const handleTouchStart = (e) => {
-        e.preventDefault(); // Prevent default touch behavior
-        setIsHolding(true);
-        setIsSkipTriggered(false);
-    };
-
-    const handleTouchEnd = () => {
-        resetState();
-    };
-
-    const resetState = () => {
+    // Stop the progress animation
+    const stopHolding = () => {
         setIsHolding(false);
-        setIsSkipTriggered(false);
-        clearInterval(progressIntervalRef.current);
-        clearTimeout(holdTimeoutRef.current);
-        setProgress(0); // Ensure progress is reset to zero
+        cancelAnimationFrame(requestRef.current);
+        setProgress(0);
     };
+
+    // Clean up animation frame on unmount
+    useEffect(() => {
+        return () => {
+            cancelAnimationFrame(requestRef.current);
+        };
+    }, []);
 
     if (!visible) return null;
 
     return (
         <div
-            className={`hold-to-skip-button ${isHolding ? "active" : ""}`}
-            onMouseDown={handleMouseDown}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
+            className="hold-to-skip-container"
+            onMouseDown={startHolding}
+            onMouseUp={stopHolding}
+            onMouseLeave={stopHolding}
+            onTouchStart={startHolding}
+            onTouchEnd={stopHolding}
         >
-            <div className="skip-button-text">Hold to Skip</div>
-            <div className="skip-progress-container">
-                <div
-                    className="skip-progress-bar"
-                    style={{ width: `${progress}%` }}
-                ></div>
+            <div className="hold-to-skip-button">
+                <span className="hold-text">
+                    {isHolding ? "Skipping..." : "Hold to Skip"}
+                </span>
+                <div className="progress-container">
+                    <div
+                        className="progress-bar"
+                        style={{ width: `${progress}%` }}
+                    ></div>
+                </div>
             </div>
         </div>
     );
@@ -122,7 +85,7 @@ function HoldToSkipButton({ onSkip, visible }) {
 
 HoldToSkipButton.propTypes = {
     onSkip: PropTypes.func.isRequired,
-    visible: PropTypes.bool.isRequired,
+    visible: PropTypes.bool,
 };
 
 export default HoldToSkipButton;

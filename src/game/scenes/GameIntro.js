@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { EventBus } from "../EventBus";
+import { audioManager } from "../AudioManager";
 
 export class GameIntro extends Phaser.Scene {
     constructor() {
@@ -29,6 +30,25 @@ export class GameIntro extends Phaser.Scene {
         // Register this scene with the event bus for React components to access
         console.log("GameIntro: Registering scene with EventBus");
         EventBus.registerScene(this);
+
+        // Initialize audio manager and play game intro music
+        audioManager.init(this.sound);
+        audioManager.playMusic("gameIntro");
+
+        // Listen for audio events from UI
+        this.setupAudioEventListeners();
+    }
+
+    setupAudioEventListeners() {
+        // Listen for UI sound event
+        EventBus.on("playSound", (key) => {
+            audioManager.playSound(key);
+        });
+
+        // Listen for mute toggle
+        EventBus.on("toggleMute", () => {
+            audioManager.toggleMute();
+        });
     }
 
     update() {
@@ -44,6 +64,8 @@ export class GameIntro extends Phaser.Scene {
     // Method to proceed to the HubScreen
     goToHubScreen() {
         console.log("GameIntro: Transitioning to HubScreen");
+        // Stop current music before changing scenes
+        audioManager.stopMusic();
         this.scene.start("HubScreen");
     }
 }

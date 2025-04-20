@@ -1,73 +1,77 @@
 import PropTypes from "prop-types";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import "../../styles/intro.css";
+import { useSound } from "../../hooks/useSound";
 
 function PlayerNameInput({ onNameConfirmed, visible }) {
-    const [playerName, setPlayerName] = useState("");
-    const [isAnimating, setIsAnimating] = useState(false);
-    const [error, setError] = useState("");
+    const [playerName, setPlayerName] = useState(
+        localStorage.getItem("playerName") || ""
+    );
+    const [animationState, setAnimationState] = useState("hidden");
+    const inputRef = useRef(null);
+    const { playClickSound } = useSound();
 
-    // Reset animation state when visibility changes
+    // Trigger entrance animation when visible
     useEffect(() => {
         if (visible) {
-            setIsAnimating(false);
+            const timer = setTimeout(() => {
+                setAnimationState("visible");
+                // Focus input after animation
+                if (inputRef.current) {
+                    inputRef.current.focus();
+                }
+            }, 100);
+            return () => clearTimeout(timer);
+        } else {
+            setAnimationState("hidden");
         }
     }, [visible]);
+
+    const handleNameChange = (e) => {
+        setPlayerName(e.target.value);
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        // Validate input
-        if (!playerName || playerName.trim() === "") {
-            setError("Please enter your name");
-            return;
+        // Play click sound
+        playClickSound();
+
+        // Save name to localStorage
+        if (playerName.trim()) {
+            localStorage.setItem("playerName", playerName.trim());
+            // Call the callback
+            if (onNameConfirmed) {
+                onNameConfirmed(playerName.trim());
+            }
         }
-
-        // Clear any errors
-        setError("");
-
-        // Start exit animation
-        setIsAnimating(true);
-
-        // Store player name in localStorage
-        localStorage.setItem("playerName", playerName.trim());
-
-        // Wait for animation to complete before proceeding
-        setTimeout(() => {
-            onNameConfirmed(playerName.trim());
-        }, 500);
     };
-
-    // If not visible, don't render
-    if (!visible) return null;
 
     return (
         <div
             className={`name-input-container ${
-                isAnimating ? "fade-out" : "fade-in"
-            }`}
+                visible ? "" : "hidden-name-input"
+            } ${animationState === "visible" ? "fade-in" : "fade-out"}`}
         >
             <div className="name-input-box">
-                <h2 className="input-title">What&apos;s your name?</h2>
-                <p className="input-subtitle">
-                    Your name will be saved locally
-                </p>
-
+                <h2 className="name-input-title">Welcome to Tokyo</h2>
+                <p className="name-input-subtitle">What is your name?</p>
                 <form onSubmit={handleSubmit}>
                     <input
+                        ref={inputRef}
                         type="text"
+                        className="name-input-field"
                         value={playerName}
-                        onChange={(e) => setPlayerName(e.target.value)}
-                        className="name-input"
+                        onChange={handleNameChange}
                         placeholder="Enter your name"
-                        maxLength={25}
-                        autoFocus
+                        maxLength={15}
                     />
-
-                    {error && <p className="error-message">{error}</p>}
-
-                    <button type="submit" className="name-submit-button">
-                        Confirm
+                    <button
+                        type="submit"
+                        className="name-input-button"
+                        disabled={!playerName.trim()}
+                    >
+                        Let&apos;s Begin
                     </button>
                 </form>
             </div>

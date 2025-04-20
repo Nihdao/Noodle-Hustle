@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { EventBus } from "../EventBus";
+import { audioManager } from "../AudioManager";
 
 export class HubScreen extends Phaser.Scene {
     constructor() {
@@ -183,14 +184,46 @@ export class HubScreen extends Phaser.Scene {
         console.log("HubScreen: Registering scene with EventBus");
         EventBus.registerScene(this);
 
+        // Initialize audio manager and play music based on current period
+        audioManager.init(this.sound);
+        audioManager.playHubMusic(this.gameState.period);
+
         // Listen for menu changes from React
         EventBus.on("menuChanged", this.handleMenuChange, this);
 
         // Listen for recruitment start
         EventBus.on("startRecruitment", this.handleStartRecruitment, this);
 
+        // Listen for audio events
+        this.setupAudioEventListeners();
+
         // Set up methods for React to call
         this.setupReactInteractions();
+    }
+
+    setupAudioEventListeners() {
+        // Listen for UI sound event
+        EventBus.on("playSound", (key) => {
+            audioManager.playSound(key);
+        });
+
+        // Listen for mute toggle
+        EventBus.on("toggleMute", () => {
+            audioManager.toggleMute();
+        });
+
+        // Listen for volume changes
+        EventBus.on("setMasterVolume", (volume) => {
+            audioManager.setMasterVolume(volume);
+        });
+
+        EventBus.on("setMusicVolume", (volume) => {
+            audioManager.setMusicVolume(volume);
+        });
+
+        EventBus.on("setSfxVolume", (volume) => {
+            audioManager.setSfxVolume(volume);
+        });
     }
 
     createSpeechBubble() {
@@ -550,6 +583,9 @@ export class HubScreen extends Phaser.Scene {
 
             // Recalculate profits
             this.recalculateProfits();
+
+            // Update music for the new period - different tracks for odd/even periods
+            audioManager.playHubMusic(this.gameState.period);
 
             // Dispatch event so React UI can update
             this.events.emit("gameStateUpdated", this.gameState);

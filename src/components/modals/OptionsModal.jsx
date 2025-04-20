@@ -1,6 +1,8 @@
 import PropTypes from "prop-types";
 import { useState, useEffect } from "react";
 import Modal from "../common/Modal";
+import { EventBus } from "../../game/EventBus";
+import { useSound } from "../../hooks/useSound";
 
 function OptionsModal({ isOpen, onClose, isMainMenu = false }) {
     // State for volume controls
@@ -12,6 +14,12 @@ function OptionsModal({ isOpen, onClose, isMainMenu = false }) {
     const [windowSize, setWindowSize] = useState("fit");
     const [isFullscreen, setIsFullscreen] = useState(false);
 
+    // State for mute
+    const [isMuted, setIsMuted] = useState(false);
+
+    // Use our sound hook for main menu context
+    const { toggleMute, playClickSound, playBackSound } = useSound();
+
     // Load saved settings on mount
     useEffect(() => {
         const savedSettings = localStorage.getItem("noodleBalanceSettings");
@@ -22,7 +30,19 @@ function OptionsModal({ isOpen, onClose, isMainMenu = false }) {
             setSfxVolume(settings.sfxVolume ?? 100);
             setWindowSize(settings.windowSize ?? "fit");
             setIsFullscreen(settings.isFullscreen ?? false);
+            setIsMuted(settings.isMuted ?? false);
         }
+
+        // Listen for mute state changes from the game
+        const handleMuteStateChanged = (muted) => {
+            setIsMuted(muted);
+        };
+
+        EventBus.on("muteStateChanged", handleMuteStateChanged);
+
+        return () => {
+            EventBus.off("muteStateChanged", handleMuteStateChanged);
+        };
     }, []);
 
     // Save settings whenever they change
@@ -33,12 +53,33 @@ function OptionsModal({ isOpen, onClose, isMainMenu = false }) {
             sfxVolume,
             windowSize,
             isFullscreen,
+            isMuted,
         };
         localStorage.setItem("noodleBalanceSettings", JSON.stringify(settings));
+    }, [
+        masterVolume,
+        musicVolume,
+        sfxVolume,
+        windowSize,
+        isFullscreen,
+        isMuted,
+    ]);
 
-        // TODO: Apply settings to Phaser game instance
-        // This will need to be implemented when we have access to the Phaser game object
-    }, [masterVolume, musicVolume, sfxVolume, windowSize, isFullscreen]);
+    // Update volume in the AudioManager when sliders change
+    useEffect(() => {
+        // Send master volume to AudioManager
+        EventBus.emit("setMasterVolume", masterVolume);
+    }, [masterVolume]);
+
+    useEffect(() => {
+        // Send music volume to AudioManager
+        EventBus.emit("setMusicVolume", musicVolume);
+    }, [musicVolume]);
+
+    useEffect(() => {
+        // Send SFX volume to AudioManager
+        EventBus.emit("setSfxVolume", sfxVolume);
+    }, [sfxVolume]);
 
     const handleClearData = () => {
         if (
@@ -46,6 +87,9 @@ function OptionsModal({ isOpen, onClose, isMainMenu = false }) {
                 "Are you sure you want to clear all save data? This cannot be undone."
             )
         ) {
+            // Play sound effect
+            EventBus.emit("playSound", "back");
+
             localStorage.removeItem("noodleBalanceSave");
             localStorage.removeItem("noodleBalanceSettings");
             window.location.reload();
@@ -53,6 +97,9 @@ function OptionsModal({ isOpen, onClose, isMainMenu = false }) {
     };
 
     const handleManualSave = () => {
+        // Play sound effect
+        EventBus.emit("playSound", "click");
+
         // TODO: Implement manual save functionality
         console.log("Manual save triggered");
     };
@@ -63,22 +110,85 @@ function OptionsModal({ isOpen, onClose, isMainMenu = false }) {
                 "Are you sure you want to load the last save? Current progress will be lost."
             )
         ) {
+            // Play sound effect
+            EventBus.emit("playSound", "click");
+
             // TODO: Implement load functionality
             console.log("Loading last save...");
         }
     };
 
+    const handleToggleMute = () => {
+        // Use different mute toggle methods based on context
+        if (isMainMenu) {
+            // Use the hook for main menu context
+            toggleMute();
+            setIsMuted(!isMuted); // Manually update state since we're not using the event listener
+
+            // Play sound effect if unmuting
+            if (isMuted) {
+                setTimeout(() => {
+                    playClickSound();
+                }, 100);
+            }
+        } else {
+            // Use EventBus for in-game context
+            EventBus.emit("toggleMute");
+
+            // Play sound effect if unmuting
+            if (isMuted) {
+                setTimeout(() => {
+                    EventBus.emit("playSound", "click");
+                }, 100);
+            }
+        }
+    };
+
+    const handleVolumeChange = (setter, value) => {
+        // Play sound effect for feedback when changing volume
+        if (!isMuted && value > 0) {
+            if (isMainMenu) {
+                playClickSound();
+            } else {
+                EventBus.emit("playSound", "click");
+            }
+        }
+
+        setter(value);
+    };
+
+    const handleClose = () => {
+        // Play back sound
+        if (isMainMenu) {
+            // Use the hook properly
+            playBackSound();
+        } else {
+            EventBus.emit("playSound", "back");
+        }
+        onClose();
+    };
+
     return (
         <Modal
             isOpen={isOpen}
-            onClose={onClose}
+            onClose={handleClose}
             title="Options"
             className="options-modal"
         >
             <div className="space-y-8">
                 <section className="bg-[#f9f3e5]/70 rounded-lg p-6 border border-[#e1d1b3]">
-                    <h3 className="text-xl font-bold text-[#c17a0f] border-b border-[#c17a0f]/30 pb-2 mb-4">
-                        Audio
+                    <h3 className="text-xl font-bold text-[#c17a0f] border-b border-[#c17a0f]/30 pb-2 mb-4 flex justify-between items-center">
+                        <span>Audio</span>
+                        <button
+                            onClick={handleToggleMute}
+                            className={`px-3 py-1 rounded text-sm font-medium flex items-center ${
+                                isMuted
+                                    ? "bg-red-500 text-white"
+                                    : "bg-[#e1d1b3] text-[#8b5d33]"
+                            }`}
+                        >
+                            {isMuted ? "Unmute" : "Mute"}
+                        </button>
                     </h3>
                     <div className="space-y-4">
                         <label className="block">
@@ -92,12 +202,63 @@ function OptionsModal({ isOpen, onClose, isMainMenu = false }) {
                                     max="100"
                                     value={masterVolume}
                                     onChange={(e) =>
-                                        setMasterVolume(Number(e.target.value))
+                                        handleVolumeChange(
+                                            setMasterVolume,
+                                            Number(e.target.value)
+                                        )
                                     }
                                     className="flex-1 h-2 rounded bg-gradient-to-r from-[#c17a0f] to-[#e1d1b3] appearance-none cursor-pointer"
                                 />
                                 <span className="text-[#8b5d33] font-medium w-14 text-right">
                                     {masterVolume}%
+                                </span>
+                            </div>
+                        </label>
+
+                        <label className="block">
+                            <span className="text-sm font-medium text-[#8b5d33] uppercase tracking-wide block mb-2">
+                                Music Volume
+                            </span>
+                            <div className="flex items-center gap-4 mt-2">
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    value={musicVolume}
+                                    onChange={(e) =>
+                                        handleVolumeChange(
+                                            setMusicVolume,
+                                            Number(e.target.value)
+                                        )
+                                    }
+                                    className="flex-1 h-2 rounded bg-gradient-to-r from-[#c17a0f] to-[#e1d1b3] appearance-none cursor-pointer"
+                                />
+                                <span className="text-[#8b5d33] font-medium w-14 text-right">
+                                    {musicVolume}%
+                                </span>
+                            </div>
+                        </label>
+
+                        <label className="block">
+                            <span className="text-sm font-medium text-[#8b5d33] uppercase tracking-wide block mb-2">
+                                Sound Effects
+                            </span>
+                            <div className="flex items-center gap-4 mt-2">
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    value={sfxVolume}
+                                    onChange={(e) =>
+                                        handleVolumeChange(
+                                            setSfxVolume,
+                                            Number(e.target.value)
+                                        )
+                                    }
+                                    className="flex-1 h-2 rounded bg-gradient-to-r from-[#c17a0f] to-[#e1d1b3] appearance-none cursor-pointer"
+                                />
+                                <span className="text-[#8b5d33] font-medium w-14 text-right">
+                                    {sfxVolume}%
                                 </span>
                             </div>
                         </label>
