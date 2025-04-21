@@ -1,0 +1,9 @@
+This directory contains assets for the delivery run scene:
+
+- player_sprite.png - Spritesheet for player character
+- money_icon.png - Icon for money
+- delivery_bg.jpg - Background image
+- restaurant_slot.png - Restaurant slot image
+- event_positive.png - Positive event bubble
+- event_negative.png - Negative event bubble
+- player_marker.png - Player marker for rank visualization 

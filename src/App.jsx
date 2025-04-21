@@ -7,6 +7,7 @@ import { PhaserGame } from "./game/PhaserGame";
 import MainMenuComponent from "./components/MainMenuComponent";
 import GameIntroComponent from "./components/GameIntroComponent";
 import HubComponent from "./components/HubComponent";
+import DeliveryRunComponent from "./components/delivery/DeliveryRunComponent";
 
 function App() {
     // References to the PhaserGame component (game and scene are exposed)
@@ -112,6 +113,9 @@ function App() {
 
             {/* Conditionally render the HubComponent */}
             {currentSceneKey === "HubScreen" && <HubComponent />}
+
+            {/* Conditionally render the DeliveryRunComponent */}
+            {currentSceneKey === "DeliveryRun" && <DeliveryRunComponent />}
 
             {/* Example: Conditionally render other components based on scene key */}
             {/* {currentSceneKey === 'Game' && <GameOverlayComponent />} */}

@@ -1,34 +1,32 @@
 @import "tailwindcss";
 
 /* Configuration du thème en CSS-first (Tailwind v4.1) */
-@layer theme {
-    :root {
-        /* Couleurs principales */
-        --color-principalRed: #a02515;
-        --color-principalRed-light: #cf3e41;
-        --color-principalBrown: #312218;
-        --color-yellowWhite: #e7d6b1;
-        --color-whiteCream: #f9f3e5;
+@theme {
+    /* Couleurs principales */
+    --color-principalRed: #a02515;
+    --color-principalRed-light: #cf3e41;
+    --color-principalBrown: #312218;
+    --color-yellowWhite: #e7d6b1;
+    --color-whiteCream: #f9f3e5;
 
-        /* Couleurs orange */
-        --color-orange: #d35400;
-        --color-orange-500: #d35400;
-        --color-orange-accent: #e67e22;
-        --color-orange-hover: #f39c12;
+    /* Couleurs orange */
+    --color-orange: #d35400;
+    --color-orange-500: #d35400;
+    --color-orange-accent: #e67e22;
+    --color-orange-hover: #f39c12;
 
-        /* Couleurs blue-gray */
-        --color-blue-gray: #2c3e50;
-        --color-blue-gray-800: #2c3e50;
-        --color-blue-gray-700: #34495e;
-        --color-blue-gray-darker: #233140;
+    /* Couleurs blue-gray */
+    --color-blue-gray: #2c3e50;
+    --color-blue-gray-800: #2c3e50;
+    --color-blue-gray-700: #34495e;
+    --color-blue-gray-darker: #233140;
 
-        /* Couleurs danger */
-        --color-danger: #e74c3c;
-        --color-danger-dark: #c0392b;
+    /* Couleurs danger */
+    --color-danger: #e74c3c;
+    --color-danger-dark: #c0392b;
 
-        /* Animation */
-        --animation-modalAppear: modalAppear 0.3s ease-out;
-    }
+    /* Animation */
+    --animation-modalAppear: modalAppear 0.3s ease-out;
 }
 
 /* Animation keyframes */

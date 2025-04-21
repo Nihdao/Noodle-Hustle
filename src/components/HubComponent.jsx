@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import NoodleBarActions from "./noodleBars/NoodleBarActions";
 import NoodleBarAssign from "./noodleBars/NoodleBarAssign";
 import NoodleBarUpgrade from "./noodleBars/NoodleBarUpgrade";
@@ -66,8 +66,36 @@ const HubComponent = () => {
 
     const handleStartPeriod = () => {
         playClickSound();
-        // Use the hook's startPeriod method instead of calling through gameRef
-        startPeriod();
+
+        // Get the current game state and pass it to the DeliveryRun scene
+        const restaurants = gameState?.restaurants?.bars || [];
+        const playerStats = gameState?.playerStats || {};
+        const funds = gameState?.finances?.funds || 0;
+        const currentPeriod = gameState?.gameProgress?.currentPeriod || 1;
+
+        // Check if it's an investor clash period
+        const investorClashIn = gameState?.gameProgress?.investorClashIn || 10;
+        if (investorClashIn === 1) {
+            console.log("Investor clash period!");
+            // TODO: Start investor clash scene
+            // For now, just start the period normally
+            startPeriod();
+            return;
+        }
+
+        // Start the DeliveryRun scene with game data
+        if (window.gameRef) {
+            window.gameRef.scene.start("DeliveryRun", {
+                restaurants,
+                playerStats,
+                funds,
+                currentPeriod,
+            });
+        } else {
+            console.error("Game reference not found");
+            // Fallback to normal period start
+            startPeriod();
+        }
     };
 
     const handleBuffs = () => {

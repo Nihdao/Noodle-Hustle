@@ -22,6 +22,7 @@ export class AudioManager {
         gameIntro: "Sketchbook2024-03-20_01.ogg",
         hubOdd: "Sketchbook2024-10-14.ogg",
         hubEven: "Sketchbook2024-11-29.ogg",
+        business: "Sketchbook 2024-10-30.ogg",
     };
 
     static sfx = {

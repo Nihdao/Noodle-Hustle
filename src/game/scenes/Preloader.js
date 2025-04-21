@@ -24,8 +24,26 @@ export class Preloader extends Scene {
     }
 
     preload() {
-        //  Load the assets for the game - Replace with your own assets
+        //  Load the assets for the game
         this.load.setPath("assets");
+
+        // Load delivery run assets
+        this.load.spritesheet(
+            "player_sprite",
+            "deliveryrun/player_sprite.png",
+            {
+                frameWidth: 32,
+                frameHeight: 32,
+            }
+        );
+        this.load.image("money_icon", "deliveryrun/money_icon.png");
+        this.load.image("delivery_bg", "deliveryrun/delivery_bg.jpg");
+        this.load.image("restaurant_slot", "deliveryrun/restaurant_slot.png");
+        this.load.image("event_positive", "deliveryrun/event_positive.png");
+        this.load.image("event_negative", "deliveryrun/event_negative.png");
+        this.load.image("player_marker", "deliveryrun/player_marker.png");
+
+        // Load audio
         AudioManager.preloadAll(this);
     }
 
