@@ -179,6 +179,14 @@
     transform: rotate(-1deg);
 }
 
+.name-input-inner {
+    background-color: #f9f3e5;
+    border: 2px solid #e1d1b3;
+    border-radius: 4px;
+    padding: 20px;
+    position: relative;
+}
+
 .name-input-box::before {
     content: "";
     position: absolute;
@@ -215,6 +223,7 @@
     font-size: 18px;
     color: #5a4a42;
     margin-bottom: 20px;
+    outline: none;
 }
 
 .name-input:focus {
@@ -243,6 +252,11 @@
 
 .name-submit-button:active {
     transform: scale(0.98);
+}
+
+.name-submit-button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
 }
 
 .error-message {
@@ -342,18 +356,22 @@
 }
 
 /* Hold to Skip Button */
-.hold-to-skip-button {
+.hold-to-skip-container {
     position: absolute;
     top: 20px;
     right: 20px;
+    z-index: 30;
+}
+
+.hold-to-skip-button {
     background-color: rgba(249, 243, 229, 0.9);
     border: 2px solid #ecdbc5;
     border-radius: 20px;
     padding: 10px 20px;
     cursor: pointer;
-    z-index: 30;
     user-select: none;
     transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .hold-to-skip-button:hover {
@@ -374,6 +392,7 @@
     font-size: 14px;
     font-weight: bold;
     margin-bottom: 5px;
+    text-align: center;
 }
 
 .skip-progress-container {

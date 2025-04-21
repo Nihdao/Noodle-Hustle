@@ -12,34 +12,42 @@ import MeetingRoom from "./meeting/MeetingRoom";
 import OptionsModal from "./modals/OptionsModal";
 import { EventBus } from "../game/EventBus";
 import { useSound } from "../hooks/useSound";
+// Import custom hooks
+import {
+    useGameState,
+    useGamePeriod,
+    usePlayerStats,
+    useFinances,
+    useGameBuffs,
+    useSocial,
+} from "../store/gameStateHooks";
 
 const HubComponent = () => {
-    const [gameData, setGameData] = React.useState({
-        playerName: localStorage.getItem("playerName") || "{name}",
-        rank: 200,
-        funds: 500000,
-        burnout: 33,
-        period: 1,
-        investorClashIn: 3,
-        noddleBars: {
-            forecastedProfit: 12657,
-        },
-        employees: {
-            laborCost: 8985,
-        },
-        debts: {
-            repayment: 1500,
-        },
-        personalTime: {
-            planned: "Home",
-        },
-        meeting: {
-            supportGauge: 50,
-        },
-        forecastProfit: 2172,
-    });
+    // Use custom hooks instead of local state management
+    const gameState = useGameState();
+    const { currentPeriod, investorClashIn, startPeriod } = useGamePeriod();
+    const { burnout } = usePlayerStats();
+    const { funds, formatCurrency } = useFinances();
+    const { showBuffsPanel } = useGameBuffs();
+    const { personalTime } = useSocial();
 
-    // State for the selected submenu in the sidebar
+    // Derive the needed state objects from gameState for backwards compatibility
+    const playerName =
+        gameState?.playerName || localStorage.getItem("playerName") || "{name}";
+    const rank = gameState?.gameProgress?.businessRank || 200;
+    const noddleBars = gameState?.restaurants?.bars[0] || {
+        forecastedProfit: 12657,
+    };
+    const employees = gameState?.employees || { laborCost: 8985 };
+    const debts = gameState?.finances?.debt || { repayment: 1500 };
+    const meeting = gameState?.meetings || { supportGauge: 50 };
+    const forecastProfit =
+        gameState?.restaurants?.bars.reduce(
+            (total, bar) => total + (bar.forecastedProfit || 0),
+            0
+        ) || 2172;
+
+    // State for the selected submenu in the sidebar - these are UI states, not game state
     const [activeSubmenu, setActiveSubmenu] = useState("Home");
     const [hoveredMenuItem, setHoveredMenuItem] = useState(null);
     const [activeNoodleBarSection, setActiveNoodleBarSection] = useState(null);
@@ -49,52 +57,23 @@ const HubComponent = () => {
     // Sons
     const { playClickSound, playBackSound } = useSound();
 
+    // Handle menu changes for fairy interaction via EventBus
     useEffect(() => {
-        if (window.gameRef) {
-            const gameState = window.gameRef.getGameState();
-            if (gameState) {
-                setGameData(gameState);
-            }
-
-            const handleGameStateUpdate = (updatedState) => {
-                setGameData(updatedState);
-            };
-
-            window.gameRef.events.on("gameStateUpdated", handleGameStateUpdate);
-
-            return () => {
-                window.gameRef.events.off(
-                    "gameStateUpdated",
-                    handleGameStateUpdate
-                );
-            };
+        if (activeSubmenu && window.gameRef) {
+            EventBus.emit("menuChanged", activeSubmenu);
         }
-    }, []);
-
-    const formatCurrency = (value) => {
-        return new Intl.NumberFormat("en-US").format(value) + " ¥";
-    };
+    }, [activeSubmenu]);
 
     const handleStartPeriod = () => {
         playClickSound();
-        if (window.gameRef && window.gameRef.startPeriod) {
-            window.gameRef.startPeriod();
-        } else {
-            console.error(
-                "Cannot start period: gameRef.startPeriod is not available"
-            );
-        }
+        // Use the hook's startPeriod method instead of calling through gameRef
+        startPeriod();
     };
 
     const handleBuffs = () => {
         playClickSound();
-        if (window.gameRef && window.gameRef.openBuffsPanel) {
-            window.gameRef.openBuffsPanel();
-        } else {
-            console.error(
-                "Cannot open buffs: gameRef.openBuffsPanel is not available"
-            );
-        }
+        // Use the hook's showBuffsPanel method
+        showBuffsPanel();
     };
 
     const handleOptions = () => {
@@ -106,11 +85,6 @@ const HubComponent = () => {
     const handleMenuClick = (menu) => {
         playClickSound();
         setActiveSubmenu(menu);
-
-        // Notify Phaser about menu change for fairy interaction
-        if (window.gameRef) {
-            EventBus.emit("menuChanged", menu);
-        }
     };
 
     // Handle noodle bar actions
@@ -391,7 +365,7 @@ const HubComponent = () => {
                                 Profit:{" "}
                                 <span className="text-emerald-600 font-semibold">
                                     {formatCurrency(
-                                        gameData.noddleBars.forecastedProfit
+                                        noddleBars.forecastedProfit
                                     )}
                                 </span>
                             </p>
@@ -431,9 +405,7 @@ const HubComponent = () => {
                             <p className="text-sm text-[color:var(--color-principalBrown)]">
                                 Cost:{" "}
                                 <span className="text-red-500 font-semibold">
-                                    {formatCurrency(
-                                        gameData.employees.laborCost
-                                    )}
+                                    {formatCurrency(employees.laborCost)}
                                 </span>
                             </p>
                         </div>
@@ -472,7 +444,7 @@ const HubComponent = () => {
                             <p className="text-sm text-[color:var(--color-principalBrown)]">
                                 Repayment:{" "}
                                 <span className="text-red-500 font-semibold">
-                                    {formatCurrency(gameData.debts.repayment)}
+                                    {formatCurrency(debts.repayment)}
                                 </span>
                             </p>
                         </div>
@@ -513,7 +485,7 @@ const HubComponent = () => {
                             <p className="text-sm text-[color:var(--color-principalBrown)]">
                                 Support:{" "}
                                 <span className="text-blue-500 font-semibold">
-                                    {gameData.meeting?.supportGauge || 50}%
+                                    {meeting?.supportGauge || 50}%
                                 </span>
                             </p>
                         </div>
@@ -554,7 +526,7 @@ const HubComponent = () => {
                             <p className="text-sm text-[color:var(--color-principalBrown)]">
                                 Planned:{" "}
                                 <span className="text-blue-500 font-semibold">
-                                    {gameData.personalTime.planned}
+                                    {personalTime.planned}
                                 </span>
                             </p>
                         </div>
@@ -570,14 +542,14 @@ const HubComponent = () => {
             return (
                 <EmployeeManagement
                     onBack={handleEmployeeBack}
-                    laborCost={gameData.employees.laborCost}
+                    laborCost={employees.laborCost}
                 />
             );
         } else if (activeEmployeeSection === "recruitment") {
             return (
                 <EmployeeRecruitment
                     onBack={handleEmployeeBack}
-                    funds={gameData.funds}
+                    funds={funds}
                 />
             );
         }
@@ -586,7 +558,7 @@ const HubComponent = () => {
             <EmployeeActions
                 onActionSelect={handleEmployeeAction}
                 onBack={() => handleMenuClick("Home")}
-                laborCost={gameData.employees.laborCost}
+                laborCost={employees.laborCost}
             />
         );
     };
@@ -597,23 +569,23 @@ const HubComponent = () => {
             return (
                 <NoodleBarAssign
                     onBack={handleNoodleBarBack}
-                    playerRank={gameData.rank || 0}
+                    playerRank={rank || 0}
                 />
             );
         } else if (activeNoodleBarSection === "upgrade") {
             return (
                 <NoodleBarUpgrade
                     onBack={handleNoodleBarBack}
-                    playerRank={gameData.rank || 0}
-                    funds={gameData.funds}
+                    playerRank={rank || 0}
+                    funds={funds}
                 />
             );
         } else if (activeNoodleBarSection === "buysell") {
             return (
                 <NoodleBarBuySell
                     onBack={handleNoodleBarBack}
-                    playerRank={gameData.rank || 0}
-                    funds={gameData.funds}
+                    playerRank={rank || 0}
+                    funds={funds}
                 />
             );
         }
@@ -622,7 +594,7 @@ const HubComponent = () => {
             <NoodleBarActions
                 onActionSelect={handleNoodleBarAction}
                 onBack={() => handleMenuClick("Home")}
-                forecastedProfit={gameData.noddleBars.forecastedProfit}
+                forecastedProfit={noddleBars.forecastedProfit}
             />
         );
     };
@@ -644,16 +616,7 @@ const HubComponent = () => {
                 return (
                     <SocialManagement
                         onBack={() => handleMenuClick("Home")}
-                        currentPlanned={gameData.personalTime.planned}
-                        onLocationSelect={(location) => {
-                            setGameData((prev) => ({
-                                ...prev,
-                                personalTime: {
-                                    ...prev.personalTime,
-                                    planned: location,
-                                },
-                            }));
-                        }}
+                        currentPlanned={personalTime.planned}
                     />
                 );
             default:
@@ -666,7 +629,7 @@ const HubComponent = () => {
         return (
             <DebtsManagement
                 onBack={() => handleMenuClick("Home")}
-                funds={gameData.funds}
+                funds={funds}
             />
         );
     };
@@ -686,7 +649,7 @@ const HubComponent = () => {
                                 className="h-10 w-10 mr-2 flex-shrink-0"
                             />
                             <h1 style={styles.headerTitle}>
-                                {gameData.playerName}&apos;s Noodles
+                                {playerName}&apos;s Noodles
                             </h1>
                         </div>
                     </header>
@@ -695,12 +658,12 @@ const HubComponent = () => {
                     <div className="bg-[color:var(--color-principalRed)] text-[color:var(--color-whiteCream)] p-2 flex shadow-md z-10 w-full">
                         <div className="px-6 border-r border-white/30">
                             <span className="font-bold text-base">
-                                Period {gameData.period}
+                                Period {currentPeriod}
                             </span>
                         </div>
                         <div className="px-6">
                             <span className="text-base">
-                                Investor Clash in {gameData.investorClashIn}
+                                Investor Clash in {investorClashIn}
                             </span>
                         </div>
                     </div>
@@ -741,7 +704,7 @@ const HubComponent = () => {
                             <div style={styles.forecastProfit}>
                                 Forecast profit:{" "}
                                 <span style={styles.forecastNumber}>
-                                    {formatCurrency(gameData.forecastProfit)}
+                                    {formatCurrency(forecastProfit)}
                                 </span>
                             </div>
                         </div>
@@ -755,7 +718,7 @@ const HubComponent = () => {
                 <div style={styles.statsPanelTopRight}>
                     <div style={styles.statsItem}>
                         <span style={styles.statsLabel}>RANK</span>
-                        <span style={styles.statsValue}>{gameData.rank}</span>
+                        <span style={styles.statsValue}>{rank}</span>
                     </div>
 
                     <div style={styles.divider}></div>
@@ -763,7 +726,7 @@ const HubComponent = () => {
                     <div style={styles.statsItem}>
                         <span style={styles.statsLabel}>FUNDS</span>
                         <span style={styles.fundsValue}>
-                            {formatCurrency(gameData.funds)}
+                            {formatCurrency(funds)}
                         </span>
                     </div>
 
@@ -787,13 +750,13 @@ const HubComponent = () => {
                                 style={{
                                     height: "100%",
                                     backgroundColor:
-                                        gameData.burnout > 70
+                                        burnout > 70
                                             ? "#EF4444"
-                                            : gameData.burnout > 40
+                                            : burnout > 40
                                             ? "#F59E0B"
                                             : "#10B981",
                                     borderRadius: "9999px",
-                                    width: `${gameData.burnout}%`,
+                                    width: `${burnout}%`,
                                     transition:
                                         "width 0.5s ease-in-out, background-color 0.5s ease-in-out",
                                 }}
@@ -805,14 +768,14 @@ const HubComponent = () => {
                                 fontWeight: "bold",
                                 fontSize: "1.1rem",
                                 color:
-                                    gameData.burnout > 70
+                                    burnout > 70
                                         ? "#EF4444"
-                                        : gameData.burnout > 40
+                                        : burnout > 40
                                         ? "#F59E0B"
                                         : "#10B981",
                             }}
                         >
-                            {gameData.burnout}%
+                            {burnout}%
                         </span>
                     </div>
                 </div>

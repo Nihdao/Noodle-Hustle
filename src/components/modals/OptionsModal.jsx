@@ -3,14 +3,23 @@ import { useState, useEffect } from "react";
 import Modal from "../common/Modal";
 import { EventBus } from "../../game/EventBus";
 import { useSound } from "../../hooks/useSound";
+import { useGameSettings } from "../../store/gameStateHooks";
+import { clearAllData } from "../../localStorage/storageManager";
+import gameState from "../../game/GameState";
 
 function OptionsModal({ isOpen, onClose, isMainMenu = false }) {
-    // State for volume controls
+    // Use the settings hook to get and update game settings
+    const { settings, updateSettings } = useGameSettings();
+
+    // Ajouter un flag pour suivre si c'est la première initialisation
+    const [isInitialized, setIsInitialized] = useState(false);
+
+    // State for volume controls - initialized from settings
     const [masterVolume, setMasterVolume] = useState(100);
     const [musicVolume, setMusicVolume] = useState(100);
     const [sfxVolume, setSfxVolume] = useState(100);
 
-    // State for display settings
+    // State for display settings - we'll gérer les modifications de ces états plus tard
     const [windowSize, setWindowSize] = useState("fit");
     const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -20,20 +29,24 @@ function OptionsModal({ isOpen, onClose, isMainMenu = false }) {
     // Use our sound hook for main menu context
     const { toggleMute, playClickSound, playBackSound } = useSound();
 
-    // Load saved settings on mount
+    // Load settings when component mounts
     useEffect(() => {
-        const savedSettings = localStorage.getItem("noodleBalanceSettings");
-        if (savedSettings) {
-            const settings = JSON.parse(savedSettings);
-            setMasterVolume(settings.masterVolume ?? 100);
-            setMusicVolume(settings.musicVolume ?? 100);
-            setSfxVolume(settings.sfxVolume ?? 100);
-            setWindowSize(settings.windowSize ?? "fit");
-            setIsFullscreen(settings.isFullscreen ?? false);
-            setIsMuted(settings.isMuted ?? false);
-        }
+        if (settings && !isInitialized) {
+            // Initialize state from settings
+            setMasterVolume(settings.audio?.masterVolume || 100);
+            setMusicVolume(settings.audio?.musicVolume || 100);
+            setSfxVolume(settings.audio?.sfxVolume || 100);
+            setWindowSize(settings.display?.windowSize || "fit");
+            setIsFullscreen(settings.display?.isFullscreen || false);
+            setIsMuted(settings.audio?.isMuted || false);
 
-        // Listen for mute state changes from the game
+            // Marquer comme initialisé pour éviter de réinitialiser en boucle
+            setIsInitialized(true);
+        }
+    }, [settings, isInitialized]);
+
+    // Listen for mute state changes
+    useEffect(() => {
         const handleMuteStateChanged = (muted) => {
             setIsMuted(muted);
         };
@@ -45,76 +58,50 @@ function OptionsModal({ isOpen, onClose, isMainMenu = false }) {
         };
     }, []);
 
-    // Save settings whenever they change
-    useEffect(() => {
-        const settings = {
-            masterVolume,
-            musicVolume,
-            sfxVolume,
-            windowSize,
-            isFullscreen,
-            isMuted,
-        };
-        localStorage.setItem("noodleBalanceSettings", JSON.stringify(settings));
-    }, [
-        masterVolume,
-        musicVolume,
-        sfxVolume,
-        windowSize,
-        isFullscreen,
-        isMuted,
-    ]);
-
-    // Update volume in the AudioManager when sliders change
-    useEffect(() => {
-        // Send master volume to AudioManager
-        EventBus.emit("setMasterVolume", masterVolume);
-    }, [masterVolume]);
-
-    useEffect(() => {
-        // Send music volume to AudioManager
-        EventBus.emit("setMusicVolume", musicVolume);
-    }, [musicVolume]);
-
-    useEffect(() => {
-        // Send SFX volume to AudioManager
-        EventBus.emit("setSfxVolume", sfxVolume);
-    }, [sfxVolume]);
-
-    const handleClearData = () => {
-        if (
-            window.confirm(
-                "Are you sure you want to clear all save data? This cannot be undone."
-            )
-        ) {
-            // Play sound effect
-            EventBus.emit("playSound", "back");
-
-            localStorage.removeItem("noodleBalanceSave");
-            localStorage.removeItem("noodleBalanceSettings");
-            window.location.reload();
+    // Manual handler functions for settings changes
+    const handleVolumeChange = (setter, value) => {
+        // Play sound effect for feedback when changing volume
+        if (!isMuted && value > 0) {
+            if (isMainMenu) {
+                playClickSound();
+            } else {
+                EventBus.emit("playSound", "click");
+            }
         }
-    };
 
-    const handleManualSave = () => {
-        // Play sound effect
-        EventBus.emit("playSound", "click");
+        setter(value);
 
-        // TODO: Implement manual save functionality
-        console.log("Manual save triggered");
-    };
-
-    const handleLoadLastSave = () => {
-        if (
-            window.confirm(
-                "Are you sure you want to load the last save? Current progress will be lost."
-            )
-        ) {
-            // Play sound effect
-            EventBus.emit("playSound", "click");
-
-            // TODO: Implement load functionality
-            console.log("Loading last save...");
+        // Only update settings after user interaction, not during initialization
+        if (isInitialized && settings) {
+            // Determine which volume is being updated
+            if (setter === setMasterVolume) {
+                updateSettings({
+                    audio: {
+                        ...(settings.audio || {}),
+                        masterVolume: value,
+                    },
+                });
+                // Send master volume to AudioManager
+                EventBus.emit("setMasterVolume", value);
+            } else if (setter === setMusicVolume) {
+                updateSettings({
+                    audio: {
+                        ...(settings.audio || {}),
+                        musicVolume: value,
+                    },
+                });
+                // Send music volume to AudioManager
+                EventBus.emit("setMusicVolume", value);
+            } else if (setter === setSfxVolume) {
+                updateSettings({
+                    audio: {
+                        ...(settings.audio || {}),
+                        sfxVolume: value,
+                    },
+                });
+                // Send SFX volume to AudioManager
+                EventBus.emit("setSfxVolume", value);
+            }
         }
     };
 
@@ -123,7 +110,18 @@ function OptionsModal({ isOpen, onClose, isMainMenu = false }) {
         if (isMainMenu) {
             // Use the hook for main menu context
             toggleMute();
-            setIsMuted(!isMuted); // Manually update state since we're not using the event listener
+            const newMuteState = !isMuted;
+            setIsMuted(newMuteState); // Manually update state since we're not using the event listener
+
+            // Update settings
+            if (isInitialized && settings) {
+                updateSettings({
+                    audio: {
+                        ...(settings.audio || {}),
+                        isMuted: newMuteState,
+                    },
+                });
+            }
 
             // Play sound effect if unmuting
             if (isMuted) {
@@ -144,17 +142,47 @@ function OptionsModal({ isOpen, onClose, isMainMenu = false }) {
         }
     };
 
-    const handleVolumeChange = (setter, value) => {
-        // Play sound effect for feedback when changing volume
-        if (!isMuted && value > 0) {
-            if (isMainMenu) {
-                playClickSound();
-            } else {
-                EventBus.emit("playSound", "click");
-            }
-        }
+    const handleClearData = () => {
+        if (
+            window.confirm(
+                "Are you sure you want to clear all save data? This cannot be undone."
+            )
+        ) {
+            // Play sound effect
+            EventBus.emit("playSound", "back");
 
-        setter(value);
+            // Clear all data using the storage manager
+            clearAllData();
+            window.location.reload();
+        }
+    };
+
+    const handleManualSave = () => {
+        // Play sound effect
+        EventBus.emit("playSound", "click");
+
+        // Save the game state
+        gameState.saveGameState(true); // Create a backup
+
+        // Show some feedback (could be enhanced)
+        alert("Game saved successfully!");
+    };
+
+    const handleLoadLastSave = () => {
+        if (
+            window.confirm(
+                "Are you sure you want to load the last save? Current progress will be lost."
+            )
+        ) {
+            // Play sound effect
+            EventBus.emit("playSound", "click");
+
+            // Reload the game state
+            gameState.initialize(false);
+
+            // Close the modal
+            onClose();
+        }
     };
 
     const handleClose = () => {

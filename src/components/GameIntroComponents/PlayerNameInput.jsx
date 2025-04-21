@@ -47,33 +47,37 @@ function PlayerNameInput({ onNameConfirmed, visible }) {
         }
     };
 
+    if (!visible) return null;
+
     return (
         <div
             className={`name-input-container ${
-                visible ? "" : "hidden-name-input"
-            } ${animationState === "visible" ? "fade-in" : "fade-out"}`}
+                animationState === "visible" ? "fade-in" : "fade-out"
+            }`}
         >
             <div className="name-input-box">
-                <h2 className="name-input-title">Welcome to Tokyo</h2>
-                <p className="name-input-subtitle">What is your name?</p>
-                <form onSubmit={handleSubmit}>
-                    <input
-                        ref={inputRef}
-                        type="text"
-                        className="name-input-field"
-                        value={playerName}
-                        onChange={handleNameChange}
-                        placeholder="Enter your name"
-                        maxLength={15}
-                    />
-                    <button
-                        type="submit"
-                        className="name-input-button"
-                        disabled={!playerName.trim()}
-                    >
-                        Let&apos;s Begin
-                    </button>
-                </form>
+                <div className="name-input-inner">
+                    <h2 className="input-title">Welcome to Tokyo</h2>
+                    <p className="input-subtitle">What is your name?</p>
+                    <form onSubmit={handleSubmit}>
+                        <input
+                            ref={inputRef}
+                            type="text"
+                            className="name-input"
+                            value={playerName}
+                            onChange={handleNameChange}
+                            placeholder="Enter your name"
+                            maxLength={8}
+                        />
+                        <button
+                            type="submit"
+                            className="name-submit-button"
+                            disabled={!playerName.trim()}
+                        >
+                            Let&apos;s Begin
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     );

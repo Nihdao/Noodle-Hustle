@@ -14,7 +14,11 @@ function HoldToSkipButton({ onSkip, visible = false }) {
     const holdDuration = 2000; // Time in ms needed to hold to skip
 
     // Start the progress animation
-    const startHolding = () => {
+    const startHolding = (e) => {
+        // Prevent default behavior for touch events to avoid scrolling
+        if (e.type === "touchstart") {
+            e.preventDefault();
+        }
         setIsHolding(true);
         startTimeRef.current = Date.now();
 
@@ -25,6 +29,8 @@ function HoldToSkipButton({ onSkip, visible = false }) {
 
     // Update progress based on how long button has been held
     const updateProgress = () => {
+        if (!isHolding) return;
+
         const elapsed = Date.now() - startTimeRef.current;
         const newProgress = Math.min((elapsed / holdDuration) * 100, 100);
         setProgress(newProgress);
@@ -50,6 +56,20 @@ function HoldToSkipButton({ onSkip, visible = false }) {
         setProgress(0);
     };
 
+    // Effect to handle updating progress when isHolding changes
+    useEffect(() => {
+        if (isHolding) {
+            requestRef.current = requestAnimationFrame(updateProgress);
+        } else {
+            cancelAnimationFrame(requestRef.current);
+            setProgress(0);
+        }
+
+        return () => {
+            cancelAnimationFrame(requestRef.current);
+        };
+    }, [isHolding]);
+
     // Clean up animation frame on unmount
     useEffect(() => {
         return () => {
@@ -60,21 +80,22 @@ function HoldToSkipButton({ onSkip, visible = false }) {
     if (!visible) return null;
 
     return (
-        <div
-            className="hold-to-skip-container"
-            onMouseDown={startHolding}
-            onMouseUp={stopHolding}
-            onMouseLeave={stopHolding}
-            onTouchStart={startHolding}
-            onTouchEnd={stopHolding}
-        >
-            <div className="hold-to-skip-button">
-                <span className="hold-text">
+        <div className="hold-to-skip-container">
+            <div
+                className={`hold-to-skip-button ${isHolding ? "active" : ""}`}
+                onMouseDown={startHolding}
+                onMouseUp={stopHolding}
+                onMouseLeave={stopHolding}
+                onTouchStart={startHolding}
+                onTouchEnd={stopHolding}
+                onTouchCancel={stopHolding}
+            >
+                <div className="skip-button-text">
                     {isHolding ? "Skipping..." : "Hold to Skip"}
-                </span>
-                <div className="progress-container">
+                </div>
+                <div className="skip-progress-container">
                     <div
-                        className="progress-bar"
+                        className="skip-progress-bar"
                         style={{ width: `${progress}%` }}
                     ></div>
                 </div>

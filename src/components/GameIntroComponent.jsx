@@ -5,6 +5,7 @@ import IntroDialogBox from "./GameIntroComponents/IntroDialogBox";
 import HoldToSkipButton from "./GameIntroComponents/HoldToSkipButton";
 import "../styles/intro.css";
 import { EventBus } from "../game/EventBus";
+import gameState from "../game/GameState";
 
 // Intro slide data from the 3-GameIntro.mdc specification
 const introSlides = [
@@ -55,30 +56,14 @@ function GameIntroComponent({ onCompleteIntro }) {
 
     // Function to initialize save data
     const initializeSaveData = () => {
-        // Get player name from localStorage
-        const playerName = localStorage.getItem("playerName") || "Player";
+        // Initialize a new game state with the player's name
+        // The playerName is retrieved from localStorage in the gameState.initialize method
+        gameState.initialize(true); // Force new game creation
 
-        // Create initial save data object
-        const initialSaveData = {
-            playerName: playerName,
-            createdAt: new Date().toISOString(),
-            gameProgress: {
-                currentDay: 1,
-                money: 5000,
-                completedIntro: true,
-            },
-            stats: {
-                burnoutLevel: 0,
-                reputation: 10,
-            },
-        };
+        // Save the initialized state
+        gameState.saveGameState();
 
-        // Save to localStorage
-        localStorage.setItem(
-            "noodleBalanceSave",
-            JSON.stringify(initialSaveData)
-        );
-        console.log("Save data initialized:", initialSaveData);
+        console.log("Game state initialized:", gameState.getGameState());
     };
 
     // Handle player name confirmation

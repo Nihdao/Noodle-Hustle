@@ -5,6 +5,7 @@ import CreditsModal from "./modals/CreditsModal";
 import MenuButton from "./common/MenuButton";
 import MenuContainer from "./common/MenuContainer";
 import { useSound } from "../hooks/useSound";
+import { hasSaveGame } from "../localStorage/storageManager";
 import "../styles/menu.css";
 // import "../styles/OptionsModal.css";
 // Import the styles - make sure the path is correct
@@ -22,8 +23,8 @@ function MainMenuComponent({
     const [isCreditsModalOpen, setIsCreditsModalOpen] = useState(false);
     // Animation state
     const [animationState, setAnimationState] = useState("hidden");
-    // Check if save data exists (placeholder logic, might need refinement)
-    const hasSaveData = localStorage.getItem("noodleBalanceSave") !== null;
+    // Check if save data exists using the storage manager
+    const saveExists = hasSaveGame();
     // Son
     const { playClickSound, playBackSound } = useSound();
 
@@ -40,7 +41,6 @@ function MainMenuComponent({
     const handleNewGameClick = () => {
         console.log("Starting new game...");
         playClickSound();
-        localStorage.removeItem("noodleBalanceSave");
         if (onStartNewGame) onStartNewGame();
     };
 
@@ -85,13 +85,13 @@ function MainMenuComponent({
                 </h1>
 
                 <div className="menu-buttons">
-                    {!hasSaveData && (
+                    {!saveExists && (
                         <MenuButton onClick={handleNewGameClick}>
                             New Game
                         </MenuButton>
                     )}
 
-                    {hasSaveData && (
+                    {saveExists && (
                         <MenuButton onClick={handleContinueClick}>
                             Continue
                         </MenuButton>
