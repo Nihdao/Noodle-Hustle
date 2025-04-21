@@ -143,10 +143,11 @@ class GameState {
         });
 
         // Notify that period has started
-        this.events.emit(
-            "periodStarted",
-            this.state.gameProgress.currentPeriod
-        );
+        const currentPeriod = this.state.gameProgress.currentPeriod;
+        this.events.emit("periodStarted", currentPeriod);
+
+        // Emit an event to update music based on period number
+        this.events.emit("updatePeriodMusic", currentPeriod);
     }
 
     /**

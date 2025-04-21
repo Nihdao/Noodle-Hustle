@@ -24,7 +24,7 @@ export const createNewGameSave = (playerName = "Player") => {
 
         // Game progression
         gameProgress: {
-            currentPeriod: 10,
+            currentPeriod: 1,
             completedIntro: true,
             investorClashIn: 10, // Countdown to next investor meeting
             businessRank: 200, // Lower is better (1 is highest)

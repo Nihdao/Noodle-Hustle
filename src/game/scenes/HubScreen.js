@@ -584,8 +584,7 @@ export class HubScreen extends Phaser.Scene {
             // Recalculate profits
             this.recalculateProfits();
 
-            // Update music for the new period - different tracks for odd/even periods
-            audioManager.playHubMusic(this.gameState.period);
+            // La musique sera mise à jour via l'événement updatePeriodMusic
 
             // Dispatch event so React UI can update
             this.events.emit("gameStateUpdated", this.gameState);

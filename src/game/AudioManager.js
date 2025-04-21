@@ -116,6 +116,9 @@ export class AudioManager {
         EventBus.on("setMasterVolume", this.setMasterVolume, this);
         EventBus.on("setMusicVolume", this.setMusicVolume, this);
         EventBus.on("setSfxVolume", this.setSfxVolume, this);
+
+        // Écouter l'événement de changement de période
+        EventBus.on("updatePeriodMusic", this.playHubMusic, this);
     }
 
     playMusic(key) {
@@ -158,7 +161,22 @@ export class AudioManager {
     playHubMusic(period) {
         // Play different music based on whether period is odd or even
         const isOdd = period % 2 === 1;
-        this.playMusic(isOdd ? "hubOdd" : "hubEven");
+        const musicKey = isOdd ? "hubOdd" : "hubEven";
+
+        // Ne pas rechanger la même musique si elle est déjà en cours de lecture
+        if (this.currentMusic === musicKey) {
+            console.log(
+                `Music ${musicKey} is already playing, no need to change.`
+            );
+            return;
+        }
+
+        console.log(
+            `Changing hub music for period ${period} (${
+                isOdd ? "odd" : "even"
+            })`
+        );
+        this.playMusic(musicKey);
     }
 
     stopMusic() {
