@@ -2,6 +2,7 @@ import { useState } from "react";
 import PropTypes from "prop-types";
 import MenuContainer from "../../common/MenuContainer";
 import { formatCurrency, getTotalStat } from "../utils/restaurantUtils";
+import { useNoodleBarOperations } from "../../../store/gameStateHooks";
 
 const EmployeeManagementModal = ({
     selectedBar,
@@ -15,9 +16,52 @@ const EmployeeManagementModal = ({
     const [employeeSearchTerm, setEmployeeSearchTerm] = useState("");
     const [activeTab, setActiveTab] = useState("All");
 
+    // Utiliser les fonctions centralisées du hook
+    const { getRestaurantNameById } = useNoodleBarOperations();
+
+    // Safety functions to handle potentially undefined values
+    const getStaffCount = () => {
+        return Array.isArray(selectedBar?.currentStaff)
+            ? selectedBar.currentStaff.length
+            : 0;
+    };
+
+    const getStaffSlots = () => {
+        return selectedBar?.staffSlots || 3;
+    };
+
+    const getCurrentStaff = () => {
+        return Array.isArray(selectedBar?.currentStaff)
+            ? selectedBar.currentStaff
+            : [];
+    };
+
+    const safeTotalStat = (stat) => {
+        if (!Array.isArray(selectedBar?.currentStaff)) {
+            return 0;
+        }
+        return getTotalStat(selectedBar.currentStaff, stat);
+    };
+
+    // Get proper profit and sales values with fallbacks
+    const getSalesVolume = () => {
+        return (
+            selectedBar?.salesVolume ||
+            selectedBar?.forecastedProfit ||
+            selectedBar?.baseProfit ||
+            0
+        );
+    };
+
+    // Get target values for each stat with fallbacks
+    const getCuisineTarget = () =>
+        selectedBar?.productCap || selectedBar?.maxProduct || 40;
+    const getServiceTarget = () => selectedBar?.serviceCap || 20;
+    const getAmbianceTarget = () => selectedBar?.ambianceCap || 10;
+
     // Filter employees based on search and tab
     const getFilteredEmployees = () => {
-        let filtered = [...allEmployees];
+        let filtered = [...(allEmployees || [])];
 
         // Apply search term filter
         if (employeeSearchTerm.trim() !== "") {
@@ -38,6 +82,24 @@ const EmployeeManagementModal = ({
         return filtered;
     };
 
+    // Récupérer le nom du restaurant à partir de son ID en utilisant le hook
+    const getRestaurantName = (assignedId) => {
+        if (!assignedId) return null;
+        return getRestaurantNameById(assignedId);
+    };
+
+    const handleEmployeeClick = (employee) => {
+        onAssignEmployee(employee);
+    };
+
+    const handleRemoveEmployeeClick = (employeeId, e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onRemoveEmployee(employeeId);
+    };
+
+    if (!selectedBar) return null;
+
     return (
         <div
             className="fixed z-50 transition-all duration-500"
@@ -52,12 +114,13 @@ const EmployeeManagementModal = ({
                 className="w-[750px] max-h-[80vh]"
                 scrollable={true}
                 maxHeight="80vh"
-                title={selectedBar.name}
+                title={selectedBar.name || "Restaurant"}
             >
                 <div className="p-4">
                     <div className="flex justify-between mb-4 items-center">
                         <p className="italic text-[color:var(--color-principalBrown)] opacity-70">
-                            {selectedBar.description}
+                            {selectedBar.description ||
+                                "No description available"}
                         </p>
                         <button
                             onClick={onCloseDetails}
@@ -90,16 +153,15 @@ const EmployeeManagementModal = ({
                                     color: "var(--color-principalBrown)",
                                 }}
                             >
-                                Current Staff ({selectedBar.currentStaff.length}
-                                /{selectedBar.staffSlots})
+                                Current Staff ({getStaffCount()}/
+                                {getStaffSlots()})
                             </h3>
 
                             <div className="grid gap-2 mb-4">
                                 {Array.from({
-                                    length: selectedBar.staffSlots,
+                                    length: getStaffSlots(),
                                 }).map((_, index) => {
-                                    const employee =
-                                        selectedBar.currentStaff[index];
+                                    const employee = getCurrentStaff()[index];
                                     return (
                                         <div
                                             key={index}
@@ -119,19 +181,19 @@ const EmployeeManagementModal = ({
                                                         className={`
                               w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm
                               ${
-                                  employee.type === "A"
+                                  employee.rarity === "A"
                                       ? "bg-red-500"
-                                      : employee.type === "B"
+                                      : employee.rarity === "B"
                                       ? "bg-blue-500"
-                                      : employee.type === "C"
+                                      : employee.rarity === "C"
                                       ? "bg-green-500"
-                                      : employee.type === "D"
+                                      : employee.rarity === "D"
                                       ? "bg-gray-500"
                                       : "bg-yellow-500"
                               }
                             `}
                                                     >
-                                                        {employee.type}
+                                                        {employee.rarity}
                                                     </div>
 
                                                     {/* Employee info */}
@@ -173,12 +235,12 @@ const EmployeeManagementModal = ({
                                                     {/* Remove button */}
                                                     <button
                                                         className="text-red-500 hover:text-red-700"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            onRemoveEmployee(
-                                                                employee.id
-                                                            );
-                                                        }}
+                                                        onClick={(e) =>
+                                                            handleRemoveEmployeeClick(
+                                                                employee.id,
+                                                                e
+                                                            )
+                                                        }
                                                     >
                                                         <svg
                                                             xmlns="http://www.w3.org/2000/svg"
@@ -232,7 +294,7 @@ const EmployeeManagementModal = ({
                                             </span>
                                             <span className="text-emerald-600 font-semibold">
                                                 {formatCurrency(
-                                                    selectedBar.forecastedProfit
+                                                    getSalesVolume()
                                                 )}
                                             </span>
                                         </div>
@@ -241,8 +303,8 @@ const EmployeeManagementModal = ({
                                                 className="h-full bg-emerald-500 rounded-full transition-all duration-500"
                                                 style={{
                                                     width: `${
-                                                        (1 /
-                                                            selectedBar.maxSales) *
+                                                        (getSalesVolume() /
+                                                            10000) *
                                                         100
                                                     }%`,
                                                 }}
@@ -262,41 +324,34 @@ const EmployeeManagementModal = ({
                                             <span className="flex">
                                                 <span
                                                     className={`px-1 ${
-                                                        getTotalStat(
-                                                            selectedBar.currentStaff,
+                                                        safeTotalStat(
                                                             "cuisine"
-                                                        ) >= 40
+                                                        ) >= getCuisineTarget()
                                                             ? "text-emerald-600"
                                                             : "text-red-500"
                                                     }`}
                                                 >
-                                                    {getTotalStat(
-                                                        selectedBar.currentStaff,
-                                                        "cuisine"
-                                                    )}
+                                                    {safeTotalStat("cuisine")}
                                                 </span>
                                                 <span className="text-gray-500">
-                                                    /40
+                                                    /{getCuisineTarget()}
                                                 </span>
                                             </span>
                                         </div>
                                         <div className="h-2 bg-gray-200 rounded-full mt-1">
                                             <div
                                                 className={`h-full rounded-full transition-all duration-500 ${
-                                                    getTotalStat(
-                                                        selectedBar.currentStaff,
-                                                        "cuisine"
-                                                    ) >= 40
+                                                    safeTotalStat("cuisine") >=
+                                                    getCuisineTarget()
                                                         ? "bg-emerald-500"
                                                         : "bg-red-500"
                                                 }`}
                                                 style={{
                                                     width: `${Math.min(
-                                                        (getTotalStat(
-                                                            selectedBar.currentStaff,
+                                                        (safeTotalStat(
                                                             "cuisine"
                                                         ) /
-                                                            40) *
+                                                            getCuisineTarget()) *
                                                             100,
                                                         100
                                                     )}%`,
@@ -317,41 +372,34 @@ const EmployeeManagementModal = ({
                                             <span className="flex">
                                                 <span
                                                     className={`px-1 ${
-                                                        getTotalStat(
-                                                            selectedBar.currentStaff,
+                                                        safeTotalStat(
                                                             "service"
-                                                        ) >= 20
+                                                        ) >= getServiceTarget()
                                                             ? "text-emerald-600"
                                                             : "text-red-500"
                                                     }`}
                                                 >
-                                                    {getTotalStat(
-                                                        selectedBar.currentStaff,
-                                                        "service"
-                                                    )}
+                                                    {safeTotalStat("service")}
                                                 </span>
                                                 <span className="text-gray-500">
-                                                    /20
+                                                    /{getServiceTarget()}
                                                 </span>
                                             </span>
                                         </div>
                                         <div className="h-2 bg-gray-200 rounded-full mt-1">
                                             <div
                                                 className={`h-full rounded-full transition-all duration-500 ${
-                                                    getTotalStat(
-                                                        selectedBar.currentStaff,
-                                                        "service"
-                                                    ) >= 20
+                                                    safeTotalStat("service") >=
+                                                    getServiceTarget()
                                                         ? "bg-emerald-500"
                                                         : "bg-red-500"
                                                 }`}
                                                 style={{
                                                     width: `${Math.min(
-                                                        (getTotalStat(
-                                                            selectedBar.currentStaff,
+                                                        (safeTotalStat(
                                                             "service"
                                                         ) /
-                                                            20) *
+                                                            getServiceTarget()) *
                                                             100,
                                                         100
                                                     )}%`,
@@ -372,41 +420,34 @@ const EmployeeManagementModal = ({
                                             <span className="flex">
                                                 <span
                                                     className={`px-1 ${
-                                                        getTotalStat(
-                                                            selectedBar.currentStaff,
+                                                        safeTotalStat(
                                                             "ambiance"
-                                                        ) >= 10
+                                                        ) >= getAmbianceTarget()
                                                             ? "text-emerald-600"
                                                             : "text-red-500"
                                                     }`}
                                                 >
-                                                    {getTotalStat(
-                                                        selectedBar.currentStaff,
-                                                        "ambiance"
-                                                    )}
+                                                    {safeTotalStat("ambiance")}
                                                 </span>
                                                 <span className="text-gray-500">
-                                                    /10
+                                                    /{getAmbianceTarget()}
                                                 </span>
                                             </span>
                                         </div>
                                         <div className="h-2 bg-gray-200 rounded-full mt-1">
                                             <div
                                                 className={`h-full rounded-full transition-all duration-500 ${
-                                                    getTotalStat(
-                                                        selectedBar.currentStaff,
-                                                        "ambiance"
-                                                    ) >= 10
+                                                    safeTotalStat("ambiance") >=
+                                                    getAmbianceTarget()
                                                         ? "bg-emerald-500"
                                                         : "bg-red-500"
                                                 }`}
                                                 style={{
                                                     width: `${Math.min(
-                                                        (getTotalStat(
-                                                            selectedBar.currentStaff,
+                                                        (safeTotalStat(
                                                             "ambiance"
                                                         ) /
-                                                            10) *
+                                                            getAmbianceTarget()) *
                                                             100,
                                                         100
                                                     )}%`,
@@ -501,33 +542,34 @@ const EmployeeManagementModal = ({
                       grid grid-cols-[auto_1fr_auto] gap-2 items-center
                       ${
                           employee.assigned !== null &&
-                          employee.assigned !== selectedBar.name
+                          employee.assigned !== selectedBar.id
                               ? "bg-gray-100 border-gray-300"
                               : "bg-[color:var(--color-whiteCream)] border-[color:var(--color-principalBrown)]"
                       }
                     `}
-                                        onClick={() =>
-                                            onAssignEmployee(employee)
-                                        }
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            handleEmployeeClick(employee);
+                                        }}
                                     >
                                         {/* Employee type badge */}
                                         <div
                                             className={`
                         w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm
                         ${
-                            employee.type === "A"
+                            employee.rarity === "A"
                                 ? "bg-red-500"
-                                : employee.type === "B"
+                                : employee.rarity === "B"
                                 ? "bg-blue-500"
-                                : employee.type === "C"
+                                : employee.rarity === "C"
                                 ? "bg-green-500"
-                                : employee.type === "D"
+                                : employee.rarity === "D"
                                 ? "bg-gray-500"
                                 : "bg-yellow-500"
                         }
                       `}
                                         >
-                                            {employee.type}
+                                            {employee.rarity}
                                         </div>
 
                                         {/* Employee info */}
@@ -554,20 +596,25 @@ const EmployeeManagementModal = ({
                                                 </span>
                                             </div>
 
-                                            {/* Assignment status */}
+                                            {/* Assignment status - Show restaurant name instead of ID */}
                                             {employee.assigned && (
                                                 <div
                                                     className={`text-xs font-medium ${
                                                         employee.assigned ===
-                                                        selectedBar.name
+                                                        selectedBar.id
                                                             ? "text-emerald-600"
                                                             : "text-amber-600"
                                                     }`}
                                                 >
                                                     {employee.assigned ===
-                                                    selectedBar.name
+                                                    selectedBar.id
                                                         ? "Currently assigned here"
-                                                        : `At: ${employee.assigned}`}
+                                                        : `At: ${
+                                                              employee.assignedName ||
+                                                              getRestaurantName(
+                                                                  employee.assigned
+                                                              )
+                                                          }`}
                                                 </div>
                                             )}
                                         </div>
@@ -575,15 +622,15 @@ const EmployeeManagementModal = ({
                                         {/* Action button */}
                                         <div>
                                             {employee.assigned ===
-                                            selectedBar.name ? (
+                                            selectedBar.id ? (
                                                 <button
                                                     className="text-red-500 hover:text-red-700"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        onRemoveEmployee(
-                                                            employee.id
-                                                        );
-                                                    }}
+                                                    onClick={(e) =>
+                                                        handleRemoveEmployeeClick(
+                                                            employee.id,
+                                                            e
+                                                        )
+                                                    }
                                                 >
                                                     <svg
                                                         xmlns="http://www.w3.org/2000/svg"
@@ -610,6 +657,13 @@ const EmployeeManagementModal = ({
                             }
                             hover:text-[color:var(--color-principalRed-light)]
                           `}
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        handleEmployeeClick(
+                                                            employee
+                                                        );
+                                                    }}
                                                 >
                                                     <svg
                                                         xmlns="http://www.w3.org/2000/svg"
@@ -643,7 +697,9 @@ const EmployeeManagementModal = ({
                                         Staff Cost
                                     </h3>
                                     <p className="text-red-500 font-bold">
-                                        {formatCurrency(selectedBar.staffCost)}
+                                        {formatCurrency(
+                                            selectedBar.staffCost || 0
+                                        )}
                                     </p>
                                 </div>
                                 <div>
@@ -655,13 +711,24 @@ const EmployeeManagementModal = ({
                                     >
                                         Net Profit
                                     </h3>
-                                    <p className="text-emerald-600 font-bold">
-                                        {formatCurrency(
-                                            selectedBar.forecastedProfit -
-                                                selectedBar.staffCost -
-                                                selectedBar.maintenance
-                                        )}
-                                    </p>
+                                    {(() => {
+                                        const netProfit =
+                                            (selectedBar.forecastedProfit ||
+                                                0) -
+                                            (selectedBar.staffCost || 0) -
+                                            (selectedBar.maintenance || 0);
+                                        const profitClass =
+                                            netProfit < 0
+                                                ? "text-orange-500"
+                                                : "text-emerald-600";
+                                        return (
+                                            <p
+                                                className={`${profitClass} font-bold`}
+                                            >
+                                                {formatCurrency(netProfit)}
+                                            </p>
+                                        );
+                                    })()}
                                 </div>
                             </div>
                         </div>
@@ -692,3 +759,4 @@ EmployeeManagementModal.propTypes = {
 };
 
 export default EmployeeManagementModal;
+

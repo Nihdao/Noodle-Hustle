@@ -25,6 +25,19 @@ const ConfirmationModal = ({
         },
     };
 
+    // Handle button clicks with event prevention
+    const handleCancel = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onCancel();
+    };
+
+    const handleConfirm = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onConfirm();
+    };
+
     // Determine what content to show based on props
     const renderContent = () => {
         if (employeeToReassign) {
@@ -56,14 +69,14 @@ const ConfirmationModal = ({
                     <div className="flex justify-center gap-4">
                         <button
                             className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md font-medium transition-colors"
-                            onClick={onCancel}
+                            onClick={handleCancel}
                             style={{ color: "var(--color-principalBrown)" }}
                         >
                             Cancel
                         </button>
                         <button
                             className="px-4 py-2 bg-[color:var(--color-principalRed)] hover:bg-[color:var(--color-principalRed-light)] text-white rounded-md font-medium transition-colors"
-                            onClick={onConfirm}
+                            onClick={handleConfirm}
                         >
                             Reassign
                         </button>
@@ -104,13 +117,13 @@ const ConfirmationModal = ({
                     <div className="flex justify-end gap-3">
                         <button
                             className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md font-medium transition-colors"
-                            onClick={onCancel}
+                            onClick={handleCancel}
                         >
                             Cancel
                         </button>
                         <button
                             className="px-4 py-2 bg-[color:var(--color-principalRed)] hover:bg-[color:var(--color-principalRed-light)] text-white rounded-md font-medium transition-colors"
-                            onClick={onConfirm}
+                            onClick={handleConfirm}
                         >
                             Confirm
                         </button>
@@ -154,13 +167,13 @@ const ConfirmationModal = ({
                     <div className="flex justify-end gap-3">
                         <button
                             className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md font-medium transition-colors"
-                            onClick={onCancel}
+                            onClick={handleCancel}
                         >
                             Cancel
                         </button>
                         <button
                             className="px-4 py-2 bg-[color:var(--color-principalRed)] hover:bg-[color:var(--color-principalRed-light)] text-white rounded-md font-medium transition-colors"
-                            onClick={onConfirm}
+                            onClick={handleConfirm}
                         >
                             {isBuy ? "Purchase" : "Sell"}
                         </button>
@@ -172,7 +185,7 @@ const ConfirmationModal = ({
 
     return (
         <>
-            <div style={styles.overlay} onClick={onCancel}></div>
+            <div style={styles.overlay} onClick={handleCancel}></div>
             <div className="fixed inset-0 z-100 flex items-center justify-center pointer-events-none">
                 <div
                     className="bg-white rounded-lg p-6 max-w-md w-full animate-fade-in pointer-events-auto shadow-xl"

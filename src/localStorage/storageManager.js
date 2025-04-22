@@ -31,7 +31,6 @@ export const createNewGameSave = (playerName) => {
     const starterBar = restaurantsData.find((r) => r.id === 1);
     return {
         // Basic info
-        playerName,
         createdAt: new Date().toISOString(),
         lastSaved: new Date().toISOString(),
 
@@ -55,6 +54,7 @@ export const createNewGameSave = (playerName) => {
 
         // Player condition
         playerStats: {
+            playerName,
             burnout: 50, // 0-100
             burnoutHistory: [],
         },
@@ -72,12 +72,31 @@ export const createNewGameSave = (playerName) => {
                 {
                     id: 1,
                     restaurantId: 1, // référence à restaurants.json
-                    maintenance: 100,
-                    staffCost: 0,
+                    name: starterBar ? starterBar.name : "Noodles Original",
+                    description: starterBar
+                        ? starterBar.description
+                        : "Where it all began.",
+                    sellable: starterBar ? starterBar.sellable : false,
+                    maxSales: starterBar ? starterBar.maxSales : 5,
+                    maxProduct: starterBar ? starterBar.maxProduct : 5,
+                    maxService: starterBar ? starterBar.maxService : 5,
+                    maxAmbiance: starterBar ? starterBar.maxAmbiance : 5,
+                    maintenance: starterBar ? starterBar.maintenance : 100,
+                    basePrice: starterBar ? starterBar.basePrice : 0,
+                    salesVolume: starterBar ? starterBar.salesVolume : 120,
+                    serviceCap: starterBar ? starterBar.serviceCap : 70,
+                    productCap: starterBar ? starterBar.productCap : 100,
+                    ambianceCap: starterBar ? starterBar.ambianceCap : 100,
+                    staff: starterEmployees
+                        .filter((emp) => emp.id === 75 || emp.id === 74)
+                        .map((emp) => emp.id),
+                    staffCost: starterEmployees
+                        .filter((emp) => emp.id === 75 || emp.id === 74)
+                        .reduce((sum, emp) => sum + emp.salary, 0),
                     staffSlots: starterBar ? starterBar.staffSlots : 3,
                     unlocked: true,
                     upgrades: {
-                        cuisine: 1,
+                        product: 1,
                         service: 1,
                         ambiance: 1,
                         salesVolume: 1,

@@ -1,20 +1,20 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import PropTypes from "prop-types";
 import MenuContainer from "../common/MenuContainer";
 import {
-    mockNoodleBars,
-    mockRestaurantSlots,
     UPGRADE_CATEGORIES,
     UPGRADE_COST_MULTIPLIER,
     UPGRADE_BASE_COSTS,
 } from "./constants/noodleBarConstants";
-import { formatCurrency } from "./utils/restaurantUtils";
+import gameState from "../../game/GameState";
+import { useRestaurants, useFinances } from "../../store/gameStateHooks";
 import ConfirmationModal from "./components/ConfirmationModal";
 
-const NoodleBarUpgrade = ({ onBack, funds = 500000 }) => {
-    const [noodleBars, setNoodleBars] = useState([...mockNoodleBars]);
-    const [restaurantSlots] = useState([...mockRestaurantSlots]);
-    const [selectedBar, setSelectedBar] = useState(noodleBars[0]); // Default to first bar
+const NoodleBarUpgrade = ({ onBack }) => {
+    const { slots: restaurantSlots, bars: noodleBars } = useRestaurants();
+    const { funds, formatCurrency } = useFinances();
+
+    const [selectedBar, setSelectedBar] = useState(null);
     const [showUpgradeDetails, setShowUpgradeDetails] = useState(false);
     const [upgradeDetailsPosition, setUpgradeDetailsPosition] = useState({
         x: 0,
@@ -26,6 +26,13 @@ const NoodleBarUpgrade = ({ onBack, funds = 500000 }) => {
     });
     const [hoveredMenuItem, setHoveredMenuItem] = useState(null);
     const [hoveredUpgrade, setHoveredUpgrade] = useState(null);
+
+    // Set the first available restaurant as selected by default
+    useEffect(() => {
+        if (noodleBars.length > 0 && !selectedBar) {
+            setSelectedBar(noodleBars[0]);
+        }
+    }, [noodleBars, selectedBar]);
 
     // Styles for consistency
     const styles = {
@@ -131,9 +138,16 @@ const NoodleBarUpgrade = ({ onBack, funds = 500000 }) => {
         return () => window.removeEventListener("resize", handleResize);
     }, [showUpgradeDetails]);
 
+    // Get current level of an upgrade
+    const getCurrentUpgradeLevel = useCallback((bar, categoryId) => {
+        return bar?.upgrades?.[categoryId] || 1;
+    }, []);
+
     // Handle upgrade click
     const handleUpgradeClick = (category) => {
-        const currentLevel = selectedBar.currentUpgrades[category.id];
+        if (!selectedBar) return;
+
+        const currentLevel = getCurrentUpgradeLevel(selectedBar, category.id);
 
         // Check if already at max level
         if (currentLevel >= category.maxLevel) {
@@ -157,6 +171,7 @@ const NoodleBarUpgrade = ({ onBack, funds = 500000 }) => {
                 currentLevel,
                 newLevel: currentLevel + 1,
                 cost,
+                barId: selectedBar.id,
             },
         });
     };
@@ -166,45 +181,18 @@ const NoodleBarUpgrade = ({ onBack, funds = 500000 }) => {
         const { upgrade } = confirmationModal;
         if (!upgrade) return;
 
-        // Update the noodle bar's upgrades
-        const updatedBars = noodleBars.map((bar) => {
-            if (bar.id === selectedBar.id) {
-                const updatedUpgrades = {
-                    ...bar.currentUpgrades,
-                    [upgrade.categoryId]: upgrade.newLevel,
-                };
+        // Initialize gameState if needed
+        if (!gameState.initialized) {
+            gameState.initialize();
+        }
 
-                // Calculate updated profit impact based on the category
-                const category = UPGRADE_CATEGORIES.find(
-                    (c) => c.id === upgrade.categoryId
-                );
-
-                // Apply profit multiplier based on category
-                let updatedProfit = bar.forecastedProfit;
-                if (category && category.baseMultiplier) {
-                    // Different increase rates for different categories
-                    const increaseRate = category.baseMultiplier - 1; // Extract the percentage increase
-                    updatedProfit = Math.round(
-                        updatedProfit * (1 + increaseRate * 0.2)
-                    ); // 20% of the category's effect per level
-                }
-
-                return {
-                    ...bar,
-                    currentUpgrades: updatedUpgrades,
-                    forecastedProfit: updatedProfit,
-                };
-            }
-            return bar;
-        });
-
-        setNoodleBars(updatedBars);
-
-        // Update the selected bar
-        const updatedSelectedBar = updatedBars.find(
-            (bar) => bar.id === selectedBar.id
+        // Use gameState to upgrade restaurant
+        gameState.upgradeRestaurant(
+            upgrade.barId,
+            upgrade.categoryId,
+            upgrade.newLevel,
+            upgrade.cost
         );
-        setSelectedBar(updatedSelectedBar);
 
         // Close the confirmation modal
         setConfirmationModal({ show: false, upgrade: null });
@@ -258,7 +246,9 @@ const NoodleBarUpgrade = ({ onBack, funds = 500000 }) => {
                                             </h4>
                                             <div className="font-semibold">
                                                 {formatCurrency(
-                                                    bar.forecastedProfit
+                                                    bar.baseProfit ||
+                                                        bar.salesVolume ||
+                                                        0
                                                 )}
                                             </div>
                                         </div>
@@ -269,10 +259,10 @@ const NoodleBarUpgrade = ({ onBack, funds = 500000 }) => {
                                             <div className="flex gap-2 text-xs">
                                                 <span>
                                                     🍜{" "}
-                                                    {
-                                                        bar.currentUpgrades
-                                                            .cuisine
-                                                    }
+                                                    {getCurrentUpgradeLevel(
+                                                        bar,
+                                                        "cuisine"
+                                                    )}
                                                     /
                                                     {
                                                         UPGRADE_CATEGORIES[0]
@@ -281,10 +271,10 @@ const NoodleBarUpgrade = ({ onBack, funds = 500000 }) => {
                                                 </span>
                                                 <span>
                                                     💖{" "}
-                                                    {
-                                                        bar.currentUpgrades
-                                                            .service
-                                                    }
+                                                    {getCurrentUpgradeLevel(
+                                                        bar,
+                                                        "service"
+                                                    )}
                                                     /
                                                     {
                                                         UPGRADE_CATEGORIES[1]
@@ -293,10 +283,10 @@ const NoodleBarUpgrade = ({ onBack, funds = 500000 }) => {
                                                 </span>
                                                 <span>
                                                     🎭{" "}
-                                                    {
-                                                        bar.currentUpgrades
-                                                            .ambiance
-                                                    }
+                                                    {getCurrentUpgradeLevel(
+                                                        bar,
+                                                        "ambiance"
+                                                    )}
                                                     /
                                                     {
                                                         UPGRADE_CATEGORIES[2]
@@ -305,10 +295,10 @@ const NoodleBarUpgrade = ({ onBack, funds = 500000 }) => {
                                                 </span>
                                                 <span>
                                                     💹{" "}
-                                                    {
-                                                        bar.currentUpgrades
-                                                            .salesVolume
-                                                    }
+                                                    {getCurrentUpgradeLevel(
+                                                        bar,
+                                                        "salesVolume"
+                                                    )}
                                                     /
                                                     {
                                                         UPGRADE_CATEGORIES[3]
@@ -317,8 +307,8 @@ const NoodleBarUpgrade = ({ onBack, funds = 500000 }) => {
                                                 </span>
                                             </div>
                                             <div className="text-xs">
-                                                Staff: {bar.currentStaff.length}
-                                                /3
+                                                Staff: {bar.staffCount || 0}/
+                                                {bar.staffSlots || 3}
                                             </div>
                                         </div>
                                     </div>
@@ -359,7 +349,9 @@ const NoodleBarUpgrade = ({ onBack, funds = 500000 }) => {
                                         </span>
                                         <span className="text-emerald-600 font-bold">
                                             {formatCurrency(
-                                                selectedBar.forecastedProfit
+                                                selectedBar.baseProfit ||
+                                                    selectedBar.salesVolume ||
+                                                    0
                                             )}
                                         </span>
                                     </div>
@@ -405,10 +397,10 @@ const NoodleBarUpgrade = ({ onBack, funds = 500000 }) => {
 
                             <div className="space-y-6">
                                 {UPGRADE_CATEGORIES.map((category) => {
-                                    const currentLevel =
-                                        selectedBar?.currentUpgrades?.[
-                                            category.id
-                                        ] || 0;
+                                    const currentLevel = getCurrentUpgradeLevel(
+                                        selectedBar,
+                                        category.id
+                                    );
                                     const isMaxLevel =
                                         currentLevel >= category.maxLevel;
                                     const upgradeCost = calculateUpgradeCost(
@@ -603,7 +595,6 @@ const NoodleBarUpgrade = ({ onBack, funds = 500000 }) => {
 
 NoodleBarUpgrade.propTypes = {
     onBack: PropTypes.func.isRequired,
-    funds: PropTypes.number,
 };
 
 export default NoodleBarUpgrade;

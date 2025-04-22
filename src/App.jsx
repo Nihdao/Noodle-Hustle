@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 
 // Remove unused Phaser import
 // import Phaser from "phaser";
@@ -9,6 +9,7 @@ import GameIntroComponent from "./components/GameIntroComponent";
 import HubComponent from "./components/HubComponent";
 import DeliveryRunComponent from "./components/delivery/DeliveryRunComponent";
 import DebugSaveModal from "./utils/DebugSaveModal";
+import gameState from "./game/GameState"; // Import direct du singleton
 
 const DEBUG_MODE = true; // Mettre à false pour désactiver le bouton debug
 
@@ -18,6 +19,7 @@ function App() {
     const [currentSceneKey, setCurrentSceneKey] = useState(null);
     const [showDebugModal, setShowDebugModal] = useState(false);
     const [debugContent, setDebugContent] = useState("");
+    const [gameStateData, setGameStateData] = useState(null);
 
     // Event emitted from the PhaserGame component
     const currentScene = (scene) => {
@@ -98,6 +100,12 @@ function App() {
     };
 
     const openDebugModal = () => {
+        loadDebugData();
+        setShowDebugModal(true);
+    };
+
+    const loadDebugData = () => {
+        // Récupérer le contenu du localStorage
         const saveData = localStorage.getItem("noodleBalanceSave");
         let content = "";
         try {
@@ -107,11 +115,27 @@ function App() {
         } catch (e) {
             content = "Erreur de parsing : " + e.message;
         }
+
+        // Récupérer l'état actuel du singleton
+        const currentGameState = gameState.initialized
+            ? gameState.getGameState()
+            : "GameState non initialisé. L'état n'est pas disponible.";
+
         setDebugContent(content);
-        setShowDebugModal(true);
+        setGameStateData(currentGameState);
     };
 
     const closeDebugModal = () => setShowDebugModal(false);
+
+    // Ajouter un event listener pour recharger les données de debug
+    useEffect(() => {
+        const handleRefreshDebug = () => loadDebugData();
+        window.addEventListener("refreshDebugData", handleRefreshDebug);
+
+        return () => {
+            window.removeEventListener("refreshDebugData", handleRefreshDebug);
+        };
+    }, []);
 
     return (
         <div id="app">
@@ -165,6 +189,7 @@ function App() {
                         open={showDebugModal}
                         onClose={closeDebugModal}
                         content={debugContent}
+                        gameState={gameStateData}
                     />
                 </>
             )}

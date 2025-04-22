@@ -5,6 +5,9 @@ import {
     usePlayerStats,
     useFinances,
     useSocial,
+    useRestaurants,
+    useEmployees,
+    useNoodleBarOperations,
 } from "../store/gameStateHooks";
 import { useSound } from "../hooks/useSound";
 import { EventBus } from "../game/EventBus";
@@ -22,28 +25,32 @@ import OptionsModal from "./modals/OptionsModal";
 import BuffsModal from "./modals/BuffsModal";
 
 const HubComponent = () => {
-    // Use custom hooks instead of local state management
-    const gameState = useGameState();
+    // Utiliser uniquement les hooks spécifiques
+    const state = useGameState(); // Uniquement pour les propriétés qui n'ont pas de hook dédié
     const { currentPeriod, investorClashIn, startPeriod } = useGamePeriod();
-    const { burnout } = usePlayerStats();
-    const { funds, formatCurrency } = useFinances();
+    const { burnout, burnoutSeverity } = usePlayerStats();
+    const { funds, debt, formatCurrency } = useFinances();
     const { personalTime } = useSocial();
+    const { bars: noodleBars } = useRestaurants();
+    const { laborCost } = useEmployees();
+    const { playerRank } = useNoodleBarOperations();
 
-    // Derive the needed state objects from gameState for backwards compatibility
-    const playerName =
-        gameState?.playerName || localStorage.getItem("playerName") || "{name}";
-    const rank = gameState?.gameProgress?.businessRank || 200;
-    const noddleBars = gameState?.restaurants?.bars[0] || {
-        forecastedProfit: 12657,
-    };
-    const employees = gameState?.employees || { laborCost: 8985 };
-    const debts = gameState?.finances?.debt || { repayment: 1500 };
-    const meeting = gameState?.meetings || { supportGauge: 50 };
-    const forecastProfit =
-        gameState?.restaurants?.bars.reduce(
-            (total, bar) => total + (bar.forecastedProfit || 0),
-            0
-        ) || 2172;
+    // Données dérivées des hooks ou du state général
+    const playerName = state?.playerStats?.playerName || "Player";
+    const businessRank = playerRank || 200;
+
+    // Valeurs qui n'ont pas encore de hook dédié
+    const meeting = state?.meetings || { supportGauge: 55 };
+
+    // Calculer le profit prévisionnel en utilisant les données des restaurants
+    const forecastProfit = noodleBars.reduce((total, bar) => {
+        // Utiliser les propriétés du restaurant ou des valeurs par défaut
+        const salesVolume =
+            bar.salesVolume || bar.forecastedProfit || bar.baseProfit || 5000;
+        const staffCost = bar.staffCost || 0;
+        const maintenance = bar.maintenance || 100;
+        return total + (salesVolume - staffCost - maintenance);
+    }, 0);
 
     // State for the selected submenu in the sidebar - these are UI states, not game state
     const [activeSubmenu, setActiveSubmenu] = useState("Home");
@@ -66,14 +73,7 @@ const HubComponent = () => {
     const handleStartPeriod = () => {
         playClickSound();
 
-        // Get the current game state and pass it to the DeliveryRun scene
-        const restaurants = gameState?.restaurants?.bars || [];
-        const playerStats = gameState?.playerStats || {};
-        const funds = gameState?.finances?.funds || 0;
-        const currentPeriod = gameState?.gameProgress?.currentPeriod || 1;
-
-        // Check if it's an investor clash period
-        const investorClashIn = gameState?.gameProgress?.investorClashIn || 10;
+        // Obtenir les données nécessaires des hooks
         if (investorClashIn === 1) {
             console.log("Investor clash period!");
             // TODO: Start investor clash scene
@@ -82,13 +82,13 @@ const HubComponent = () => {
             return;
         }
 
-        // Start the DeliveryRun scene with game data
+        // Start the DeliveryRun scene with game data from hooks
         if (window.gameRef) {
             // Arrêter la scène HubScreen avant de démarrer DeliveryRun
             window.gameRef.scene.stop("HubScreen");
             window.gameRef.scene.start("DeliveryRun", {
-                restaurants,
-                playerStats,
+                restaurants: noodleBars,
+                playerStats: { burnout, burnoutSeverity },
                 funds,
                 currentPeriod,
             });
@@ -431,9 +431,7 @@ const HubComponent = () => {
                             <p className="text-sm text-[color:var(--color-principalBrown)]">
                                 Profit:{" "}
                                 <span className="text-emerald-600 font-semibold">
-                                    {formatCurrency(
-                                        noddleBars.forecastedProfit
-                                    )}
+                                    {formatCurrency(forecastProfit)}
                                 </span>
                             </p>
                         </div>
@@ -472,7 +470,7 @@ const HubComponent = () => {
                             <p className="text-sm text-[color:var(--color-principalBrown)]">
                                 Cost:{" "}
                                 <span className="text-red-500 font-semibold">
-                                    {formatCurrency(employees.laborCost)}
+                                    {formatCurrency(laborCost)}
                                 </span>
                             </p>
                         </div>
@@ -511,7 +509,7 @@ const HubComponent = () => {
                             <p className="text-sm text-[color:var(--color-principalBrown)]">
                                 Repayment:{" "}
                                 <span className="text-red-500 font-semibold">
-                                    {formatCurrency(debts.repayment)}
+                                    {formatCurrency(debt.periodRepayment || 0)}
                                 </span>
                             </p>
                         </div>
@@ -603,7 +601,7 @@ const HubComponent = () => {
             return (
                 <EmployeeManagement
                     onBack={handleEmployeeBack}
-                    laborCost={employees.laborCost}
+                    laborCost={laborCost}
                 />
             );
         } else if (activeEmployeeSection === "recruitment") {
@@ -619,7 +617,7 @@ const HubComponent = () => {
             <EmployeeActions
                 onActionSelect={handleEmployeeAction}
                 onBack={() => handleMenuClick("Home")}
-                laborCost={employees.laborCost}
+                laborCost={laborCost}
             />
         );
     };
@@ -630,14 +628,14 @@ const HubComponent = () => {
             return (
                 <NoodleBarAssign
                     onBack={handleNoodleBarBack}
-                    playerRank={rank || 0}
+                    playerRank={businessRank}
                 />
             );
         } else if (activeNoodleBarSection === "upgrade") {
             return (
                 <NoodleBarUpgrade
                     onBack={handleNoodleBarBack}
-                    playerRank={rank || 0}
+                    playerRank={businessRank}
                     funds={funds}
                 />
             );
@@ -645,7 +643,7 @@ const HubComponent = () => {
             return (
                 <NoodleBarBuySell
                     onBack={handleNoodleBarBack}
-                    playerRank={rank || 0}
+                    playerRank={businessRank}
                     funds={funds}
                 />
             );
@@ -655,7 +653,7 @@ const HubComponent = () => {
             <NoodleBarActions
                 onActionSelect={handleNoodleBarAction}
                 onBack={() => handleMenuClick("Home")}
-                forecastedProfit={noddleBars.forecastedProfit}
+                forecastedProfit={forecastProfit}
             />
         );
     };
@@ -837,7 +835,7 @@ const HubComponent = () => {
                 <div style={styles.statsPanelTopRight}>
                     <div style={styles.statsItem}>
                         <span style={styles.statsLabel}>RANK</span>
-                        <span style={styles.statsValue}>{rank}</span>
+                        <span style={styles.statsValue}>{businessRank}</span>
                     </div>
 
                     <div style={styles.divider}></div>
@@ -869,9 +867,10 @@ const HubComponent = () => {
                                 style={{
                                     height: "100%",
                                     backgroundColor:
-                                        burnout > 70
+                                        burnoutSeverity === "critical"
                                             ? "#EF4444"
-                                            : burnout > 40
+                                            : burnoutSeverity === "high" ||
+                                              burnoutSeverity === "medium"
                                             ? "#F59E0B"
                                             : "#10B981",
                                     borderRadius: "9999px",
@@ -887,9 +886,10 @@ const HubComponent = () => {
                                 fontWeight: "bold",
                                 fontSize: "1.1rem",
                                 color:
-                                    burnout > 70
+                                    burnoutSeverity === "critical"
                                         ? "#EF4444"
-                                        : burnout > 40
+                                        : burnoutSeverity === "high" ||
+                                          burnoutSeverity === "medium"
                                         ? "#F59E0B"
                                         : "#10B981",
                             }}

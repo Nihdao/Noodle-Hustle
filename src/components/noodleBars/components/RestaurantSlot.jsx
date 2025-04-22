@@ -6,11 +6,23 @@ const RestaurantSlot = ({
     index,
     bar,
     formatCurrency,
-    isHovered,
+    isHovered = false,
     onSelect,
     onMouseEnter,
     onMouseLeave,
 }) => {
+    console.log(bar);
+    // Get staff count safely by checking currentStaff array
+    const getStaffCount = () => {
+        if (!bar) return 0;
+        return Array.isArray(bar.staff) ? bar.staff.length : 0;
+    };
+
+    // Get max staff slots safely
+    const getMaxStaffSlots = () => {
+        return bar?.staffSlots || 3;
+    };
+
     return (
         <div
             className={`
@@ -106,26 +118,31 @@ const RestaurantSlot = ({
                                     opacity: isHovered ? 0.9 : 0.7,
                                 }}
                             >
-                                Staff: {bar.currentStaff.length}/
-                                {bar.staffSlots} |
-                                {bar.forecastedProfit > 0
-                                    ? ` Forecast: ${formatCurrency(
-                                          bar.forecastedProfit
-                                      )}`
-                                    : " Not staffed"}
+                                <span className="font-bold">{bar.name}</span>
+                                <br />
+                                Staff: {getStaffCount()}/{getMaxStaffSlots()}
                             </p>
                         )}
-                        <p
-                            className="text-xs mt-1"
-                            style={{
-                                color: isHovered
-                                    ? "white"
-                                    : "var(--color-principalBrown)",
-                                opacity: isHovered ? 0.9 : 0.7,
-                            }}
-                        >
-                            Click to manage
-                        </p>
+                        {bar && (
+                            <p
+                                className="text-sm"
+                                style={{
+                                    color: isHovered
+                                        ? "white"
+                                        : "var(--color-principalBrown)",
+                                    opacity: isHovered ? 0.9 : 0.7,
+                                }}
+                            >
+                                {(bar.forecastedProfit || bar.baseProfit || 0) >
+                                0
+                                    ? `Forecast: ${formatCurrency(
+                                          bar.forecastedProfit ||
+                                              bar.baseProfit ||
+                                              0
+                                      )}`
+                                    : ""}
+                            </p>
+                        )}
                     </div>
                 )}
             </div>
@@ -147,16 +164,18 @@ const RestaurantSlot = ({
 
 RestaurantSlot.propTypes = {
     slot: PropTypes.shape({
-        id: PropTypes.number.isRequired,
+        id: PropTypes.oneOfType([PropTypes.number, PropTypes.string])
+            .isRequired,
         purchased: PropTypes.bool.isRequired,
         name: PropTypes.string,
-        barId: PropTypes.number,
+        barId: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
     }).isRequired,
     status: PropTypes.oneOf(["locked", "available", "purchased"]).isRequired,
     index: PropTypes.number.isRequired,
     bar: PropTypes.object,
+    employees: PropTypes.array,
     formatCurrency: PropTypes.func.isRequired,
-    isHovered: PropTypes.bool.isRequired,
+    isHovered: PropTypes.bool,
     onSelect: PropTypes.func.isRequired,
     onMouseEnter: PropTypes.func.isRequired,
     onMouseLeave: PropTypes.func.isRequired,

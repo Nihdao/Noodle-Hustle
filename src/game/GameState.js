@@ -43,9 +43,10 @@ class GameState {
             // Les paramètres sont maintenant dans state.settings
             this.settings = this.state.settings;
         } else {
-            // Pas besoin d'obtenir playerName de localStorage car
-            // nous avons tout consolidé
-            this.state = createNewGameSave();
+            // Retrieve playerName from localStorage if available
+            const playerName = localStorage.getItem("playerName") || "";
+            console.log("playerName", playerName);
+            this.state = createNewGameSave(playerName);
             this.settings = this.state.settings;
         }
 

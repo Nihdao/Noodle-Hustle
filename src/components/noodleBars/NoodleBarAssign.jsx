@@ -5,32 +5,43 @@ import RestaurantPreview from "./components/RestaurantPreview";
 import ConfirmationModal from "./components/ConfirmationModal";
 import EmployeeManagementModal from "./components/EmployeeManagementModal";
 import {
-    mockNoodleBars,
-    mockEmployees,
-    mockRestaurantSlots,
-} from "./constants/noodleBarConstants";
-import {
     formatCurrency,
     getTotalStat,
     getAvailableSlots,
     getSlotStatus,
     getNextRankUnlock,
 } from "./utils/restaurantUtils";
+import {
+    useRestaurants,
+    useEmployees,
+    useNoodleBarOperations,
+} from "../../store/gameStateHooks";
 
-const NoodleBarAssign = ({ onBack, playerRank = 200 }) => {
+const NoodleBarAssign = ({ onBack, playerRank }) => {
+    const {
+        slots: restaurantSlots,
+        bars: noodleBars,
+        getRestaurantById,
+    } = useRestaurants();
+    const { rosterWithDetails: allEmployees } = useEmployees();
+    const {
+        playerRank: statePlayerRank,
+        getRestaurantStaff,
+        handleAssignEmployee,
+        removeEmployeeFromRestaurant,
+    } = useNoodleBarOperations();
+
+    // Use player rank from props or state
+    const actualPlayerRank = playerRank || statePlayerRank;
+
     const [selectedBar, setSelectedBar] = useState(null);
     const [showDetails, setShowDetails] = useState(false);
     const [detailsPosition, setDetailsPosition] = useState({ x: 0, y: 0 });
     const [hoveredBar, setHoveredBar] = useState(null);
     const [previewPosition, setPreviewPosition] = useState({ x: 0, y: 0 });
-    const [allEmployees, setAllEmployees] = useState([...mockEmployees]);
     const [showConfirmation, setShowConfirmation] = useState(false);
     const [employeeToReassign, setEmployeeToReassign] = useState(null);
-    const [noodleBars, setNoodleBars] = useState([...mockNoodleBars]);
     const [hoveredMenuItem, setHoveredMenuItem] = useState(null);
-    const [restaurantSlots, setRestaurantSlots] = useState([
-        ...mockRestaurantSlots,
-    ]);
 
     // Styles similar to HubComponent for consistency
     const styles = {
@@ -101,15 +112,31 @@ const NoodleBarAssign = ({ onBack, playerRank = 200 }) => {
         },
     };
 
+    // Get full restaurant data for a given bar
+    const getCompleteBarData = (barId) => {
+        if (!barId) return null;
+        return getRestaurantById(barId);
+    };
+
     const handleMouseEnter = (bar, event) => {
         if (!bar.unlocked) return;
 
-        setHoveredBar(bar);
-        const rect = event.currentTarget.getBoundingClientRect();
-        setPreviewPosition({
-            x: rect.right + 20,
-            y: rect.top + window.scrollY,
-        });
+        // Get complete bar data with all necessary fields
+        const completeBarData = getCompleteBarData(bar.id);
+        if (completeBarData) {
+            // Enhance with currentStaff for stats calculation
+            const enhancedBar = {
+                ...completeBarData,
+                currentStaff: getRestaurantStaff(bar.id),
+            };
+            setHoveredBar(enhancedBar);
+
+            const rect = event.currentTarget.getBoundingClientRect();
+            setPreviewPosition({
+                x: rect.right + 20,
+                y: rect.top + window.scrollY,
+            });
+        }
     };
 
     const handleMouseLeave = () => {
@@ -119,17 +146,21 @@ const NoodleBarAssign = ({ onBack, playerRank = 200 }) => {
     const handleSelectBar = (bar) => {
         if (!bar.unlocked) return;
 
-        setSelectedBar(bar);
-        setShowDetails(true);
+        // Get complete bar data with all necessary fields
+        const completeBarData = getCompleteBarData(bar.id);
+        if (completeBarData) {
+            setSelectedBar(completeBarData);
+            setShowDetails(true);
 
-        // Calculate the position for the modal to appear in the right side
-        const sidebarWidth = window.innerWidth * 0.333; // 33.333% of the window width
-        const mainAreaWidth = window.innerWidth * 0.667; // 66.667% of the window width
+            // Calculate the position for the modal to appear in the right side
+            const sidebarWidth = window.innerWidth * 0.333; // 33.333% of the window width
+            const mainAreaWidth = window.innerWidth * 0.667; // 66.667% of the window width
 
-        setDetailsPosition({
-            x: sidebarWidth + mainAreaWidth / 2,
-            y: window.innerHeight / 2,
-        });
+            setDetailsPosition({
+                x: sidebarWidth + mainAreaWidth / 2,
+                y: window.innerHeight / 2,
+            });
+        }
     };
 
     const handleCloseDetails = () => {
@@ -155,160 +186,45 @@ const NoodleBarAssign = ({ onBack, playerRank = 200 }) => {
         return () => window.removeEventListener("resize", handleResize);
     }, [showDetails]);
 
-    const handleAssignEmployee = (employee) => {
-        // Since we have just one restaurant, we'll assign to "Noodles Original"
-        const targetBar = noodleBars[0].name;
+    // Handle employee assignment with confirmation if needed
+    const onAssignEmployee = (employee) => {
+        if (!selectedBar) return;
 
-        // If the restaurant's staff is already full, don't proceed
-        if (noodleBars[0].currentStaff.length >= noodleBars[0].staffSlots) {
-            return;
-        }
+        const result = handleAssignEmployee(
+            employee,
+            selectedBar.id,
+            selectedBar.name
+        );
 
-        if (employee.assigned && employee.assigned !== targetBar) {
-            // Show confirmation modal if employee is already assigned elsewhere
-            setEmployeeToReassign({
-                employee,
-                targetBar: targetBar,
-            });
+        // If result is an object with needsConfirmation=true, show confirmation modal
+        if (result && typeof result === "object" && result.needsConfirmation) {
+            setEmployeeToReassign(result);
             setShowConfirmation(true);
-            return;
-        }
-
-        // If employee is not assigned or already assigned to this restaurant, proceed
-        if (!employee.assigned || employee.assigned === targetBar) {
-            assignEmployee(employee, targetBar);
         }
     };
 
-    const assignEmployee = (employee, barName) => {
-        // Update the employee's assignment
-        const updatedEmployees = allEmployees.map((emp) =>
-            emp.id === employee.id ? { ...emp, assigned: barName } : emp
-        );
-
-        // Update the shop's staff
-        const updatedBars = noodleBars.map((bar) => {
-            if (bar.name === barName) {
-                // Don't add if staff is already full
-                if (bar.currentStaff.length >= bar.staffSlots) {
-                    return bar;
-                }
-
-                // Check if employee is already in this bar
-                if (
-                    bar.currentStaff.some((staff) => staff.id === employee.id)
-                ) {
-                    return bar;
-                }
-
-                return {
-                    ...bar,
-                    currentStaff: [...bar.currentStaff, employee],
-                    forecastedProfit:
-                        bar.forecastedProfit + employee.cuisine * 100,
-                };
-            }
-
-            return bar;
-        });
-
-        // Update restaurant slots to reflect changes
-        const updatedSlots = restaurantSlots.map((slot) => {
-            if (
-                slot.barId &&
-                updatedBars.find((bar) => bar.id === slot.barId)
-            ) {
-                const bar = updatedBars.find((bar) => bar.id === slot.barId);
-                return {
-                    ...slot,
-                    name: bar.name,
-                };
-            }
-            return slot;
-        });
-
-        setAllEmployees(updatedEmployees);
-        setNoodleBars(updatedBars);
-        setRestaurantSlots(updatedSlots);
-
-        // Update the selected bar to reflect changes
-        if (selectedBar) {
-            const updatedSelectedBar = updatedBars.find(
-                (bar) => bar.id === selectedBar.id
-            );
-            setSelectedBar(updatedSelectedBar);
-        }
-
-        // Clear confirmation modal
-        setShowConfirmation(false);
-        setEmployeeToReassign(null);
-    };
-
-    const handleRemoveEmployee = (employeeId) => {
-        // Find the employee
-        const employee = allEmployees.find((emp) => emp.id === employeeId);
-
-        if (!employee) return;
-
-        // Update employee's assignment
-        const updatedEmployees = allEmployees.map((emp) =>
-            emp.id === employeeId ? { ...emp, assigned: null } : emp
-        );
-
-        // Update the shop's staff
-        const updatedBars = noodleBars.map((bar) => {
-            if (bar.name === selectedBar.name) {
-                return {
-                    ...bar,
-                    currentStaff: bar.currentStaff.filter(
-                        (staff) => staff.id !== employeeId
-                    ),
-                    forecastedProfit: Math.max(
-                        0,
-                        bar.forecastedProfit - employee.cuisine * 80
-                    ),
-                };
-            }
-            return bar;
-        });
-
-        // Update restaurant slots to reflect changes
-        const updatedSlots = restaurantSlots.map((slot) => {
-            if (
-                slot.barId &&
-                updatedBars.find((bar) => bar.id === slot.barId)
-            ) {
-                const bar = updatedBars.find((bar) => bar.id === slot.barId);
-                return {
-                    ...slot,
-                    name: bar.name,
-                };
-            }
-            return slot;
-        });
-
-        setAllEmployees(updatedEmployees);
-        setNoodleBars(updatedBars);
-        setRestaurantSlots(updatedSlots);
-
-        // Update the selected bar to reflect changes
-        const updatedSelectedBar = updatedBars.find(
-            (bar) => bar.id === selectedBar.id
-        );
-        setSelectedBar(updatedSelectedBar);
+    // Handle employee removal
+    const onRemoveEmployee = (employeeId) => {
+        removeEmployeeFromRestaurant(employeeId);
     };
 
     // Calculate number of available slots
-    const availableSlots = getAvailableSlots(playerRank);
-    const nextRankUnlock = getNextRankUnlock(playerRank);
+    const availableSlots = getAvailableSlots(actualPlayerRank);
+    const nextRankUnlock = getNextRankUnlock(actualPlayerRank);
 
     // Handle confirmation actions
     const handleConfirmReassignment = () => {
         if (employeeToReassign) {
-            assignEmployee(
+            // Use the centralized function from the hook
+            handleAssignEmployee(
                 employeeToReassign.employee,
+                employeeToReassign.targetBarId,
                 employeeToReassign.targetBar
             );
+
+            // Clear confirmation modal after action
+            setShowConfirmation(false);
+            setEmployeeToReassign(null);
         }
     };
 
@@ -383,13 +299,17 @@ const NoodleBarAssign = ({ onBack, playerRank = 200 }) => {
             {/* Employee management modal */}
             {showDetails && selectedBar && (
                 <EmployeeManagementModal
-                    selectedBar={selectedBar}
+                    selectedBar={{
+                        ...selectedBar,
+                        currentStaff: getRestaurantStaff(selectedBar.id),
+                        upgrades: selectedBar.upgrades || {},
+                    }}
                     showDetails={showDetails}
                     detailsPosition={detailsPosition}
                     allEmployees={allEmployees}
                     onCloseDetails={handleCloseDetails}
-                    onRemoveEmployee={handleRemoveEmployee}
-                    onAssignEmployee={handleAssignEmployee}
+                    onRemoveEmployee={onRemoveEmployee}
+                    onAssignEmployee={onAssignEmployee}
                 />
             )}
 

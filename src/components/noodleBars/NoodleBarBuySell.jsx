@@ -4,31 +4,59 @@ import RestaurantSlot from "./components/RestaurantSlot";
 import ConfirmationModal from "./components/ConfirmationModal";
 import MenuContainer from "../common/MenuContainer";
 import {
-    mockNoodleBars,
-    mockRestaurantSlots,
-} from "./constants/noodleBarConstants";
-import {
-    formatCurrency,
     getAvailableSlots,
     getSlotStatus,
     getNextRankUnlock,
 } from "./utils/restaurantUtils";
+import {
+    useRestaurants,
+    useFinances,
+    useNoodleBarOperations,
+} from "../../store/gameStateHooks";
+import restaurantsData from "../../data/restaurants.json";
 
-const NoodleBarBuySell = ({ onBack, playerRank = 200, funds = 500000 }) => {
-    const [noodleBars] = useState([...mockNoodleBars]);
-    const [restaurantSlots, setRestaurantSlots] = useState([
-        ...mockRestaurantSlots,
-    ]);
+const NoodleBarBuySell = ({ onBack, playerRank }) => {
+    const {
+        slots: restaurantSlots,
+        bars: noodleBars,
+        purchaseRestaurant,
+    } = useRestaurants();
+    const { funds, formatCurrency } = useFinances();
+    const { playerRank: statePlayerRank, sellRestaurant } =
+        useNoodleBarOperations();
+
+    // Use player rank from props or state
+    const actualPlayerRank = playerRank || statePlayerRank;
+
     const [hoveredBar, setHoveredBar] = useState(null);
     const [hoveredMenuItem, setHoveredMenuItem] = useState(null);
     const [confirmationModal, setConfirmationModal] = useState({
         show: false,
         action: null, // "buy" or "sell"
+        slot: null,
         bar: null,
+        cost: 0,
+        sellPrice: 0,
     });
     const [showRestaurantMenu, setShowRestaurantMenu] = useState(false);
     const [selectedSlot, setSelectedSlot] = useState(null);
     const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
+    const [availableRestaurants, setAvailableRestaurants] = useState([]);
+
+    // Get all available restaurants from data file
+    useEffect(() => {
+        // Map to actual restaurant data to display in list
+        const ownedRestaurantIds = noodleBars
+            .filter((bar) => bar.restaurantId)
+            .map((bar) => bar.restaurantId);
+
+        // Filter out restaurants that are already owned (by template ID)
+        const restaurants = restaurantsData.filter(
+            (bar) => !ownedRestaurantIds.includes(bar.id)
+        );
+
+        setAvailableRestaurants(restaurants);
+    }, [restaurantSlots, noodleBars]);
 
     // Styles for consistency with other components
     const styles = {
@@ -85,8 +113,8 @@ const NoodleBarBuySell = ({ onBack, playerRank = 200, funds = 500000 }) => {
     };
 
     // Calculate number of available slots based on player rank
-    const availableSlots = getAvailableSlots(playerRank);
-    const nextRankUnlock = getNextRankUnlock(playerRank);
+    const availableSlots = getAvailableSlots(actualPlayerRank);
+    const nextRankUnlock = getNextRankUnlock(actualPlayerRank);
 
     const handleMouseEnter = (bar) => {
         setHoveredBar(bar);
@@ -99,7 +127,7 @@ const NoodleBarBuySell = ({ onBack, playerRank = 200, funds = 500000 }) => {
     // Handle buy restaurant
     const handleBuyRestaurant = (slot, bar) => {
         // Check if player has enough funds
-        if (funds < bar.purchasePrice) {
+        if (funds < bar.basePrice) {
             return; // Not enough funds
         }
 
@@ -108,7 +136,7 @@ const NoodleBarBuySell = ({ onBack, playerRank = 200, funds = 500000 }) => {
             action: "buy",
             slot,
             bar,
-            cost: bar.purchasePrice,
+            cost: bar.basePrice,
         });
         setShowRestaurantMenu(false);
     };
@@ -116,7 +144,7 @@ const NoodleBarBuySell = ({ onBack, playerRank = 200, funds = 500000 }) => {
     // Handle sell restaurant
     const handleSellRestaurant = (slot, bar) => {
         // Prevent selling Noodles Original
-        if (bar.name === "Noodles Original") {
+        if (bar.name === "Noodles Original" || !bar.sellable) {
             return;
         }
 
@@ -168,53 +196,67 @@ const NoodleBarBuySell = ({ onBack, playerRank = 200, funds = 500000 }) => {
         const { action, slot, bar } = confirmationModal;
 
         if (action === "buy") {
-            // Update restaurant slots to mark as purchased and assign bar ID
-            const updatedSlots = restaurantSlots.map((s) => {
-                if (s.id === slot.id) {
-                    return {
-                        ...s,
-                        purchased: true,
-                        barId: bar.id,
-                        name: bar.name,
-                    };
-                }
-                return s;
-            });
+            // Use the gameState function to purchase restaurant
+            const newRestaurant = {
+                id: Date.now(), // Generate unique ID for instance
+                restaurantId: bar.id, // Reference to template restaurant
+                name: bar.name,
+                description: bar.description,
+                purchasePrice: bar.basePrice,
+                baseProfit: bar.baseProfit || bar.salesVolume || 0,
+                staffSlots: bar.staffSlots || 3,
+                unlocked: true,
+                sellable: bar.sellable !== false,
+                upgrades: {
+                    cuisine: 1,
+                    service: 1,
+                    ambiance: 1,
+                    salesVolume: 1,
+                },
+            };
 
-            setRestaurantSlots(updatedSlots);
+            purchaseRestaurant(slot.id, newRestaurant);
         } else if (action === "sell") {
-            // Update restaurant slots to mark as not purchased and remove bar ID
-            const updatedSlots = restaurantSlots.map((s) => {
-                if (s.id === slot.id) {
-                    return {
-                        ...s,
-                        purchased: false,
-                        barId: null,
-                        name: null,
-                    };
-                }
-                return s;
-            });
-
-            setRestaurantSlots(updatedSlots);
+            // Use the centralized sellRestaurant function
+            sellRestaurant(
+                slot.id,
+                bar.id,
+                Math.floor(bar.purchasePrice * 0.7)
+            );
         }
 
         // Close confirmation modal
         setConfirmationModal({
             show: false,
             action: null,
+            slot: null,
             bar: null,
+            cost: 0,
+            sellPrice: 0,
         });
     };
 
-    // Handle available restaurants to buy
-    const getAvailableRestaurants = () => {
-        // Get bars that are not already purchased
-        const purchasedBarIds = restaurantSlots
-            .filter((slot) => slot.purchased && slot.barId)
-            .map((slot) => slot.barId);
+    // Prepare details object for the confirmation modal
+    const getBuySellDetails = () => {
+        if (!confirmationModal.show) return null;
 
-        return noodleBars.filter((bar) => !purchasedBarIds.includes(bar.id));
+        if (confirmationModal.action === "buy") {
+            return {
+                barName: confirmationModal.bar?.name || "",
+                price: confirmationModal.cost || 0,
+                action: "buy",
+                currentFunds: funds,
+            };
+        } else if (confirmationModal.action === "sell") {
+            return {
+                barName: confirmationModal.bar?.name || "",
+                price: confirmationModal.sellPrice || 0,
+                action: "sell",
+                currentFunds: funds,
+            };
+        }
+
+        return null;
     };
 
     return (
@@ -275,7 +317,7 @@ const NoodleBarBuySell = ({ onBack, playerRank = 200, funds = 500000 }) => {
                                         bar && handleMouseEnter(bar)
                                     }
                                     onMouseLeave={handleMouseLeave}
-                                    onClick={() =>
+                                    onSelect={() =>
                                         status === "available" &&
                                         handleShowRestaurantMenu(slot)
                                     }
@@ -288,18 +330,21 @@ const NoodleBarBuySell = ({ onBack, playerRank = 200, funds = 500000 }) => {
                                             className={`
                                                 px-3 py-1 rounded text-sm font-medium ml-12
                                                 ${
+                                                    !bar.sellable ||
                                                     bar.name ===
-                                                    "Noodles Original"
+                                                        "Noodles Original"
                                                         ? "bg-gray-300 cursor-not-allowed opacity-50"
                                                         : "bg-red-500 hover:bg-red-600 text-white"
                                                 }
                                             `}
                                             onClick={() =>
+                                                bar.sellable &&
                                                 bar.name !==
                                                     "Noodles Original" &&
                                                 handleSellRestaurant(slot, bar)
                                             }
                                             disabled={
+                                                !bar.sellable ||
                                                 bar.name === "Noodles Original"
                                             }
                                         >
@@ -393,13 +438,13 @@ const NoodleBarBuySell = ({ onBack, playerRank = 200, funds = 500000 }) => {
                             </div>
 
                             <div className="space-y-4">
-                                {getAvailableRestaurants().length === 0 ? (
+                                {availableRestaurants.length === 0 ? (
                                     <p className="text-center text-[color:var(--color-principalBrown)] py-8">
                                         You already own all available
                                         restaurants!
                                     </p>
                                 ) : (
-                                    getAvailableRestaurants().map((bar) => (
+                                    availableRestaurants.map((bar) => (
                                         <div
                                             key={bar.id}
                                             className="bg-[color:var(--color-yellowWhite)] p-4 rounded-lg border border-[color:var(--color-yellowWhite-dark)] transition-all duration-200 hover:shadow-md"
@@ -428,7 +473,9 @@ const NoodleBarBuySell = ({ onBack, playerRank = 200, funds = 500000 }) => {
                                                         </span>
                                                         <span className="text-emerald-600 font-bold">
                                                             {formatCurrency(
-                                                                bar.baseProfit
+                                                                bar.baseProfit ||
+                                                                    bar.salesVolume ||
+                                                                    0
                                                             )}
                                                         </span>
                                                     </div>
@@ -436,7 +483,7 @@ const NoodleBarBuySell = ({ onBack, playerRank = 200, funds = 500000 }) => {
                                                 <div className="flex flex-col items-end">
                                                     <div className="text-2xl font-bold text-[color:var(--color-principalBrown)] mb-2">
                                                         {formatCurrency(
-                                                            bar.purchasePrice
+                                                            bar.basePrice
                                                         )}
                                                     </div>
                                                     <button
@@ -444,7 +491,7 @@ const NoodleBarBuySell = ({ onBack, playerRank = 200, funds = 500000 }) => {
                                                             px-4 py-2 rounded-md text-white font-medium
                                                             ${
                                                                 funds >=
-                                                                bar.purchasePrice
+                                                                bar.basePrice
                                                                     ? "bg-[color:var(--color-principalRed)] hover:bg-[color:var(--color-principalRed-light)]"
                                                                     : "bg-gray-400 cursor-not-allowed"
                                                             }
@@ -452,7 +499,7 @@ const NoodleBarBuySell = ({ onBack, playerRank = 200, funds = 500000 }) => {
                                                         `}
                                                         onClick={() =>
                                                             funds >=
-                                                                bar.purchasePrice &&
+                                                                bar.basePrice &&
                                                             handleBuyRestaurant(
                                                                 selectedSlot,
                                                                 bar
@@ -460,11 +507,10 @@ const NoodleBarBuySell = ({ onBack, playerRank = 200, funds = 500000 }) => {
                                                         }
                                                         disabled={
                                                             funds <
-                                                            bar.purchasePrice
+                                                            bar.basePrice
                                                         }
                                                     >
-                                                        {funds >=
-                                                        bar.purchasePrice
+                                                        {funds >= bar.basePrice
                                                             ? "Purchase"
                                                             : "Not Enough Funds"}
                                                     </button>
@@ -499,7 +545,10 @@ const NoodleBarBuySell = ({ onBack, playerRank = 200, funds = 500000 }) => {
                     setConfirmationModal({
                         show: false,
                         action: null,
+                        slot: null,
                         bar: null,
+                        cost: 0,
+                        sellPrice: 0,
                     })
                 }
                 onConfirm={handleConfirmAction}
@@ -508,21 +557,7 @@ const NoodleBarBuySell = ({ onBack, playerRank = 200, funds = 500000 }) => {
                         ? "Confirm Purchase"
                         : "Confirm Sale"
                 }
-                buySellDetails={
-                    confirmationModal.action === "buy"
-                        ? {
-                              barName: confirmationModal.bar?.name,
-                              price: confirmationModal.cost,
-                              action: "buy",
-                              currentFunds: funds,
-                          }
-                        : {
-                              barName: confirmationModal.bar?.name,
-                              price: confirmationModal.sellPrice,
-                              action: "sell",
-                              currentFunds: funds,
-                          }
-                }
+                buySellDetails={getBuySellDetails()}
             />
 
             {/* Back Button */}
@@ -543,7 +578,6 @@ const NoodleBarBuySell = ({ onBack, playerRank = 200, funds = 500000 }) => {
 NoodleBarBuySell.propTypes = {
     onBack: PropTypes.func.isRequired,
     playerRank: PropTypes.number,
-    funds: PropTypes.number,
 };
 
 export default NoodleBarBuySell;

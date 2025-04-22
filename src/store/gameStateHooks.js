@@ -11,13 +11,11 @@ import gameState from "../game/GameState";
  */
 export const useGameState = () => {
     const [state, setState] = useState(null);
-
     useEffect(() => {
         // Make sure gameState is initialized
         if (!gameState.initialized) {
             gameState.initialize();
         }
-
         // Set initial state
         setState(gameState.getGameState());
 
@@ -439,6 +437,232 @@ export const useGameBuffs = () => {
         activeBuffs: getBuffsWithDetails(),
         rawBuffs: buffs,
         showBuffsPanel,
+    };
+};
+
+/**
+ * Hook for Noodle Bar operations that centralizes common functionalities
+ * @returns {Object} Noodle Bar operations and related functions
+ */
+export const useNoodleBarOperations = () => {
+    const { rosterWithDetails: allEmployees } = useEmployees();
+    const { bars: noodleBars } = useRestaurants();
+    const state = useGameState();
+
+    // Get restaurant staff
+    const getRestaurantStaff = useCallback(
+        (restaurantId) => {
+            return allEmployees.filter((emp) => emp.assigned === restaurantId);
+        },
+        [allEmployees]
+    );
+
+    // Get restaurant name by ID
+    const getRestaurantNameById = useCallback(
+        (restaurantId) => {
+            const restaurant = noodleBars.find(
+                (bar) => bar.id === restaurantId
+            );
+            return restaurant ? restaurant.name : `Restaurant ${restaurantId}`;
+        },
+        [noodleBars]
+    );
+
+    // Assign employee to restaurant
+    const assignEmployee = useCallback(
+        (employee, barId) => {
+            if (!gameState.initialized) {
+                gameState.initialize();
+            }
+
+            // Utiliser la méthode updateGameState pour mettre à jour l'état correctement
+            gameState.updateGameState((state) => {
+                // Mettre à jour l'employé dans le roster
+                const updatedRoster = state.employees.roster.map((emp) =>
+                    emp.id === employee.id
+                        ? {
+                              ...emp,
+                              assigned: barId,
+                              assignedName: getRestaurantNameById(barId),
+                          }
+                        : emp
+                );
+
+                return {
+                    ...state,
+                    employees: {
+                        ...state.employees,
+                        roster: updatedRoster,
+                    },
+                };
+            });
+        },
+        [getRestaurantNameById]
+    );
+
+    // Remove employee from restaurant
+    const removeEmployeeFromRestaurant = useCallback((employeeId) => {
+        if (!gameState.initialized) {
+            gameState.initialize();
+        }
+
+        // Utiliser la méthode updateGameState pour mettre à jour l'état correctement
+        gameState.updateGameState((state) => {
+            // Mettre à jour l'employé dans le roster pour le désassigner
+            const updatedRoster = state.employees.roster.map((emp) =>
+                emp.id === employeeId
+                    ? {
+                          ...emp,
+                          assigned: null,
+                          assignedName: null,
+                      }
+                    : emp
+            );
+
+            return {
+                ...state,
+                employees: {
+                    ...state.employees,
+                    roster: updatedRoster,
+                },
+            };
+        });
+    }, []);
+
+    // Handle UI for assigning employee
+    const handleAssignEmployee = useCallback(
+        (employee, targetBarId, targetBarName) => {
+            // Check if restaurant staff is full
+            const currentStaff = getRestaurantStaff(targetBarId);
+            const targetBar = noodleBars.find((bar) => bar.id === targetBarId);
+            const maxStaff = targetBar?.staffSlots || 3;
+
+            if (currentStaff.length >= maxStaff) {
+                return false; // Restaurant is full
+            }
+
+            // If employee is already assigned elsewhere, show confirmation
+            if (employee.assigned && employee.assigned !== targetBarId) {
+                return {
+                    needsConfirmation: true,
+                    employee,
+                    targetBar:
+                        targetBarName || getRestaurantNameById(targetBarId),
+                    targetBarId,
+                };
+            }
+
+            // If not assigned or already in this restaurant, proceed directly
+            assignEmployee(employee, targetBarId);
+            return true;
+        },
+        [assignEmployee, getRestaurantNameById, getRestaurantStaff, noodleBars]
+    );
+
+    // Upgrade restaurant
+    const upgradeRestaurant = useCallback(
+        (barId, categoryId, newLevel, cost) => {
+            if (!gameState.initialized) {
+                gameState.initialize();
+            }
+
+            // Utiliser la méthode updateGameState pour mettre à jour l'état correctement
+            gameState.updateGameState((state) => {
+                // Trouver le restaurant à mettre à jour
+                const updatedBars = state.restaurants.bars.map((bar) => {
+                    if (bar.id === barId) {
+                        // Mettre à jour la catégorie spécifique du restaurant
+                        const upgrades = {
+                            ...(bar.upgrades || {}),
+                            [categoryId]: newLevel,
+                        };
+
+                        return {
+                            ...bar,
+                            upgrades,
+                        };
+                    }
+                    return bar;
+                });
+
+                // Déduire le coût des fonds
+                return {
+                    ...state,
+                    restaurants: {
+                        ...state.restaurants,
+                        bars: updatedBars,
+                    },
+                    finances: {
+                        ...state.finances,
+                        funds: state.finances.funds - cost,
+                        expensesHistory: [
+                            ...state.finances.expensesHistory,
+                            {
+                                amount: cost,
+                                source: `Upgraded ${categoryId} for restaurant ${barId}`,
+                                period: state.gameProgress.currentPeriod,
+                            },
+                        ],
+                    },
+                };
+            });
+        },
+        []
+    );
+
+    // Sell restaurant
+    const sellRestaurant = useCallback((slotId, barId, sellPrice) => {
+        if (!gameState.initialized) {
+            gameState.initialize();
+        }
+
+        // Utiliser la méthode updateGameState pour mettre à jour l'état correctement
+        gameState.updateGameState((state) => {
+            // Marquer le slot comme non acheté
+            const updatedSlots = state.restaurants.slots.map((slot) =>
+                slot.id === slotId
+                    ? { ...slot, purchased: false, barId: null }
+                    : slot
+            );
+
+            // Retirer le restaurant de la liste
+            const updatedBars = state.restaurants.bars.filter(
+                (bar) => bar.id !== barId
+            );
+
+            // Ajouter le prix de vente aux fonds
+            return {
+                ...state,
+                restaurants: {
+                    ...state.restaurants,
+                    slots: updatedSlots,
+                    bars: updatedBars,
+                },
+                finances: {
+                    ...state.finances,
+                    funds: state.finances.funds + sellPrice,
+                    incomeHistory: [
+                        ...state.finances.incomeHistory,
+                        {
+                            amount: sellPrice,
+                            source: `Sold restaurant ${barId}`,
+                            period: state.gameProgress.currentPeriod,
+                        },
+                    ],
+                },
+            };
+        });
+    }, []);
+
+    return {
+        getRestaurantStaff,
+        getRestaurantNameById,
+        assignEmployee,
+        removeEmployeeFromRestaurant,
+        handleAssignEmployee,
+        upgradeRestaurant,
+        sellRestaurant,
+        playerRank: state?.gameProgress?.businessRank || 200,
     };
 };
 

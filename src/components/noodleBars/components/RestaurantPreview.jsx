@@ -1,3 +1,6 @@
+// This component is no longer needed as mentioned by the user.
+// It will be kept for reference but won't be used in the application.
+
 import PropTypes from "prop-types";
 import MenuContainer from "../../common/MenuContainer";
 
@@ -8,6 +11,37 @@ const RestaurantPreview = ({
     getTotalStat,
 }) => {
     if (!restaurant) return null;
+
+    // Safely get profit value with fallbacks
+    const getProfit = () => {
+        const forecastedProfit = restaurant.forecastedProfit || 0;
+        const staffCost = restaurant.staffCost || 0;
+        const maintenance = restaurant.maintenance || 0;
+        return forecastedProfit - staffCost - maintenance;
+    };
+
+    // Safely calculate staff stats - handle cases where currentStaff might be undefined
+    const safeGetTotalStat = (stat) => {
+        if (!Array.isArray(restaurant.currentStaff)) {
+            return 0;
+        }
+        return getTotalStat(restaurant.currentStaff, stat);
+    };
+
+    // Get the target values for each stat
+    const getCuisineTarget = () => restaurant.productCap || 40;
+    const getServiceTarget = () => restaurant.serviceCap || 20;
+    const getAmbianceTarget = () => restaurant.ambianceCap || 10;
+
+    // Determine if stat meets target
+    const isStatSufficient = (stat, value) => {
+        const targets = {
+            cuisine: getCuisineTarget(),
+            service: getServiceTarget(),
+            ambiance: getAmbianceTarget(),
+        };
+        return value >= targets[stat];
+    };
 
     return (
         <div
@@ -50,19 +84,16 @@ const RestaurantPreview = ({
                             <span>🍜 Cuisine: </span>
                             <span
                                 className={
-                                    getTotalStat(
-                                        restaurant.currentStaff,
-                                        "cuisine"
-                                    ) >= 40
+                                    isStatSufficient(
+                                        "cuisine",
+                                        safeGetTotalStat("cuisine")
+                                    )
                                         ? "text-emerald-600"
                                         : "text-red-500"
                                 }
                             >
-                                {getTotalStat(
-                                    restaurant.currentStaff,
-                                    "cuisine"
-                                )}
-                                /40
+                                {safeGetTotalStat("cuisine")}/
+                                {getCuisineTarget()}
                             </span>
                         </div>
                         <div
@@ -74,19 +105,16 @@ const RestaurantPreview = ({
                             <span>💖 Service: </span>
                             <span
                                 className={
-                                    getTotalStat(
-                                        restaurant.currentStaff,
-                                        "service"
-                                    ) >= 20
+                                    isStatSufficient(
+                                        "service",
+                                        safeGetTotalStat("service")
+                                    )
                                         ? "text-emerald-600"
                                         : "text-red-500"
                                 }
                             >
-                                {getTotalStat(
-                                    restaurant.currentStaff,
-                                    "service"
-                                )}
-                                /20
+                                {safeGetTotalStat("service")}/
+                                {getServiceTarget()}
                             </span>
                         </div>
                         <div
@@ -98,19 +126,16 @@ const RestaurantPreview = ({
                             <span>🎭 Ambiance: </span>
                             <span
                                 className={
-                                    getTotalStat(
-                                        restaurant.currentStaff,
-                                        "ambiance"
-                                    ) >= 10
+                                    isStatSufficient(
+                                        "ambiance",
+                                        safeGetTotalStat("ambiance")
+                                    )
                                         ? "text-emerald-600"
                                         : "text-red-500"
                                 }
                             >
-                                {getTotalStat(
-                                    restaurant.currentStaff,
-                                    "ambiance"
-                                )}
-                                /10
+                                {safeGetTotalStat("ambiance")}/
+                                {getAmbianceTarget()}
                             </span>
                         </div>
                         <div
@@ -120,17 +145,15 @@ const RestaurantPreview = ({
                             }}
                         >
                             <span>💴 Profit: </span>
-                            <span className="text-emerald-600">
-                                {formatCurrency(restaurant.forecastedProfit)}
+                            <span
+                                className={
+                                    getProfit() < 0
+                                        ? "text-orange-500"
+                                        : "text-emerald-600"
+                                }
+                            >
+                                {formatCurrency(getProfit())}
                             </span>
-                        </div>
-                    </div>
-                    <div className="mt-2 pt-2 border-t border-[color:var(--color-principalBrown)] border-opacity-20">
-                        <div
-                            className="text-xs text-center"
-                            style={{ color: "var(--color-principalRed)" }}
-                        >
-                            Click to manage staff
                         </div>
                     </div>
                 </div>

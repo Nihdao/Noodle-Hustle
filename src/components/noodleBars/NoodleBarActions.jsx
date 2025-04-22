@@ -20,7 +20,13 @@ const NoodleBarActions = ({ onActionSelect, onBack, forecastedProfit }) => {
                     style={{ animationDelay: "30ms" }}
                 >
                     <span>Forecasted profit: </span>
-                    <span className="ml-2 text-lg font-semibold text-emerald-600">
+                    <span
+                        className={`ml-2 text-lg font-semibold ${
+                            forecastedProfit < 0
+                                ? "text-orange-500"
+                                : "text-emerald-600"
+                        }`}
+                    >
                         {formatCurrency(forecastedProfit)}
                     </span>
                 </div>
