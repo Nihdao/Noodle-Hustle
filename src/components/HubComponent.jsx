@@ -740,7 +740,7 @@ const HubComponent = () => {
                             ...styles.startPeriodButton,
                             transform:
                                 hoveredMenuItem === "Start"
-                                    ? "perspective(500px) rotateX(5deg) translateY(-5px) scale(1.02)"
+                                    ? "perspective(500px) rotateX(5deg) translateX(5px) scale(1.02)"
                                     : "perspective(500px) rotateX(5deg)",
                             boxShadow:
                                 hoveredMenuItem === "Start"
@@ -748,7 +748,7 @@ const HubComponent = () => {
                                     : "0 4px 8px rgba(0, 0, 0, 0.2)",
                             backgroundColor:
                                 hoveredMenuItem === "Start"
-                                    ? "#FF2D2D" // Slightly brighter red on hover
+                                    ? "var(--color-principalRed-light)" // Slightly brighter red on hover
                                     : "var(--color-principalRed)",
                         }}
                         onClick={handleStartPeriod}
@@ -775,10 +775,6 @@ const HubComponent = () => {
                                         hoveredMenuItem === "Start"
                                             ? "scale(1.05)"
                                             : "scale(1)",
-                                    textShadow:
-                                        hoveredMenuItem === "Start"
-                                            ? "0 0 10px rgba(255, 255, 255, 0.5)"
-                                            : "none",
                                     transition: "all 0.3s ease",
                                 }}
                             >
@@ -820,10 +816,6 @@ const HubComponent = () => {
                                 <span
                                     style={{
                                         ...styles.forecastNumber,
-                                        textShadow:
-                                            hoveredMenuItem === "Start"
-                                                ? "0 0 8px rgba(16, 185, 129, 0.7)"
-                                                : "none",
                                         transform:
                                             hoveredMenuItem === "Start"
                                                 ? "scale(1.05)"

@@ -8,14 +8,13 @@ import {
     createNewGameSave,
     loadGame,
     saveGame,
-    loadSettings,
-    saveSettings,
     hasSaveGame,
     createBackup,
-    STORAGE_KEYS,
 } from "../localStorage/storageManager";
 import confidantsData from "../data/confidants.json";
 import buffsData from "../data/buffs.json";
+import employeesData from "../data/employees.json";
+import restaurantsData from "../data/restaurants.json";
 
 class GameState {
     constructor() {
@@ -38,16 +37,16 @@ class GameState {
      * @returns {Object} Current game state
      */
     initialize(forceNew = false) {
-        // Load settings first
-        this.settings = loadSettings();
-
         // Load or create game state
         if (!forceNew && hasSaveGame()) {
             this.state = loadGame();
+            // Les paramètres sont maintenant dans state.settings
+            this.settings = this.state.settings;
         } else {
-            const playerName =
-                localStorage.getItem(STORAGE_KEYS.PLAYER_NAME) || "Player";
-            this.state = createNewGameSave(playerName);
+            // Pas besoin d'obtenir playerName de localStorage car
+            // nous avons tout consolidé
+            this.state = createNewGameSave();
+            this.settings = this.state.settings;
         }
 
         this.initialized = true;
@@ -529,12 +528,29 @@ class GameState {
      * @param {Object} newSettings - New settings object or partial settings
      */
     updateSettings(newSettings) {
+        // Mettre à jour les paramètres dans state.settings
+        if (!this.state || !this.state.settings) {
+            if (!this.initialized) {
+                this.initialize();
+            }
+        }
+
+        // Mise à jour des paramètres internes
         this.settings = {
             ...this.settings,
             ...newSettings,
         };
 
-        saveSettings(this.settings);
+        // Mise à jour dans l'état du jeu
+        this.updateGameState((state) => ({
+            ...state,
+            settings: this.settings,
+        }));
+
+        // Enregistrement automatique après mise à jour des paramètres
+        this.saveGameState();
+
+        // Notification aux composants
         this.events.emit("settingsUpdated", this.settings);
     }
 
@@ -554,12 +570,66 @@ class GameState {
     }
 
     /**
+     * Get employee data by ID
+     * @param {number} employeeId - ID of the employee from employees.json
+     * @returns {Object} Complete employee data
+     */
+    getEmployeeData(employeeId) {
+        return employeesData.find((emp) => emp.id === employeeId);
+    }
+
+    /**
+     * Get confidant data by ID
+     * @param {string} confidantId - ID of the confidant
+     * @returns {Object} Complete confidant data
+     */
+    getConfidantData(confidantId) {
+        return confidantsData.confidants.find(
+            (conf) => conf.id === confidantId
+        );
+    }
+
+    /**
+     * Get buff data by ID
+     * @param {string} buffId - ID of the buff
+     * @returns {Object} Complete buff data
+     */
+    getBuffData(buffId) {
+        // Recherche dans plusieurs catégories de buffs
+        const categories = Object.keys(buffsData);
+        for (const category of categories) {
+            const buff = buffsData[category].find((b) => b.id === buffId);
+            if (buff) return buff;
+        }
+        return null;
+    }
+
+    /**
+     * Get restaurant data by ID
+     * @param {number} restaurantId - ID of the restaurant
+     * @returns {Object} Complete restaurant data
+     */
+    getRestaurantData(restaurantId) {
+        return restaurantsData.find((rest) => rest.id === restaurantId);
+    }
+
+    /**
      * Add a new employee to the roster
      * @param {Object} employee - Employee data object
      */
     hireEmployee(employee) {
         this.updateGameState((state) => {
-            const newRoster = [...state.employees.roster, employee];
+            // Ajouter uniquement l'ID et les données spécifiques à l'instance
+            const newEmployeeEntry = {
+                id: `e${Date.now()}`, // ID unique pour cette instance d'employé
+                employeeId: employee.id, // ID qui référence employees.json
+                level: 1,
+                salary: employee.salary,
+                morale: 100,
+                assigned: null,
+            };
+
+            const newRoster = [...state.employees.roster, newEmployeeEntry];
             const newLaborCost = newRoster.reduce(
                 (total, emp) => total + emp.salary,
                 0

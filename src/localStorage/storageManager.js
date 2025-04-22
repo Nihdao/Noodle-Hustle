@@ -4,19 +4,31 @@
  * Centralizes storage structure definitions and provides utility functions
  */
 
+import confidantsData from "../data/confidants.json";
+import employeesData from "../data/employees.json";
+import restaurantsData from "../data/restaurants.json";
+
 // Constants for storage keys
 export const STORAGE_KEYS = {
     GAME_SAVE: "noodleBalanceSave",
-    SETTINGS: "noodleBalanceSettings",
-    SOCIAL_ACTION_DONE_IN_PERIOD: "socialActionDoneInPeriod",
-    PLAYER_NAME: "playerName",
+    // Nous supprimons ces clés séparées car elles seront intégrées dans GAME_SAVE
+    // SETTINGS: "noodleBalanceSettings",
+    // SOCIAL_ACTION_DONE_IN_PERIOD: "socialActionDoneInPeriod",
+    // PLAYER_NAME: "playerName",
+    // STORAGE_KEY_CANDIDATES: "noodleBalanceCandidates",
 };
 
 /**
  * Game save data structure
  * Contains all persistent gameplay data
  */
-export const createNewGameSave = (playerName = "Player") => {
+export const createNewGameSave = (playerName) => {
+    // Sélectionner les employés avec id 75 et 74
+    const starterEmployees = employeesData.filter(
+        (e) => e.id === 75 || e.id === 74
+    );
+    // Starter bar : id 1
+    const starterBar = restaurantsData.find((r) => r.id === 1);
     return {
         // Basic info
         playerName,
@@ -27,27 +39,15 @@ export const createNewGameSave = (playerName = "Player") => {
         gameProgress: {
             currentPeriod: 1,
             completedIntro: true,
-            investorClashIn: 10, // Countdown to next investor meeting
+            investorClashIn: 5, // Countdown to next investor meeting
             businessRank: 200, // Lower is better (1 is highest)
         },
 
         // Financial data
         finances: {
-            funds: 5000000, // Current available money
+            funds: 1000, // Current available money
             debt: {
-                loans: [
-                    // Example loan structure
-                    {
-                        id: "initial-loan",
-                        amount: 500000,
-                        interestRate: 0.05,
-                        term: 20, // periods
-                        remainingPeriods: 20,
-                        periodPayment: 25000,
-                    },
-                ],
-                totalDebt: 500000,
-                periodRepayment: 25000,
+                amount: 500,
             },
             expensesHistory: [],
             incomeHistory: [],
@@ -55,14 +55,14 @@ export const createNewGameSave = (playerName = "Player") => {
 
         // Player condition
         playerStats: {
-            burnout: 33, // 0-100
+            burnout: 50, // 0-100
             burnoutHistory: [],
         },
 
-        // Restaurant data
+        // Restaurant data - optimisé pour utiliser des IDs plutôt que des objets complets
         restaurants: {
             slots: [
-                { id: 1, purchased: true, barId: 1 }, // First slot with original restaurant
+                { id: 1, purchased: true, barId: 1 },
                 { id: 2, purchased: false, barId: null },
                 { id: 3, purchased: false, barId: null },
                 { id: 4, purchased: false, barId: null },
@@ -71,18 +71,10 @@ export const createNewGameSave = (playerName = "Player") => {
             bars: [
                 {
                     id: 1,
-                    name: "Noodles Original",
-                    description: "Where it all began.",
-                    sellable: false,
-                    maxSales: 5,
-                    maxProduct: 5,
-                    maxService: 5,
-                    maxAmbiance: 5,
+                    restaurantId: 1, // référence à restaurants.json
                     maintenance: 100,
-                    baseProfit: 10000,
-                    forecastedProfit: 12657,
-                    staffCost: 8985,
-                    staffSlots: 3,
+                    staffCost: 0,
+                    staffSlots: starterBar ? starterBar.staffSlots : 3,
                     unlocked: true,
                     upgrades: {
                         cuisine: 1,
@@ -94,85 +86,50 @@ export const createNewGameSave = (playerName = "Player") => {
             ],
         },
 
-        // Employee management
+        // Employee management - enrichi avec tous les champs de employees.json et dynamique d'action par période
         employees: {
-            roster: [
-                {
-                    id: "e1",
-                    name: "Carl Ramen",
-                    type: "C",
-                    level: 3,
-                    service: 38,
-                    cuisine: 53,
-                    ambiance: 53,
-                    salary: 4500,
-                    morale: 85,
-                    assigned: 1, // restaurant ID
-                },
-                {
-                    id: "e2",
-                    name: "Lucie Pho",
-                    type: "D",
-                    level: 3,
-                    service: 30,
-                    cuisine: 31,
-                    ambiance: 34,
-                    salary: 4485,
-                    morale: 78,
-                    assigned: 1, // restaurant ID
-                },
-            ],
-            laborCost: 8985,
+            roster: starterEmployees.map((employee, idx) => ({
+                id: `e${idx + 1}`,
+                employeeId: employee.id,
+                name: employee.name,
+                rarity: employee.rarity,
+                levelCap: employee.levelCap,
+                service: employee.service,
+                cuisine: employee.cuisine,
+                ambiance: employee.ambiance,
+                salary: employee.salary,
+                mood: employee.mood,
+                debateTrait: employee.debateTrait,
+                interventionCost: employee.interventionCost,
+                relevance: employee.relevance,
+                repartee: employee.repartee,
+                level: 1,
+                assigned: 1, // restaurant id 1
+                actions: [], // Historique des actions par période [{ period: n, type: 'service', value: +2 }]
+            })),
+            laborCost: starterEmployees.reduce(
+                (sum, emp) => sum + emp.salary,
+                0
+            ),
+            // Historique des actions collectives par période, ex: { period: 1, actions: [{employeeId: 1, type: 'service', value: +2}] }
+            periodActions: [],
         },
 
-        // Social relationships
-        social: {
-            relationships: [
-                {
-                    npcId: "mentor",
-                    name: "Master Umami",
-                    level: 1, // 1-5
-                    interactions: [],
-                    buffs: ["Reduces burnout by 5%"],
-                    nextMeetingScheduled: false,
-                },
-                {
-                    npcId: "rival",
-                    name: "Chef Kompetitor",
-                    level: 1,
-                    interactions: [],
-                    buffs: [],
-                    nextMeetingScheduled: false,
-                },
-                {
-                    npcId: "supplier",
-                    name: "Nori Wholesaler",
-                    level: 1,
-                    interactions: [],
-                    buffs: [],
-                    nextMeetingScheduled: false,
-                },
-                {
-                    npcId: "critic",
-                    name: "Food Blogger",
-                    level: 1,
-                    interactions: [],
-                    buffs: [],
-                    nextMeetingScheduled: false,
-                },
-                {
-                    npcId: "friend",
-                    name: "Old Colleague",
-                    level: 1,
-                    interactions: [],
-                    buffs: [],
-                    nextMeetingScheduled: false,
-                },
+        // Gestion du recrutement des salariés - stocke les tentatives et résultats par période
+        employeeRecruitment: {
+            searchHistory: [
+                // Exemple : { period: 1, searchResults:[1, 2, 3] }
             ],
-            personalTime: {
-                planned: "Home",
-                history: [],
-            },
+            searchActionDoneInPeriod: false,
+        },
+
+        // Social relationships - optimisé avec des IDs
+        social: {
+            relationships: confidantsData.confidants.map((confidant) => ({
+                npcId: confidant.id,
+                level: 0,
+            })),
+            socialActionDoneInPeriod: false,
         },
 
         // Investor meetings
@@ -180,35 +137,47 @@ export const createNewGameSave = (playerName = "Player") => {
             supportGauge: 50,
             history: [],
             nextMeeting: {
-                period: 10,
+                period: 5,
                 prepared: false,
             },
         },
 
-        // Event history
-        events: {
-            completedEvents: [],
-            activeEvents: [],
-        },
-
-        // Active gameplay buffs
+        // Active gameplay buffs - optimisé avec des IDs
         buffs: {
-            active: [],
+            active: [], // Sera rempli avec des références aux buffs par ID
         },
 
         // Game stats and achievements
-        statistics: {
-            periodsPlayed: 1,
-            totalCustomersServed: 0,
-            totalRevenue: 0,
-            totalExpenses: 0,
-            highestProfit: 0,
-            worstLoss: 0,
-            investorMeetingsWon: 0,
-            investorMeetingsLost: 0,
-            restaurantsPurchased: 1,
-            employeesHired: 2,
+        // statistics: {
+        //     periodsPlayed: 1,
+        //     totalCustomersServed: 0,
+        //     totalRevenue: 0,
+        //     totalExpenses: 0,
+        //     highestProfit: 0,
+        //     worstLoss: 0,
+        //     investorMeetingsWon: 0,
+        //     investorMeetingsLost: 0,
+        //     restaurantsPurchased: 1,
+        //     employeesHired: 2,
+        // },
+
+        // Intégration des autres clés de stockage
+        settings: {
+            audio: {
+                masterVolume: 100,
+                musicVolume: 100,
+                sfxVolume: 100,
+                isMuted: false,
+            },
+            gameplay: {
+                tutorialEnabled: true,
+                autosaveEnabled: true,
+                autosaveInterval: 1,
+            },
         },
+
+        // Candidats disponibles pour embauche
+        candidates: [], // Sera rempli avec des ID d'employés plutôt que des objets complets
     };
 };
 
@@ -223,15 +192,10 @@ export const defaultSettings = {
         sfxVolume: 100,
         isMuted: false,
     },
-    display: {
-        windowSize: "fit",
-        isFullscreen: false,
-    },
     gameplay: {
         tutorialEnabled: true,
-        difficultyMultiplier: 1.0,
         autosaveEnabled: true,
-        autosaveInterval: 5, // every 5 periods
+        autosaveInterval: 1,
     },
 };
 
@@ -274,8 +238,19 @@ export const loadGame = () => {
  */
 export const saveSettings = (settings) => {
     try {
-        localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
-        return true;
+        // Charger la sauvegarde actuelle
+        const savedGame = loadGame();
+        if (savedGame) {
+            // Mettre à jour les paramètres dans la sauvegarde
+            savedGame.settings = settings;
+            // Sauvegarder la sauvegarde mise à jour
+            return saveGame(savedGame);
+        } else {
+            // Pas de sauvegarde existante, créer une nouvelle avec les paramètres
+            const newSave = createNewGameSave();
+            newSave.settings = settings;
+            return saveGame(newSave);
+        }
     } catch (error) {
         console.error("Failed to save settings:", error);
         return false;
@@ -288,10 +263,51 @@ export const saveSettings = (settings) => {
  */
 export const loadSettings = () => {
     try {
-        const savedSettings = localStorage.getItem(STORAGE_KEYS.SETTINGS);
-        return savedSettings ? JSON.parse(savedSettings) : defaultSettings;
+        const savedGame = loadGame();
+        // Si une sauvegarde existe et contient des paramètres, les renvoyer
+        if (savedGame && savedGame.settings) {
+            return savedGame.settings;
+        }
+        // Sinon, utiliser les paramètres par défaut
+        const defaultSettings = {
+            audio: {
+                masterVolume: 100,
+                musicVolume: 100,
+                sfxVolume: 100,
+                isMuted: false,
+            },
+            display: {
+                windowSize: "fit",
+                isFullscreen: false,
+            },
+            gameplay: {
+                tutorialEnabled: true,
+                difficultyMultiplier: 1.0,
+                autosaveEnabled: true,
+                autosaveInterval: 5, // every 5 periods
+            },
+        };
+        return defaultSettings;
     } catch (error) {
         console.error("Failed to load settings:", error);
+        const defaultSettings = {
+            audio: {
+                masterVolume: 100,
+                musicVolume: 100,
+                sfxVolume: 100,
+                isMuted: false,
+            },
+            display: {
+                windowSize: "fit",
+                isFullscreen: false,
+            },
+            gameplay: {
+                tutorialEnabled: true,
+                difficultyMultiplier: 1.0,
+                autosaveEnabled: true,
+                autosaveInterval: 5, // every 5 periods
+            },
+        };
         return defaultSettings;
     }
 };
@@ -301,10 +317,8 @@ export const loadSettings = () => {
  */
 export const clearAllData = () => {
     try {
+        // Nous n'avons plus besoin de supprimer plusieurs clés, juste la principale
         localStorage.removeItem(STORAGE_KEYS.GAME_SAVE);
-        localStorage.removeItem(STORAGE_KEYS.SETTINGS);
-        localStorage.removeItem(STORAGE_KEYS.PLAYER_NAME);
-        localStorage.removeItem(STORAGE_KEYS.SOCIAL_ACTION_DONE_IN_PERIOD);
         return true;
     } catch (error) {
         console.error("Failed to clear data:", error);

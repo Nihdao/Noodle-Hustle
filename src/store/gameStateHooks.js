@@ -131,16 +131,62 @@ export const useRestaurants = () => {
         gameState.purchaseRestaurant(slotId, restaurant);
     }, []);
 
+    // Récupère les données complètes d'un restaurant à partir de son ID
     const getRestaurantById = useCallback(
         (id) => {
-            return restaurants.bars.find((bar) => bar.id === id);
+            const restaurantInstance = restaurants.bars.find(
+                (bar) => bar.id === id
+            );
+            if (!restaurantInstance) return null;
+
+            // Si le restaurant est personnalisé (sans référence), retourner directement
+            if (!restaurantInstance.restaurantId) return restaurantInstance;
+
+            // Récupérer les données de base du restaurant depuis la référence
+            const baseRestaurantData = gameState.getRestaurantData(
+                restaurantInstance.restaurantId
+            );
+
+            if (!baseRestaurantData) return restaurantInstance; // Fallback
+
+            // Combiner les données de base avec les données d'instance
+            return {
+                ...baseRestaurantData,
+                ...restaurantInstance,
+                // Garder les propriétés d'instance qui doivent remplacer celles de base
+                id: restaurantInstance.id,
+                maintenance: restaurantInstance.maintenance,
+                upgrades: restaurantInstance.upgrades,
+                staffCost: restaurantInstance.staffCost,
+            };
         },
         [restaurants.bars]
     );
 
+    // Renvoie la liste complète des restaurants avec données combinées
+    const getBarsWithDetails = useCallback(() => {
+        return restaurants.bars.map((bar) => {
+            // Si le restaurant est personnalisé (sans référence), retourner directement
+            if (!bar.restaurantId) return bar;
+
+            const baseData = gameState.getRestaurantData(bar.restaurantId);
+            if (!baseData) return bar;
+
+            return {
+                ...baseData,
+                ...bar,
+                id: bar.id,
+                maintenance: bar.maintenance,
+                upgrades: bar.upgrades,
+                staffCost: bar.staffCost,
+            };
+        });
+    }, [restaurants.bars]);
+
     return {
         slots: restaurants.slots || [],
-        bars: restaurants.bars || [],
+        bars: getBarsWithDetails() || [],
+        rawBars: restaurants.bars || [],
         purchaseRestaurant,
         getRestaurantById,
     };
@@ -162,15 +208,57 @@ export const useEmployees = () => {
         gameState.hireEmployee(employee);
     }, []);
 
+    // Récupère les données complètes d'un employé à partir de son ID d'instance
     const getEmployeeById = useCallback(
         (id) => {
-            return employees.roster.find((emp) => emp.id === id);
+            const employeeInstance = employees.roster.find(
+                (emp) => emp.id === id
+            );
+            if (!employeeInstance) return null;
+
+            // Récupérer les données de base de l'employé depuis la référence
+            const baseEmployeeData = gameState.getEmployeeData(
+                employeeInstance.employeeId
+            );
+
+            if (!baseEmployeeData) return employeeInstance; // Fallback
+
+            // Combiner les données de base avec les données d'instance
+            return {
+                ...baseEmployeeData,
+                ...employeeInstance,
+                // Garder les propriétés d'instance qui doivent remplacer celles de base
+                id: employeeInstance.id,
+                salary: employeeInstance.salary,
+                level: employeeInstance.level,
+                morale: employeeInstance.morale,
+                assigned: employeeInstance.assigned,
+            };
         },
         [employees.roster]
     );
 
+    // Renvoie la liste complète des employés avec données combinées
+    const getRosterWithDetails = useCallback(() => {
+        return employees.roster.map((emp) => {
+            const baseData = gameState.getEmployeeData(emp.employeeId);
+            if (!baseData) return emp;
+
+            return {
+                ...baseData,
+                ...emp,
+                id: emp.id,
+                salary: emp.salary,
+                level: emp.level,
+                morale: emp.morale,
+                assigned: emp.assigned,
+            };
+        });
+    }, [employees.roster]);
+
     return {
         roster: employees.roster || [],
+        rosterWithDetails: getRosterWithDetails(),
         laborCost: employees.laborCost || 0,
         hireEmployee,
         getEmployeeById,
@@ -198,10 +286,55 @@ export const useSocial = () => {
         gameState.schedulePesonalTime(activity);
     }, []);
 
+    // Récupère les données détaillées d'un confidant
+    const getConfidantDetails = useCallback(
+        (npcId) => {
+            const relationship = social.relationships.find(
+                (rel) => rel.npcId === npcId
+            );
+            if (!relationship) return null;
+
+            // Récupérer les données de base du confidant
+            const baseConfidantData = gameState.getConfidantData(npcId);
+            if (!baseConfidantData) return relationship;
+
+            // Combiner les données
+            return {
+                ...baseConfidantData,
+                ...relationship,
+                npcId: relationship.npcId,
+                level: relationship.level,
+                interactions: relationship.interactions,
+                nextMeetingScheduled: relationship.nextMeetingScheduled,
+            };
+        },
+        [social.relationships]
+    );
+
+    // Renvoie la liste complète des relations avec détails
+    const getRelationshipsWithDetails = useCallback(() => {
+        return social.relationships.map((rel) => {
+            const baseData = gameState.getConfidantData(rel.npcId);
+            if (!baseData) return rel;
+
+            return {
+                ...baseData,
+                ...rel,
+                npcId: rel.npcId,
+                level: rel.level,
+                interactions: rel.interactions,
+                nextMeetingScheduled: rel.nextMeetingScheduled,
+            };
+        });
+    }, [social.relationships]);
+
     return {
-        relationships: social.relationships || [],
+        relationships: getRelationshipsWithDetails() || [],
+        rawRelationships: social.relationships || [],
         personalTime: social.personalTime || { planned: "Home", history: [] },
+        socialActionDoneInPeriod: social.socialActionDoneInPeriod || false,
         schedulePesonalTime,
+        getConfidantDetails,
     };
 };
 
@@ -281,8 +414,30 @@ export const useGameBuffs = () => {
         gameState.openBuffsPanel();
     }, []);
 
+    // Renvoie les buffs avec leurs détails complets
+    const getBuffsWithDetails = useCallback(() => {
+        return buffs.map((buff) => {
+            // Si le buff contient déjà toutes les données nécessaires
+            if (!buff.buffId) return buff;
+
+            // Récupérer les données de base du buff
+            const baseBuffData = gameState.getBuffData(buff.buffId);
+            if (!baseBuffData) return buff;
+
+            // Combiner les données
+            return {
+                ...baseBuffData,
+                ...buff,
+                id: buff.id, // Garder l'ID d'instance
+                level: buff.level,
+                source: buff.source,
+            };
+        });
+    }, [buffs]);
+
     return {
-        activeBuffs: buffs,
+        activeBuffs: getBuffsWithDetails(),
+        rawBuffs: buffs,
         showBuffsPanel,
     };
 };
