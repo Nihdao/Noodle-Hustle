@@ -1,26 +1,25 @@
-import { useEffect, useState } from "react";
-import NoodleBarActions from "./noodleBars/NoodleBarActions";
-import NoodleBarAssign from "./noodleBars/NoodleBarAssign";
-import NoodleBarUpgrade from "./noodleBars/NoodleBarUpgrade";
-import NoodleBarBuySell from "./noodleBars/NoodleBarBuySell";
-import EmployeeActions from "./employee/EmployeeActions";
-import EmployeeManagement from "./employee/EmployeeManagement";
-import EmployeeRecruitment from "./employee/EmployeeRecruitment";
-import DebtsManagement from "./debts/DebtsManagement";
-import SocialManagement from "./social/SocialManagement";
-import MeetingRoom from "./meeting/MeetingRoom";
-import OptionsModal from "./modals/OptionsModal";
-import { EventBus } from "../game/EventBus";
-import { useSound } from "../hooks/useSound";
-// Import custom hooks
+import { useState, useEffect } from "react";
 import {
     useGameState,
     useGamePeriod,
     usePlayerStats,
     useFinances,
-    useGameBuffs,
     useSocial,
 } from "../store/gameStateHooks";
+import { useSound } from "../hooks/useSound";
+import { EventBus } from "../game/EventBus";
+import NoodleBarBuySell from "./noodleBars/NoodleBarBuySell";
+import EmployeeActions from "./employee/EmployeeActions";
+import EmployeeManagement from "./employee/EmployeeManagement";
+import EmployeeRecruitment from "./employee/EmployeeRecruitment";
+import SocialManagement from "./social/SocialManagement";
+import DebtsManagement from "./debts/DebtsManagement";
+import NoodleBarActions from "./noodleBars/NoodleBarActions";
+import NoodleBarAssign from "./noodleBars/NoodleBarAssign";
+import NoodleBarUpgrade from "./noodleBars/NoodleBarUpgrade";
+import MeetingRoom from "./meeting/MeetingRoom";
+import OptionsModal from "./modals/OptionsModal";
+import BuffsModal from "./modals/BuffsModal";
 
 const HubComponent = () => {
     // Use custom hooks instead of local state management
@@ -28,7 +27,6 @@ const HubComponent = () => {
     const { currentPeriod, investorClashIn, startPeriod } = useGamePeriod();
     const { burnout } = usePlayerStats();
     const { funds, formatCurrency } = useFinances();
-    const { showBuffsPanel } = useGameBuffs();
     const { personalTime } = useSocial();
 
     // Derive the needed state objects from gameState for backwards compatibility
@@ -53,6 +51,7 @@ const HubComponent = () => {
     const [activeNoodleBarSection, setActiveNoodleBarSection] = useState(null);
     const [activeEmployeeSection, setActiveEmployeeSection] = useState(null);
     const [isOptionsModalOpen, setIsOptionsModalOpen] = useState(false);
+    const [isBuffsModalOpen, setIsBuffsModalOpen] = useState(false);
 
     // Sons
     const { playClickSound, playBackSound } = useSound();
@@ -85,6 +84,8 @@ const HubComponent = () => {
 
         // Start the DeliveryRun scene with game data
         if (window.gameRef) {
+            // Arrêter la scène HubScreen avant de démarrer DeliveryRun
+            window.gameRef.scene.stop("HubScreen");
             window.gameRef.scene.start("DeliveryRun", {
                 restaurants,
                 playerStats,
@@ -100,8 +101,7 @@ const HubComponent = () => {
 
     const handleBuffs = () => {
         playClickSound();
-        // Use the hook's showBuffsPanel method
-        showBuffsPanel();
+        setIsBuffsModalOpen(true);
     };
 
     const handleOptions = () => {
@@ -218,6 +218,8 @@ const HubComponent = () => {
             overflow: "hidden",
             transform: "perspective(500px) rotateX(5deg)",
             transformOrigin: "bottom",
+            transition: "all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+            cursor: "pointer",
         },
         startPeriodTop: {
             width: "100%",
@@ -229,9 +231,21 @@ const HubComponent = () => {
             alignItems: "center",
             justifyContent: "center",
             gap: "0.75rem",
-            transition: "background-color 0.2s",
+            transition: "all 0.3s ease",
             position: "relative",
             zIndex: 2,
+            "&:after": {
+                content: '""',
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+                background:
+                    "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 100%)",
+                transform: "translateX(-100%)",
+                transition: "transform 0.5s ease",
+            },
         },
         startPeriodBottom: {
             fontSize: "0.9rem",
@@ -240,6 +254,7 @@ const HubComponent = () => {
             textAlign: "center",
             backgroundColor: "rgba(49, 34, 24, 0.3)",
             borderTop: "1px solid rgba(255, 255, 255, 0.1)",
+            transition: "all 0.3s ease",
         },
         forecastProfit: {
             fontSize: "0.9rem",
@@ -318,6 +333,30 @@ const HubComponent = () => {
             gap: "1rem",
             zIndex: 20,
         },
+        actionButton: (isHovered) => ({
+            backgroundColor: isHovered
+                ? "var(--color-principalRed)"
+                : "var(--color-whiteCream)",
+            color: isHovered
+                ? "var(--color-whiteCream)"
+                : "var(--color-principalBrown)",
+            padding: "0.85rem 1.5rem",
+            borderRadius: "1rem",
+            fontWeight: "bold",
+            boxShadow: isHovered
+                ? "0 4px 15px rgba(0, 0, 0, 0.25)"
+                : "0 4px 15px rgba(0, 0, 0, 0.15)",
+            border: "1px solid rgba(255, 255, 255, 0.6)",
+            transition: "all 0.3s ease",
+            backdropFilter: "blur(5px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "0.rem",
+            cursor: "pointer",
+            transform: isHovered ? "scale(1.05)" : "translateY(0)",
+            fontSize: "1rem",
+        }),
         actionButtonStyled: {
             backgroundColor: "rgba(255, 255, 255, 0.85)",
             color: "var(--color-principalBrown)",
@@ -551,12 +590,6 @@ const HubComponent = () => {
                             <h2 className="text-lg font-bold text-[color:var(--color-principalBrown)]">
                                 Personal Time
                             </h2>
-                            <p className="text-sm text-[color:var(--color-principalBrown)]">
-                                Planned:{" "}
-                                <span className="text-blue-500 font-semibold">
-                                    {personalTime.planned}
-                                </span>
-                            </p>
                         </div>
                     </button>
                 </div>
@@ -703,22 +736,67 @@ const HubComponent = () => {
 
                     {/* START PERIOD Button at bottom of sidebar but wider than sidebar */}
                     <button
-                        style={styles.startPeriodButton}
+                        style={{
+                            ...styles.startPeriodButton,
+                            transform:
+                                hoveredMenuItem === "Start"
+                                    ? "perspective(500px) rotateX(5deg) translateY(-5px) scale(1.02)"
+                                    : "perspective(500px) rotateX(5deg)",
+                            boxShadow:
+                                hoveredMenuItem === "Start"
+                                    ? "0 10px 20px rgba(0, 0, 0, 0.3), 0 0 15px rgba(255, 59, 48, 0.5)"
+                                    : "0 4px 8px rgba(0, 0, 0, 0.2)",
+                            backgroundColor:
+                                hoveredMenuItem === "Start"
+                                    ? "#FF2D2D" // Slightly brighter red on hover
+                                    : "var(--color-principalRed)",
+                        }}
                         onClick={handleStartPeriod}
+                        onMouseEnter={() => setHoveredMenuItem("Start")}
+                        onMouseLeave={() => setHoveredMenuItem(null)}
                         className={
                             activeSubmenu !== "Home"
                                 ? "opacity-0 pointer-events-none transition-opacity duration-300"
                                 : "opacity-100 transition-opacity duration-300"
                         }
                     >
-                        <div style={styles.startPeriodTop}>
-                            <span>START PERIOD</span>
+                        <div
+                            style={{
+                                ...styles.startPeriodTop,
+                                padding:
+                                    hoveredMenuItem === "Start"
+                                        ? "1.35rem 0"
+                                        : "1.25rem 0",
+                            }}
+                        >
+                            <span
+                                style={{
+                                    transform:
+                                        hoveredMenuItem === "Start"
+                                            ? "scale(1.05)"
+                                            : "scale(1)",
+                                    textShadow:
+                                        hoveredMenuItem === "Start"
+                                            ? "0 0 10px rgba(255, 255, 255, 0.5)"
+                                            : "none",
+                                    transition: "all 0.3s ease",
+                                }}
+                            >
+                                START PERIOD
+                            </span>
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 className="h-7 w-7"
                                 fill="none"
                                 viewBox="0 0 24 24"
                                 stroke="currentColor"
+                                style={{
+                                    transform:
+                                        hoveredMenuItem === "Start"
+                                            ? "translateX(3px) scale(1.1)"
+                                            : "translateX(0)",
+                                    transition: "all 0.3s ease",
+                                }}
                             >
                                 <path
                                     strokeLinecap="round"
@@ -728,10 +806,31 @@ const HubComponent = () => {
                                 />
                             </svg>
                         </div>
-                        <div style={styles.startPeriodBottom}>
+                        <div
+                            style={{
+                                ...styles.startPeriodBottom,
+                                backgroundColor:
+                                    hoveredMenuItem === "Start"
+                                        ? "rgba(49, 34, 24, 0.4)"
+                                        : "rgba(49, 34, 24, 0.3)",
+                            }}
+                        >
                             <div style={styles.forecastProfit}>
                                 Forecast profit:{" "}
-                                <span style={styles.forecastNumber}>
+                                <span
+                                    style={{
+                                        ...styles.forecastNumber,
+                                        textShadow:
+                                            hoveredMenuItem === "Start"
+                                                ? "0 0 8px rgba(16, 185, 129, 0.7)"
+                                                : "none",
+                                        transform:
+                                            hoveredMenuItem === "Start"
+                                                ? "scale(1.05)"
+                                                : "scale(1)",
+                                        transition: "all 0.3s ease",
+                                    }}
+                                >
                                     {formatCurrency(forecastProfit)}
                                 </span>
                             </div>
@@ -808,55 +907,61 @@ const HubComponent = () => {
                     </div>
                 </div>
 
-                {/* Buffs and Options - Absolute positioned in bottom right */}
+                {/* Action buttons on the bottom */}
                 <div style={styles.actionButtonsContainer}>
-                    <button
-                        style={{
-                            ...styles.actionButtonStyled,
-                            ...styles.buffsButton,
-                        }}
-                        onClick={handleBuffs}
-                        className="hover:scale-105 hover:shadow-xl active:scale-95 transition-all"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="20"
-                            height="20"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
+                    <div className="flex space-x-3">
+                        <button
+                            style={styles.actionButton(
+                                hoveredMenuItem === "Buffs"
+                            )}
+                            onMouseEnter={() => setHoveredMenuItem("Buffs")}
+                            onMouseLeave={() => setHoveredMenuItem(null)}
+                            onClick={handleBuffs}
+                            className="hover:scale-105 hover:shadow-xl active:scale-95 transition-all"
                         >
-                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                        </svg>
-                        Buffs
-                    </button>
-                    <button
-                        style={{
-                            ...styles.actionButtonStyled,
-                            ...styles.optionsButton,
-                        }}
-                        onClick={handleOptions}
-                        className="hover:scale-105 hover:shadow-xl active:scale-95 transition-all"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="20"
-                            height="20"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-5 w-5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                                />
+                            </svg>
+                            Buffs
+                        </button>
+
+                        <button
+                            style={styles.actionButton(
+                                hoveredMenuItem === "Options"
+                            )}
+                            onMouseEnter={() => setHoveredMenuItem("Options")}
+                            onMouseLeave={() => setHoveredMenuItem(null)}
+                            onClick={handleOptions}
+                            className="hover:scale-105 hover:shadow-xl active:scale-95 transition-all"
                         >
-                            <circle cx="12" cy="12" r="3"></circle>
-                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                        </svg>
-                        Options
-                    </button>
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            >
+                                <circle cx="12" cy="12" r="3"></circle>
+                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                            </svg>
+                            Options
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -864,6 +969,12 @@ const HubComponent = () => {
             <OptionsModal
                 isOpen={isOptionsModalOpen}
                 onClose={handleCloseOptions}
+            />
+
+            {/* Buffs Modal */}
+            <BuffsModal
+                isOpen={isBuffsModalOpen}
+                onClose={() => setIsBuffsModalOpen(false)}
             />
         </div>
     );

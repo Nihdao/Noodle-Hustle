@@ -19,13 +19,13 @@ export class GameIntro extends Phaser.Scene {
         const height = this.cameras.main.height;
 
         // Add orange background (same as MainMenu for consistency)
-        this.add.rectangle(0, 0, width, height, 0xe67e22).setOrigin(0);
+        // this.add.rectangle(0, 0, width, height, 0xe67e22).setOrigin(0);
 
         // Add repeating noodles pattern with diagonal scrolling (same as MainMenu)
         this.noodlesPattern = this.add
             .tileSprite(0, 0, width, height, "noodles")
             .setOrigin(0)
-            .setAlpha(0.3); // Add some transparency
+            .setAlpha(0.05); // Add some transparency
 
         // Register this scene with the event bus for React components to access
         console.log("GameIntro: Registering scene with EventBus");
@@ -54,8 +54,8 @@ export class GameIntro extends Phaser.Scene {
     update() {
         // Make the pattern scroll diagonally (top-left to bottom-right)
         if (this.noodlesPattern) {
-            this.noodlesPattern.tilePositionX += 0.5;
-            this.noodlesPattern.tilePositionY += 0.5;
+            this.noodlesPattern.tilePositionX += 0.2;
+            this.noodlesPattern.tilePositionY += 0.2;
         }
     }
 

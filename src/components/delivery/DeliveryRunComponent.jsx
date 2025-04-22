@@ -4,7 +4,7 @@ import { useGameState, useFinances } from "../../store/gameStateHooks";
 import { useSound } from "../../hooks/useSound";
 
 const DeliveryRunComponent = () => {
-    const gameState = useGameState();
+    const appGameState = useGameState();
     const { formatCurrency } = useFinances();
     const { playClickSound } = useSound();
 
@@ -15,9 +15,15 @@ const DeliveryRunComponent = () => {
     const [animationPhase, setAnimationPhase] = useState("running"); // "running", "results", "rank", "complete"
 
     // Get business rank from gameState
-    const businessRank = gameState?.gameProgress?.businessRank || 200;
+    const businessRank = appGameState?.gameProgress?.businessRank || 200;
 
     useEffect(() => {
+        // Réinitialiser les états à chaque montage du composant
+        setResultsData(null);
+        setShowResults(false);
+        setShowRankDisplay(false);
+        setAnimationPhase("running");
+
         // Listen for results ready event from Phaser scene
         const handleResultsReady = (data) => {
             console.log("Delivery results ready:", data);
@@ -29,17 +35,27 @@ const DeliveryRunComponent = () => {
                 setTimeout(() => {
                     setAnimationPhase("results");
                     setShowResults(true);
-                }, 500);
+                }, 300); // Reduced from 500ms to 300ms for faster animation
+            }
+        };
+
+        // Add event listener for skipping the animation
+        const handleSkipAnimation = () => {
+            if (animationPhase === "running") {
+                setAnimationPhase("results");
+                setShowResults(true);
             }
         };
 
         EventBus.on("deliveryResultsReady", handleResultsReady);
+        EventBus.on("skipDeliveryAnimation", handleSkipAnimation);
 
         // Cleanup
         return () => {
             EventBus.off("deliveryResultsReady", handleResultsReady);
+            EventBus.off("skipDeliveryAnimation", handleSkipAnimation);
         };
-    }, [animationPhase]);
+    }, []);
 
     // Handle showing rank display
     const handleShowRank = () => {
@@ -248,7 +264,7 @@ const DeliveryRunComponent = () => {
                                 </td>
                                 <td className="py-3 px-6 text-right text-emerald-600">
                                     {formatCurrency(
-                                        gameState?.finances?.funds || 0
+                                        appGameState?.finances?.funds || 0
                                     )}
                                 </td>
                             </tr>
@@ -486,7 +502,7 @@ const DeliveryRunComponent = () => {
                         <div className="flex flex-col items-end">
                             <span className="text-xs opacity-70">Period:</span>
                             <span className="text-xl font-bold">
-                                {gameState?.gameProgress?.currentPeriod || 1}
+                                {appGameState?.gameProgress?.currentPeriod || 1}
                             </span>
                         </div>
                         <div className="flex flex-col items-end">
@@ -494,12 +510,26 @@ const DeliveryRunComponent = () => {
                             <span className="text-xl font-bold">
                                 ¥
                                 {(
-                                    gameState?.finances?.funds || 5000000
+                                    appGameState?.finances?.funds || 5000000
                                 ).toLocaleString()}
                             </span>
                         </div>
                     </div>
                 </div>
+
+                {/* Skip Animation Button at bottom */}
+                {animationPhase === "running" && (
+                    <div className="absolute bottom-4 right-4 pointer-events-auto">
+                        <button
+                            onClick={() =>
+                                EventBus.emit("skipDeliveryAnimation")
+                            }
+                            className="bg-principalBrown text-yellowWhite px-4 py-2 rounded-lg shadow-lg hover:bg-principalBrown-light transition-all duration-300"
+                        >
+                            Skip Animation
+                        </button>
+                    </div>
+                )}
             </div>
         );
     };

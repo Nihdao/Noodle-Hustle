@@ -1,0 +1,329 @@
+{
+    "confidants": [
+        {
+            "id": "mrMiso",
+            "name": "Mr. Miso",
+            "role": "Ex-HR Director",
+            "buff": "recruitmentGuru",
+            "buffName": "Recruitment Guru",
+            "location": "Park",
+            "firstAppearance": 1,
+            "frequency": 1,
+            "currentLevel": 0,
+            "maxLevel": 5,
+            "portrait": "/assets/social/mr_miso.png",
+            "dialogues": [
+                {
+                    "level": 1,
+                    "responses": [
+                        "Back when I ran HR, I thought I'd seen everything. But watching people build something from scratch? That's real power.",
+                        "You were in HR? Must've been a nightmare.",
+                        "Depends on the company. Mine was all spreadsheets and fake smiles. So I left.",
+                        "And now you're just… hanging out in the park?",
+                        "Best place to spot future leaders. Like you."
+                    ]
+                },
+                {
+                    "level": 2,
+                    "responses": [
+                        "You know what I hated most? Watching great people get crushed by bad systems. That's why I'm rooting for you.",
+                        "Thanks… I think I needed that.",
+                        "I've seen talent wasted. You've got the guts to build a place where that doesn't happen.",
+                        "Trying. But it's a lot to manage.",
+                        "Just don't forget: systems serve people. Not the other way around."
+                    ]
+                },
+                {
+                    "level": 3,
+                    "responses": [
+                        "After I quit, I lived in my car for a while. Made ramen on a camping stove. People started buying it. That's how I started again.",
+                        "You're kidding. That's amazing.",
+                        "Truth. No kitchen, no permits, just hunger and hope.",
+                        "Guess you were doing ghost kitchens before it was cool.",
+                        "Ha! With real ghosts. And no heat."
+                    ]
+                },
+                {
+                    "level": 4,
+                    "responses": [
+                        "You're starting to see it, huh? The difference between someone who can grow, and someone who wants to.",
+                        "Hiring's harder than I thought.",
+                        "Because you care. Most bosses don't.",
+                        "Still make mistakes though.",
+                        "Good. Mistakes teach. Egos don't."
+                    ]
+                },
+                {
+                    "level": 5,
+                    "responses": [
+                        "You don't run a noodle bar. You run a people bar. Keep them fed, and they'll carry you to the stars.",
+                        "I think I finally get it.",
+                        "Then you're ahead of 90% of managers already.",
+                        "So… ramen is just the bait?",
+                        "Exactly. And you're cooking up a revolution."
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "riko",
+            "name": "Riko",
+            "role": "Former Delivery Driver",
+            "buff": "deliveryFlow",
+            "buffName": "Delivery Flow",
+            "location": "Downtown",
+            "firstAppearance": 1,
+            "frequency": 1,
+            "currentLevel": 0,
+            "maxLevel": 5,
+            "portrait": "/assets/social/riko.png",
+            "dialogues": [
+                {
+                    "level": 1,
+                    "responses": [
+                        "You run deliveries too? Back in my day, we dodged more potholes than customers.",
+                        "You used to deliver noodles?",
+                        "Fastest in town. Rain, wind, protests—you name it.",
+                        "Bet your reflexes are still sharp.",
+                        "They better be. I still ride like I've got soup to save."
+                    ]
+                },
+                {
+                    "level": 2,
+                    "responses": [
+                        "Want a trick? Always tilt the bowl just a little uphill. Less slosh.",
+                        "That actually works?",
+                        "Trust me, customers don't like broth in the bag.",
+                        "Noted. You should write a book.",
+                        "I've got a title: 'The Zen of Zip'."
+                    ]
+                },
+                {
+                    "level": 3,
+                    "responses": [
+                        "I once had to deliver during a typhoon. Helmet full of rain, brakes gone. Made it anyway.",
+                        "You're serious?!",
+                        "They still tipped. Said it was the warmest soup they'd had all year.",
+                        "That's wild. You ever thought of quitting?",
+                        "Yeah. But I love the chase."
+                    ]
+                },
+                {
+                    "level": 4,
+                    "responses": [
+                        "Delivery's like life—balance speed and control, or spill everything.",
+                        "So… I shouldn't boost around corners?",
+                        "Only if you like soggy noodles.",
+                        "Right. Ride smooth, serve better.",
+                        "Now you're speaking my language."
+                    ]
+                },
+                {
+                    "level": 5,
+                    "responses": [
+                        "You're making good runs. I see fewer spills. Cleaner reviews.",
+                        "I'm learning from the best.",
+                        "Keep your wheels aligned and your mind calm.",
+                        "Soup first. Ego later.",
+                        "Exactly. Now get moving."
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "ginji",
+            "name": "Ginji",
+            "role": "Debate Coach",
+            "buff": "investorWhisperer",
+            "buffName": "Investor Whisperer",
+            "location": "Lake",
+            "firstAppearance": 1,
+            "frequency": 1,
+            "currentLevel": 0,
+            "maxLevel": 5,
+            "portrait": "/assets/social/ginji.png",
+            "dialogues": [
+                {
+                    "level": 1,
+                    "responses": [
+                        "Debate is just combat without fists. You ever shout numbers at someone until they give you money?",
+                        "Not… exactly?",
+                        "Then you've never pitched right. Let me show you how to strike.",
+                        "Sounds intense.",
+                        "Investor meetings are. But fun, if you've got nerve."
+                    ]
+                },
+                {
+                    "level": 2,
+                    "responses": [
+                        "You don't win with volume. You win with rhythm. Speak like waves crashing, not like a faucet leaking.",
+                        "So… prepare my rhythm?",
+                        "More like, feel it. Be unexpected. Be sharp.",
+                        "And don't leak, got it.",
+                        "Heh. Good start."
+                    ]
+                },
+                {
+                    "level": 3,
+                    "responses": [
+                        "Let's practice. I say 'Your business is unstable.' You say?",
+                        "'And yet, profitable every cycle. Want in or out?'",
+                        "Nice. Flip the pressure. Control the flow.",
+                        "You do this for fun?",
+                        "Winning is fun."
+                    ]
+                },
+                {
+                    "level": 4,
+                    "responses": [
+                        "Debaters fear silence. Use it. A pause is a blade.",
+                        "Wait... so say less?",
+                        "Exactly. Make them lean in, then strike.",
+                        "I'll sharpen my silence.",
+                        "That's the spirit."
+                    ]
+                },
+                {
+                    "level": 5,
+                    "responses": [
+                        "Now, you're dangerous. Calm, precise… loud only when it counts.",
+                        "I think I'm finally ready for the next investor clash.",
+                        "Then go make them tremble. And maybe… buy me dinner after.",
+                        "Deal. If I survive.",
+                        "You will."
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "yuna",
+            "name": "Yuna",
+            "role": "Burnout Therapist",
+            "buff": "mentalClarity",
+            "buffName": "Mental Clarity",
+            "location": "Lake",
+            "firstAppearance": 1,
+            "frequency": 1,
+            "currentLevel": 0,
+            "maxLevel": 5,
+            "portrait": "/assets/social/yuna.png",
+            "dialogues": [
+                {
+                    "level": 1,
+                    "responses": [
+                        "You look like a guy running on fumes. Sit down. I brought tea.",
+                        "Do I really look that bad?",
+                        "Worse. You blink like your brain's buffering.",
+                        "So, what... you're a therapist now?",
+                        "Burnout specialist. And ramen fan."
+                    ]
+                },
+                {
+                    "level": 2,
+                    "responses": [
+                        "People think rest is optional. It's not. You wouldn't let your noodles boil dry, right?",
+                        "Point taken.",
+                        "You've got ambition, but your brain needs oxygen too.",
+                        "So I just… sit?",
+                        "Start there."
+                    ]
+                },
+                {
+                    "level": 3,
+                    "responses": [
+                        "I once worked with someone who never stopped. Perfect numbers. Until he didn't show up one day.",
+                        "What happened?",
+                        "They called it 'a personal break.' I call it damage ignored too long.",
+                        "You think I'm close to that?",
+                        "Closer than you think."
+                    ]
+                },
+                {
+                    "level": 4,
+                    "responses": [
+                        "Sit with silence. It tells you more than noise ever will.",
+                        "You sound like a monk.",
+                        "I'm just someone who broke once, then learned to bend.",
+                        "Guess I'm still learning.",
+                        "Then you're doing fine."
+                    ]
+                },
+                {
+                    "level": 5,
+                    "responses": [
+                        "I can't stop the chaos. But I can help you find stillness in motion.",
+                        "That sounds… poetic.",
+                        "It's practical. Breathe. Sleep. Let go of perfection.",
+                        "I'll try.",
+                        "That's enough."
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "sensei_kuro",
+            "name": "Sensei Kuro",
+            "role": "Retired Accountant",
+            "buff": "smartSpending",
+            "buffName": "Smart Spending",
+            "location": "Hypermarket",
+            "firstAppearance": 1,
+            "frequency": 1,
+            "currentLevel": 0,
+            "maxLevel": 5,
+            "portrait": "/assets/social/sensei_kuro.png",
+            "dialogues": [
+                {
+                    "level": 1,
+                    "responses": [
+                        "This place is chaos. Beautiful, expensive chaos.",
+                        "You shop here a lot?",
+                        "Only for deals. And wisdom. These aisles tell stories, if you listen.",
+                        "Right... noodles and enlightenment.",
+                        "Same thing."
+                    ]
+                },
+                {
+                    "level": 2,
+                    "responses": [
+                        "People forget that money leaks through the floor if you don't seal it.",
+                        "You mean like… maintenance?",
+                        "I mean like poor thinking. But yes. Fix your thinking, fix your bills.",
+                        "So, budgeting is a philosophy?",
+                        "Everything is."
+                    ]
+                },
+                {
+                    "level": 3,
+                    "responses": [
+                        "Once had a student blow $10k on gold-plated napkin holders. He's bankrupt now. Still has the napkins though.",
+                        "Ouch.",
+                        "They were beautiful. Useless, but beautiful.",
+                        "Note to self: no luxury chopsticks.",
+                        "Unless they boost morale. Maybe."
+                    ]
+                },
+                {
+                    "level": 4,
+                    "responses": [
+                        "Cut what doesn't add value. Keep what sings. Even if it's a weird statue in the staff room.",
+                        "I… don't follow.",
+                        "You will. When you find what your team laughs at, you'll find what keeps them going.",
+                        "So jokes are… assets?",
+                        "The best kind."
+                    ]
+                },
+                {
+                    "level": 5,
+                    "responses": [
+                        "People chase growth. I chase balance. Growth without balance? That's just fire.",
+                        "But fire cooks ramen.",
+                        "Until it burns it.",
+                        "Touché.",
+                        "You're getting it."
+                    ]
+                }
+            ]
+        }
+    ]
+}

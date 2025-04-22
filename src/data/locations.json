@@ -1,0 +1,34 @@
+{
+    "locations": [
+        {
+            "id": "home",
+            "name": "Home",
+            "icon": "🏡",
+            "description": "Relax at home after work. Does not trigger a meeting, but reduces burnout at the end of the period."
+        },
+        {
+            "id": "park",
+            "name": "Park",
+            "icon": "🌳",
+            "description": "Take a walk in the park to clear your mind and enjoy nature. May encounter people exercising or relaxing."
+        },
+        {
+            "id": "lake",
+            "name": "Lake",
+            "icon": "🌊",
+            "description": "Visit the scenic lake for fishing or meditation. The serene atmosphere is perfect for reflection."
+        },
+        {
+            "id": "downtown",
+            "name": "Downtown",
+            "icon": "🏙️",
+            "description": "Explore the bustling downtown area with shops, restaurants, and entertainment venues."
+        },
+        {
+            "id": "hypermarket",
+            "name": "Hypermarket",
+            "icon": "🏬",
+            "description": "Browse the hypermarket for daily necessities or just window shop. An easy way to pass time."
+        }
+    ]
+}

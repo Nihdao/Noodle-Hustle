@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { EventBus } from "../EventBus";
 import { audioManager } from "../AudioManager";
+import gameState from "../GameState";
 
 export class DeliveryRun extends Phaser.Scene {
     constructor() {
@@ -24,14 +25,7 @@ export class DeliveryRun extends Phaser.Scene {
     preload() {
         // Load delivery run assets if not already loaded
         if (!this.textures.exists("player_sprite")) {
-            this.load.spritesheet(
-                "player_sprite",
-                "assets/deliveryrun/player_sprite.png",
-                {
-                    frameWidth: 32,
-                    frameHeight: 32,
-                }
-            );
+            this.load.image("player_sprite");
         }
 
         // Load noodles background pattern if not already loaded
@@ -39,12 +33,6 @@ export class DeliveryRun extends Phaser.Scene {
             this.load.image("noodles", "noodles.png");
         }
 
-        this.load.image("money_icon", "assets/deliveryrun/money_icon.png");
-        this.load.image("delivery_bg", "assets/deliveryrun/delivery_bg.jpg");
-        this.load.image(
-            "restaurant_slot",
-            "assets/deliveryrun/restaurant_slot.png"
-        );
         this.load.image(
             "event_positive",
             "assets/deliveryrun/event_positive.png"
@@ -354,26 +342,11 @@ export class DeliveryRun extends Phaser.Scene {
         Object.keys(this.playerSprites).forEach((restaurantId) => {
             const restaurantData = this.playerSprites[restaurantId];
 
-            // Create animation for player running
-            if (!this.anims.exists("run")) {
-                this.anims.create({
-                    key: "run",
-                    frames: this.anims.generateFrameNumbers("player_sprite", {
-                        start: 0,
-                        end: 3,
-                    }),
-                    frameRate: 10,
-                    repeat: -1,
-                });
-            }
-
-            restaurantData.sprite.play("run");
-
             // Animate player sprite moving across the track
             this.tweens.add({
                 targets: restaurantData.sprite,
                 x: restaurantData.maxX,
-                duration: 15000, // 15 seconds to complete the run
+                duration: 5000, // 5 seconds to complete the run
                 ease: "Power1",
                 onUpdate: (tween) => {
                     // Update progress bar width
@@ -657,7 +630,18 @@ export class DeliveryRun extends Phaser.Scene {
             console.log("Returning to hub");
             this.cameras.main.fadeOut(1000, 0, 0, 0);
             this.time.delayedCall(1000, () => {
+                // Arrêter la musique et la scène actuelle
                 audioManager.stopMusic();
+
+                // Réinitialiser les variables importantes
+                this.activeRestaurants = [];
+                this.playerSprites = {};
+                this.events = {};
+                this.finished = false;
+                this.started = false;
+
+                // Arrêter complètement cette scène avant de démarrer HubScreen
+                this.scene.stop();
                 this.scene.start("HubScreen");
             });
         });
@@ -671,6 +655,41 @@ export class DeliveryRun extends Phaser.Scene {
         }
 
         // Update logic if needed
+    }
+
+    /**
+     * Process delivery results in the game state
+     * This is called when the user clicks "Return to Hub" in the UI
+     */
+    finalizeDeliveryResults() {
+        // Send the results to GameState for processing
+        const results = {
+            totalProfit: this.totalProfit,
+            rankChange: this.rankChange || 0,
+            restaurants: this.restaurants,
+        };
+
+        // Process results in GameState (update funds, rank, burnout)
+        gameState.processDeliveryResults(results);
+
+        // Emit event to show personal time resolution
+        this.events.emit("readyForPersonalTime");
+
+        // Note: We don't return to the hub here - that will be handled by React components
+        // after the personal time is resolved
+    }
+
+    // Update the returnToHub method to first finalize results
+    returnToHub() {
+        // First finalize the results if not done already
+        if (!this.resultsFinalized) {
+            this.finalizeDeliveryResults();
+            this.resultsFinalized = true;
+        }
+
+        this.deliveryComplete = true;
+        this.scene.stop("PlayerUI");
+        this.scene.start("HubScreen");
     }
 }
 

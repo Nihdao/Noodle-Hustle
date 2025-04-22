@@ -8,6 +8,7 @@
 export const STORAGE_KEYS = {
     GAME_SAVE: "noodleBalanceSave",
     SETTINGS: "noodleBalanceSettings",
+    SOCIAL_ACTION_DONE_IN_PERIOD: "socialActionDoneInPeriod",
     PLAYER_NAME: "playerName",
 };
 
@@ -302,6 +303,8 @@ export const clearAllData = () => {
     try {
         localStorage.removeItem(STORAGE_KEYS.GAME_SAVE);
         localStorage.removeItem(STORAGE_KEYS.SETTINGS);
+        localStorage.removeItem(STORAGE_KEYS.PLAYER_NAME);
+        localStorage.removeItem(STORAGE_KEYS.SOCIAL_ACTION_DONE_IN_PERIOD);
         return true;
     } catch (error) {
         console.error("Failed to clear data:", error);
