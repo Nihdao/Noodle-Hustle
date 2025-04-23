@@ -116,14 +116,14 @@ export const createNewGameSave = (playerName) => {
                 cuisine: employee.cuisine,
                 ambiance: employee.ambiance,
                 salary: employee.salary,
-                mood: employee.mood,
+                morale: employee.morale,
                 debateTrait: employee.debateTrait,
                 interventionCost: employee.interventionCost,
                 relevance: employee.relevance,
                 repartee: employee.repartee,
                 level: 1,
                 assigned: 1, // restaurant id 1
-                actions: [], // Historique des actions par période [{ period: n, type: 'service', value: +2 }]
+                management: false,
             })),
             laborCost: starterEmployees.reduce(
                 (sum, emp) => sum + emp.salary,

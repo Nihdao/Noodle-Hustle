@@ -1,202 +1,35 @@
 import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import MenuContainer from "../common/MenuContainer";
+import { useEmployees, useFinances } from "../../store/gameStateHooks";
 
-// Mock data - à remplacer par des données réelles plus tard
-const mockEmployees = [
-    {
-        id: 1,
-        name: "Hiroshi Tanaka",
-        level: 3,
-        mood: 2,
-        trait: "Authoritative",
-        rarity: "B",
-        salary: 4500,
-        skills: {
-            cooking: 78,
-            service: 45,
-            management: 65,
-            debate: 60,
-        },
-        debateStats: {
-            trait: "Assertive",
-            interventionCost: 35,
-            relevance: 72,
-            repartee: 68,
-        },
-        description:
-            "Experienced chef with good management skills. Specializes in traditional ramen.",
-        assigned: "Noodles Original",
-    },
-    {
-        id: 2,
-        name: "Yuki Sato",
-        level: 2,
-        mood: 3,
-        trait: "Empathetic",
-        rarity: "C",
-        salary: 3200,
-        skills: {
-            cooking: 35,
-            service: 80,
-            management: 40,
-            debate: 55,
-        },
-        debateStats: {
-            trait: "Diplomatic",
-            interventionCost: 25,
-            relevance: 65,
-            repartee: 42,
-        },
-        description:
-            "Friendly service staff with excellent customer relation skills.",
-        assigned: "Noodles Original",
-    },
-    {
-        id: 3,
-        name: "Kenji Watanabe",
-        level: 4,
-        mood: 1,
-        trait: "Analytical",
-        rarity: "A",
-        salary: 6800,
-        skills: {
-            cooking: 50,
-            service: 65,
-            management: 90,
-            debate: 85,
-        },
-        debateStats: {
-            trait: "Logical",
-            interventionCost: 45,
-            relevance: 88,
-            repartee: 79,
-        },
-        description:
-            "Top-tier manager who can increase the efficiency of the entire restaurant.",
-        assigned: "Ramen Haven",
-    },
-    {
-        id: 4,
-        name: "Aiko Yamamoto",
-        level: 1,
-        mood: 3,
-        trait: "Empathetic",
-        rarity: "D",
-        salary: 2500,
-        skills: {
-            cooking: 60,
-            service: 30,
-            management: 20,
-            debate: 40,
-        },
-        debateStats: {
-            trait: "Reflective",
-            interventionCost: 20,
-            relevance: 35,
-            repartee: 30,
-        },
-        description: "Novice chef with potential. Eager to learn and improve.",
-        assigned: "Ramen Haven",
-    },
-    {
-        id: 5,
-        name: "Takeshi Nakamura",
-        level: 5,
-        mood: 2,
-        trait: "Authoritative",
-        rarity: "S",
-        salary: 9500,
-        skills: {
-            cooking: 95,
-            service: 70,
-            management: 85,
-            debate: 75,
-        },
-        debateStats: {
-            trait: "Commanding",
-            interventionCost: 60,
-            relevance: 82,
-            repartee: 77,
-        },
-        description:
-            "Legendary chef whose ramen recipes are sought across Japan.",
-        assigned: "Ramen Royale",
-    },
-    {
-        id: 6,
-        name: "Sakura Ito",
-        level: 2,
-        mood: 2,
-        trait: "Empathetic",
-        rarity: "C",
-        salary: 3000,
-        skills: {
-            cooking: 25,
-            service: 75,
-            management: 35,
-            debate: 50,
-        },
-        debateStats: {
-            trait: "Sympathetic",
-            interventionCost: 22,
-            relevance: 58,
-            repartee: 45,
-        },
-        description:
-            "Attentive service staff who ensures customers have a pleasant experience.",
-        assigned: null,
-    },
-    {
-        id: 7,
-        name: "Ryu Kobayashi",
-        level: 3,
-        mood: 1,
-        trait: "Analytical",
-        rarity: "B",
-        salary: 5200,
-        skills: {
-            cooking: 30,
-            service: 60,
-            management: 80,
-            debate: 70,
-        },
-        debateStats: {
-            trait: "Strategic",
-            interventionCost: 40,
-            relevance: 75,
-            repartee: 65,
-        },
-        description:
-            "Efficient manager who excels at optimizing restaurant operations.",
-        assigned: null,
-    },
-];
+const EmployeeManagement = ({ onBack }) => {
+    const {
+        rosterWithDetails: employees,
+        laborCost,
+        trainEmployee,
+        giftEmployee,
+        fireEmployee,
+        getEmployeeById,
+    } = useEmployees();
+    const { funds, formatCurrency } = useFinances();
 
-const EmployeeManagement = ({ onBack, laborCost, funds = 50000 }) => {
-    const [employees, setEmployees] = useState(mockEmployees);
     const [selectedEmployee, setSelectedEmployee] = useState(null);
     const [hoveredMenuItem, setHoveredMenuItem] = useState(null);
+    const [hoveredTooltip, setHoveredTooltip] = useState(false);
     const [detailsPosition, setDetailsPosition] = useState({ x: 0, y: 0 });
     const [showDetails, setShowDetails] = useState(false);
-    const [actionPerformed, setActionPerformed] = useState(false);
-
-    const formatCurrency = (value) => {
-        return new Intl.NumberFormat("fr-FR").format(value) + " ¥";
-    };
+    const [errorMessage, setErrorMessage] = useState("");
 
     // Mood emojis mapping
-    const getMoodEmoji = (mood) => {
-        switch (mood) {
-            case 3:
-                return { emoji: "😄", label: "Happy", color: "#4ADE80" };
-            case 2:
-                return { emoji: "🙂", label: "Content", color: "#FBBF24" };
-            case 1:
-                return { emoji: "😒", label: "Dissatisfied", color: "#F87171" };
-            default:
-                return { emoji: "😐", label: "Neutral", color: "#9CA3AF" };
-        }
+    const getMoodEmoji = (morale) => {
+        if (morale >= 80)
+            return { emoji: "😄", label: "Happy", color: "#4ADE80" };
+        if (morale >= 50)
+            return { emoji: "🙂", label: "Okay", color: "#FBBF24" };
+        if (morale >= 30)
+            return { emoji: "😒", label: "Dissatisfied", color: "#F87171" };
+        return { emoji: "😣", label: "Unhappy", color: "#EF4444" };
     };
 
     // Calcul des coûts d'action basés sur l'employé
@@ -211,7 +44,7 @@ const EmployeeManagement = ({ onBack, laborCost, funds = 50000 }) => {
         return costsMap[rarity] || 1000;
     };
 
-    const getTrainingCost = (rarity, level) => {
+    const getTrainingCost = (rarity) => {
         const rarityMultiplier = {
             D: 500,
             C: 800,
@@ -219,12 +52,24 @@ const EmployeeManagement = ({ onBack, laborCost, funds = 50000 }) => {
             A: 1800,
             S: 2500,
         };
-        return (rarityMultiplier[rarity] || 1000) * level;
+        return rarityMultiplier[rarity] || 1000;
     };
 
     const getFireCost = (salary) => {
         return Math.round(salary * 0.25);
     };
+
+    // Update the selected employee when employees data changes
+    useEffect(() => {
+        if (selectedEmployee && showDetails) {
+            const updatedEmployee = employees.find(
+                (emp) => emp.id === selectedEmployee.id
+            );
+            if (updatedEmployee) {
+                setSelectedEmployee(updatedEmployee);
+            }
+        }
+    }, [employees, selectedEmployee, showDetails]);
 
     // Gérer la sélection d'un employé
     const handleSelectEmployee = (employee) => {
@@ -261,57 +106,80 @@ const EmployeeManagement = ({ onBack, laborCost, funds = 50000 }) => {
 
     // Actions sur les employés
     const handleGift = (employee) => {
-        if (employee.mood >= 3 || actionPerformed) return;
+        if (employee.morale >= 100) return;
+        if (employee.management) {
+            setErrorMessage(
+                "This employee has already had a management action performed this period."
+            );
+            setTimeout(() => setErrorMessage(""), 3000);
+            return;
+        }
 
         const cost = getGiftCost(employee.rarity);
-        if (cost > funds) return;
+        if (cost > funds) {
+            setErrorMessage("Insufficient funds for this action.");
+            setTimeout(() => setErrorMessage(""), 3000);
+            return;
+        }
 
-        // Update employee mood
-        const updatedEmployees = employees.map((emp) =>
-            emp.id === employee.id
-                ? { ...emp, mood: Math.min(emp.mood + 1, 3) }
-                : emp
-        );
+        giftEmployee(employee.id, cost);
 
-        setEmployees(updatedEmployees);
-        setSelectedEmployee({
-            ...employee,
-            mood: Math.min(employee.mood + 1, 3),
-        });
-        setActionPerformed(true);
+        // Update the selected employee with fresh data
+        setTimeout(() => {
+            const updatedEmployee = getEmployeeById(employee.id);
+            if (updatedEmployee) {
+                setSelectedEmployee(updatedEmployee);
+            }
+        }, 100);
     };
 
     const handleTraining = (employee) => {
-        if (actionPerformed) return;
+        if (employee.management) {
+            setErrorMessage(
+                "This employee has already had a management action performed this period."
+            );
+            setTimeout(() => setErrorMessage(""), 3000);
+            return;
+        }
 
-        const cost = getTrainingCost(employee.rarity, employee.level);
-        if (cost > funds) return;
+        const cost = getTrainingCost(employee.rarity);
+        if (cost > funds) {
+            setErrorMessage("Insufficient funds for this action.");
+            setTimeout(() => setErrorMessage(""), 3000);
+            return;
+        }
 
-        // Update employee level
-        const updatedEmployees = employees.map((emp) =>
-            emp.id === employee.id ? { ...emp, level: emp.level + 1 } : emp
-        );
+        trainEmployee(employee.id, cost);
 
-        setEmployees(updatedEmployees);
-        setSelectedEmployee({ ...employee, level: employee.level + 1 });
-        setActionPerformed(true);
+        // Update the selected employee with fresh data
+        setTimeout(() => {
+            const updatedEmployee = getEmployeeById(employee.id);
+            if (updatedEmployee) {
+                setSelectedEmployee(updatedEmployee);
+            }
+        }, 100);
     };
 
     const handleFire = (employee) => {
-        if (actionPerformed) return;
+        // Check if employee is protected (initial employees)
+        if (employee.id === 74 || employee.id === 75) {
+            setErrorMessage(
+                "This employee cannot be fired. They are part of your initial team."
+            );
+            setTimeout(() => setErrorMessage(""), 3000); // Clear message after 3 seconds
+            return;
+        }
 
         const cost = getFireCost(employee.salary);
-        if (cost > funds) return;
+        if (cost > funds) {
+            setErrorMessage("Insufficient funds for severance payment.");
+            setTimeout(() => setErrorMessage(""), 3000);
+            return;
+        }
 
-        // Remove employee
-        const updatedEmployees = employees.filter(
-            (emp) => emp.id !== employee.id
-        );
-
-        setEmployees(updatedEmployees);
+        fireEmployee(employee.id, cost);
         setSelectedEmployee(null);
         setShowDetails(false);
-        setActionPerformed(true);
     };
 
     // Style for the component
@@ -424,33 +292,6 @@ const EmployeeManagement = ({ onBack, laborCost, funds = 50000 }) => {
                 left: "0.5rem",
             };
         },
-        actionButton: (enabled, type) => {
-            const colors = {
-                gift: { bg: "#10B981", hoverBg: "#059669" },
-                training: { bg: "#3B82F6", hoverBg: "#2563EB" },
-                fire: { bg: "#EF4444", hoverBg: "#DC2626" },
-            };
-            return {
-                backgroundColor: enabled ? colors[type]?.bg : "#9CA3AF",
-                color: "#FFFFFF",
-                padding: "0.5rem 1rem",
-                borderRadius: "0.375rem",
-                fontWeight: "bold",
-                cursor: enabled ? "pointer" : "not-allowed",
-                transition: "all 0.3s ease",
-                opacity: enabled ? 1 : 0.7,
-                border: "none",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "0.5rem",
-                ":hover": {
-                    backgroundColor: enabled
-                        ? colors[type]?.hoverBg
-                        : "#9CA3AF",
-                },
-            };
-        },
         skillBar: (value, color) => ({
             width: `${value}%`,
             backgroundColor: color || "var(--color-principalRed)",
@@ -472,6 +313,24 @@ const EmployeeManagement = ({ onBack, laborCost, funds = 50000 }) => {
             left: "0.5rem",
             boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
             zIndex: 3,
+        },
+        tooltip: {
+            position: "absolute",
+            backgroundColor: "rgba(0, 0, 0, 0.8)",
+            color: "white",
+            padding: "0.5rem 0.75rem",
+            borderRadius: "0.375rem",
+            zIndex: 100,
+            maxWidth: "250px",
+            boxShadow: "0 2px 10px rgba(0, 0, 0, 0.2)",
+            fontSize: "0.75rem",
+            lineHeight: "1.3",
+            top: "calc(100% + 5px)",
+            left: "50%",
+            transform: "translateX(-50%)",
+            opacity: hoveredTooltip ? 1 : 0,
+            visibility: hoveredTooltip ? "visible" : "hidden",
+            transition: "opacity 0.2s, visibility 0.2s",
         },
     };
 
@@ -510,7 +369,7 @@ const EmployeeManagement = ({ onBack, laborCost, funds = 50000 }) => {
 
                 <div className="grid grid-cols-3 gap-4">
                     {employees.map((employee) => {
-                        const moodInfo = getMoodEmoji(employee.mood);
+                        const moodInfo = getMoodEmoji(employee.morale || 90);
                         return (
                             <div
                                 key={employee.id}
@@ -547,7 +406,7 @@ const EmployeeManagement = ({ onBack, laborCost, funds = 50000 }) => {
                                         </div>
 
                                         {/* Simplified bottom row with just mood and assignment */}
-                                        <div className="mt-2 flex  justify-center items-center text-xs">
+                                        <div className="mt-2 flex justify-center items-center text-xs">
                                             <div className="flex items-center">
                                                 <span
                                                     className="text-xl"
@@ -589,7 +448,7 @@ const EmployeeManagement = ({ onBack, laborCost, funds = 50000 }) => {
                         className="w-[700px] max-h-[80vh]"
                         scrollable={true}
                         maxHeight="80vh"
-                        title={`${selectedEmployee.name} - ${selectedEmployee.trait} ${selectedEmployee.rarity}`}
+                        title={`${selectedEmployee.name} - Rarity ${selectedEmployee.rarity}`}
                     >
                         <div className="p-5">
                             <div className="flex mb-6">
@@ -625,31 +484,50 @@ const EmployeeManagement = ({ onBack, laborCost, funds = 50000 }) => {
                                     </div>
 
                                     <div className="space-y-3 text-[color:var(--color-principalBrown)]">
-                                        <div className="flex justify-between items-center p-2 bg-[color:var(--color-yellowWhite)] rounded-lg">
-                                            <span className="font-medium">
-                                                Mood:
+                                        <div className="flex justify-between items-center p-2 bg-[color:var(--color-yellowWhite)] rounded-lg relative">
+                                            <span className="font-medium flex items-center">
+                                                Morale :
+                                                <div
+                                                    className="ml-1 w-4 h-4 bg-gray-200 rounded-full flex items-center justify-center text-gray-700 text-xs cursor-help"
+                                                    onMouseEnter={() =>
+                                                        setHoveredTooltip(true)
+                                                    }
+                                                    onMouseLeave={() =>
+                                                        setHoveredTooltip(false)
+                                                    }
+                                                >
+                                                    ?
+                                                </div>
+                                                {hoveredTooltip && (
+                                                    <div style={styles.tooltip}>
+                                                        <p>
+                                                            <strong>
+                                                                Morale Impact:
+                                                            </strong>
+                                                        </p>
+                                                        <p className="mt-1">
+                                                            • High (≥80):
+                                                            Performance boost
+                                                        </p>
+                                                        <p>
+                                                            • Low (≤30):
+                                                            Performance penalty
+                                                        </p>
+                                                    </div>
+                                                )}
                                             </span>
                                             <div className="flex items-center gap-2">
-                                                <span
-                                                    className="text-2xl"
-                                                    style={{
-                                                        color: getMoodEmoji(
-                                                            selectedEmployee.mood
-                                                        ).color,
-                                                    }}
-                                                >
-                                                    {
-                                                        getMoodEmoji(
-                                                            selectedEmployee.mood
-                                                        ).emoji
-                                                    }
-                                                </span>
                                                 <span className="text-sm font-medium">
                                                     {
                                                         getMoodEmoji(
-                                                            selectedEmployee.mood
+                                                            selectedEmployee.morale ||
+                                                                50
                                                         ).label
                                                     }
+                                                </span>
+                                                <span className="text-sm">
+                                                    ({selectedEmployee.morale}
+                                                    /100)
                                                 </span>
                                             </div>
                                         </div>
@@ -665,205 +543,9 @@ const EmployeeManagement = ({ onBack, laborCost, funds = 50000 }) => {
                                             </span>
                                         </div>
                                     </div>
-
-                                    {/* Employee Actions */}
-                                    <div className="mt-4 bg-[color:var(--color-yellowWhite)] rounded-lg p-3">
-                                        <h4 className="font-bold mb-1 text-[color:var(--color-principalBrown)]">
-                                            Available Actions
-                                        </h4>
-                                        <div className="text-xs text-gray-500 mb-3 italic">
-                                            Limited to 1 per employee per period
-                                        </div>
-
-                                        <div className="space-y-3">
-                                            {/* Gift Action */}
-                                            <div className="flex justify-between items-center p-2 rounded-lg bg-white hover:bg-gray-50 transition-colors">
-                                                <div className="flex items-center">
-                                                    <div className="text-2xl mr-2">
-                                                        🎁
-                                                    </div>
-                                                    <div>
-                                                        <div className="font-medium text-[color:var(--color-principalBrown)]">
-                                                            Gift
-                                                        </div>
-                                                        <div className="text-sm text-gray-500">
-                                                            +1 Mood (max 3)
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center">
-                                                    <span className="mr-2 text-red-500 font-medium">
-                                                        {formatCurrency(
-                                                            getGiftCost(
-                                                                selectedEmployee.rarity
-                                                            )
-                                                        )}
-                                                    </span>
-                                                    <button
-                                                        className={`px-3 py-1 rounded text-white font-medium transform transition-transform ${
-                                                            selectedEmployee.mood <
-                                                                3 &&
-                                                            !actionPerformed &&
-                                                            funds >=
-                                                                getGiftCost(
-                                                                    selectedEmployee.rarity
-                                                                )
-                                                                ? "bg-emerald-500 hover:bg-emerald-600 hover:scale-105 active:scale-95"
-                                                                : "bg-gray-400 cursor-not-allowed"
-                                                        }`}
-                                                        onClick={() =>
-                                                            handleGift(
-                                                                selectedEmployee
-                                                            )
-                                                        }
-                                                        disabled={
-                                                            selectedEmployee.mood >=
-                                                                3 ||
-                                                            actionPerformed ||
-                                                            funds <
-                                                                getGiftCost(
-                                                                    selectedEmployee.rarity
-                                                                )
-                                                        }
-                                                    >
-                                                        Give
-                                                    </button>
-                                                </div>
-                                            </div>
-
-                                            {/* Training Action */}
-                                            <div className="flex flex-col p-2 rounded-lg bg-white hover:bg-gray-50 transition-colors">
-                                                <div className="flex justify-between items-center">
-                                                    <div className="flex items-center">
-                                                        <div className="text-2xl mr-2">
-                                                            🧠
-                                                        </div>
-                                                        <div>
-                                                            <div className="font-medium text-[color:var(--color-principalBrown)]">
-                                                                Training
-                                                            </div>
-                                                            <div className="text-sm text-gray-500">
-                                                                Level{" "}
-                                                                {
-                                                                    selectedEmployee.level
-                                                                }{" "}
-                                                                →{" "}
-                                                                {selectedEmployee.level +
-                                                                    1}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center">
-                                                        <span className="mr-2 text-red-500 font-medium">
-                                                            {formatCurrency(
-                                                                getTrainingCost(
-                                                                    selectedEmployee.rarity,
-                                                                    selectedEmployee.level
-                                                                )
-                                                            )}
-                                                        </span>
-                                                        <button
-                                                            className={`px-3 py-1 rounded text-white font-medium transform transition-transform ${
-                                                                !actionPerformed &&
-                                                                funds >=
-                                                                    getTrainingCost(
-                                                                        selectedEmployee.rarity,
-                                                                        selectedEmployee.level
-                                                                    )
-                                                                    ? "bg-blue-500 hover:bg-blue-600 hover:scale-105 active:scale-95"
-                                                                    : "bg-gray-400 cursor-not-allowed"
-                                                            }`}
-                                                            onClick={() =>
-                                                                handleTraining(
-                                                                    selectedEmployee
-                                                                )
-                                                            }
-                                                            disabled={
-                                                                actionPerformed ||
-                                                                funds <
-                                                                    getTrainingCost(
-                                                                        selectedEmployee.rarity,
-                                                                        selectedEmployee.level
-                                                                    )
-                                                            }
-                                                        >
-                                                            Train
-                                                        </button>
-                                                    </div>
-                                                </div>
-
-                                                {/* Training Progress Bar */}
-                                                <div className="mt-2">
-                                                    <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
-                                                        <div
-                                                            className="h-full rounded-full transition-all"
-                                                            style={{
-                                                                width: "100%",
-                                                                backgroundColor:
-                                                                    "var(--color-principalRed)",
-                                                                opacity: 0.7,
-                                                            }}
-                                                        ></div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Fire Action */}
-                                            <div className="flex justify-between items-center p-2 rounded-lg bg-white hover:bg-gray-50 transition-colors">
-                                                <div className="flex items-center">
-                                                    <div className="text-2xl mr-2">
-                                                        ❌
-                                                    </div>
-                                                    <div>
-                                                        <div className="font-medium text-[color:var(--color-principalBrown)]">
-                                                            Fire
-                                                        </div>
-                                                        <div className="text-sm text-gray-500">
-                                                            25% of salary as
-                                                            severance
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center">
-                                                    <span className="mr-2 text-red-500 font-medium">
-                                                        {formatCurrency(
-                                                            getFireCost(
-                                                                selectedEmployee.salary
-                                                            )
-                                                        )}
-                                                    </span>
-                                                    <button
-                                                        className={`px-3 py-1 rounded text-white font-medium transform transition-transform ${
-                                                            !actionPerformed &&
-                                                            funds >=
-                                                                getFireCost(
-                                                                    selectedEmployee.salary
-                                                                )
-                                                                ? "bg-red-500 hover:bg-red-600 hover:scale-105 active:scale-95"
-                                                                : "bg-gray-400 cursor-not-allowed"
-                                                        }`}
-                                                        onClick={() =>
-                                                            handleFire(
-                                                                selectedEmployee
-                                                            )
-                                                        }
-                                                        disabled={
-                                                            actionPerformed ||
-                                                            funds <
-                                                                getFireCost(
-                                                                    selectedEmployee.salary
-                                                                )
-                                                        }
-                                                    >
-                                                        Fire
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
                                 </div>
 
-                                {/* Right Column - Restaurant Skills and Debate Stats */}
+                                {/* Right Column - Restaurant Skills */}
                                 <div className="w-1/2 pl-4 border-l border-gray-200">
                                     {/* Restaurant Skills Section */}
                                     <div className="bg-[color:var(--color-yellowWhite)] rounded-lg p-3 mb-4">
@@ -875,12 +557,11 @@ const EmployeeManagement = ({ onBack, laborCost, funds = 50000 }) => {
                                             <div>
                                                 <div className="flex justify-between mb-1">
                                                     <span className="text-sm font-medium text-[color:var(--color-principalBrown)]">
-                                                        🍳 Cooking
+                                                        🍳 Cuisine
                                                     </span>
                                                     <span className="text-sm font-medium text-[color:var(--color-principalBrown)]">
                                                         {
-                                                            selectedEmployee
-                                                                .skills.cooking
+                                                            selectedEmployee.cuisine
                                                         }
                                                         /100
                                                     </span>
@@ -889,8 +570,7 @@ const EmployeeManagement = ({ onBack, laborCost, funds = 50000 }) => {
                                                     <div
                                                         className="h-full rounded-full transition-all"
                                                         style={styles.skillBar(
-                                                            selectedEmployee
-                                                                .skills.cooking,
+                                                            selectedEmployee.cuisine,
                                                             "#F97316"
                                                         )}
                                                     ></div>
@@ -904,8 +584,7 @@ const EmployeeManagement = ({ onBack, laborCost, funds = 50000 }) => {
                                                     </span>
                                                     <span className="text-sm font-medium text-[color:var(--color-principalBrown)]">
                                                         {
-                                                            selectedEmployee
-                                                                .skills.service
+                                                            selectedEmployee.service
                                                         }
                                                         /100
                                                     </span>
@@ -914,8 +593,7 @@ const EmployeeManagement = ({ onBack, laborCost, funds = 50000 }) => {
                                                     <div
                                                         className="h-full rounded-full transition-all"
                                                         style={styles.skillBar(
-                                                            selectedEmployee
-                                                                .skills.service,
+                                                            selectedEmployee.service,
                                                             "#0EA5E9"
                                                         )}
                                                     ></div>
@@ -925,13 +603,11 @@ const EmployeeManagement = ({ onBack, laborCost, funds = 50000 }) => {
                                             <div>
                                                 <div className="flex justify-between mb-1">
                                                     <span className="text-sm font-medium text-[color:var(--color-principalBrown)]">
-                                                        📊 Management
+                                                        🎭 Ambiance
                                                     </span>
                                                     <span className="text-sm font-medium text-[color:var(--color-principalBrown)]">
                                                         {
-                                                            selectedEmployee
-                                                                .skills
-                                                                .management
+                                                            selectedEmployee.ambiance
                                                         }
                                                         /100
                                                     </span>
@@ -940,124 +616,8 @@ const EmployeeManagement = ({ onBack, laborCost, funds = 50000 }) => {
                                                     <div
                                                         className="h-full rounded-full transition-all"
                                                         style={styles.skillBar(
-                                                            selectedEmployee
-                                                                .skills
-                                                                .management,
+                                                            selectedEmployee.ambiance,
                                                             "#8B5CF6"
-                                                        )}
-                                                    ></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Debate Stats Section */}
-                                    <div className="bg-[color:var(--color-yellowWhite)] rounded-lg p-3 mb-4">
-                                        <h4 className="font-bold mb-3 text-[color:var(--color-principalBrown)]">
-                                            🗣️ Debate Skills
-                                        </h4>
-
-                                        <div className="space-y-3">
-                                            <div className="flex justify-between items-center p-2 bg-white rounded-lg">
-                                                <span className="font-medium text-sm text-[color:var(--color-principalBrown)]">
-                                                    Debate Trait:
-                                                </span>
-                                                <span className="text-[color:var(--color-principalBrown)] font-semibold px-2 py-0.5 bg-gray-100 rounded">
-                                                    {
-                                                        selectedEmployee
-                                                            .debateStats.trait
-                                                    }
-                                                </span>
-                                            </div>
-
-                                            <div className="flex justify-between items-center p-2 bg-white rounded-lg">
-                                                <span className="font-medium text-sm text-[color:var(--color-principalBrown)]">
-                                                    Intervention Cost:
-                                                </span>
-                                                <span className="text-red-500 font-medium">
-                                                    {
-                                                        selectedEmployee
-                                                            .debateStats
-                                                            .interventionCost
-                                                    }{" "}
-                                                    pts
-                                                </span>
-                                            </div>
-
-                                            <div>
-                                                <div className="flex justify-between mb-1">
-                                                    <span className="text-sm font-medium text-[color:var(--color-principalBrown)]">
-                                                        Relevance
-                                                    </span>
-                                                    <span className="text-sm font-medium text-[color:var(--color-principalBrown)]">
-                                                        {
-                                                            selectedEmployee
-                                                                .debateStats
-                                                                .relevance
-                                                        }
-                                                        /100
-                                                    </span>
-                                                </div>
-                                                <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                                                    <div
-                                                        className="h-full rounded-full transition-all"
-                                                        style={styles.skillBar(
-                                                            selectedEmployee
-                                                                .debateStats
-                                                                .relevance,
-                                                            "#EC4899"
-                                                        )}
-                                                    ></div>
-                                                </div>
-                                            </div>
-
-                                            <div>
-                                                <div className="flex justify-between mb-1">
-                                                    <span className="text-sm font-medium text-[color:var(--color-principalBrown)]">
-                                                        Repartee
-                                                    </span>
-                                                    <span className="text-sm font-medium text-[color:var(--color-principalBrown)]">
-                                                        {
-                                                            selectedEmployee
-                                                                .debateStats
-                                                                .repartee
-                                                        }
-                                                        /100
-                                                    </span>
-                                                </div>
-                                                <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                                                    <div
-                                                        className="h-full rounded-full transition-all"
-                                                        style={styles.skillBar(
-                                                            selectedEmployee
-                                                                .debateStats
-                                                                .repartee,
-                                                            "#10B981"
-                                                        )}
-                                                    ></div>
-                                                </div>
-                                            </div>
-
-                                            <div>
-                                                <div className="flex justify-between mb-1">
-                                                    <span className="text-sm font-medium text-[color:var(--color-principalBrown)]">
-                                                        Overall Debate
-                                                    </span>
-                                                    <span className="text-sm font-medium text-[color:var(--color-principalBrown)]">
-                                                        {
-                                                            selectedEmployee
-                                                                .skills.debate
-                                                        }
-                                                        /100
-                                                    </span>
-                                                </div>
-                                                <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                                                    <div
-                                                        className="h-full rounded-full transition-all"
-                                                        style={styles.skillBar(
-                                                            selectedEmployee
-                                                                .skills.debate,
-                                                            "#6366F1"
                                                         )}
                                                     ></div>
                                                 </div>
@@ -1067,11 +627,210 @@ const EmployeeManagement = ({ onBack, laborCost, funds = 50000 }) => {
                                 </div>
                             </div>
 
-                            {actionPerformed && (
+                            {/* Employee Actions - pleine largeur */}
+                            <div className="w-full mt-4">
+                                <div className="bg-[color:var(--color-yellowWhite)] rounded-lg p-3">
+                                    <h4 className="font-bold mb-1 text-[color:var(--color-principalBrown)]">
+                                        Available Actions
+                                    </h4>
+                                    <div className="text-xs text-gray-500 mb-3 italic">
+                                        Limited to 1 per employee per period
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        {/* Gift Action */}
+                                        <div className="flex justify-between items-center p-2 rounded-lg bg-white hover:bg-gray-50 transition-colors">
+                                            <div className="flex items-center">
+                                                <div className="text-2xl mr-2">
+                                                    🎁
+                                                </div>
+                                                <div>
+                                                    <div className="font-medium text-[color:var(--color-principalBrown)]">
+                                                        Gift
+                                                    </div>
+                                                    <div className="text-sm text-gray-500">
+                                                        +30 Morale (max 100)
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center">
+                                                <span className="mr-2 text-red-500 font-medium">
+                                                    {formatCurrency(
+                                                        getGiftCost(
+                                                            selectedEmployee.rarity
+                                                        )
+                                                    )}
+                                                </span>
+                                                <button
+                                                    className={`px-3 py-1 rounded text-white font-medium transform transition-transform ${
+                                                        (selectedEmployee.morale ||
+                                                            0) < 100 &&
+                                                        !selectedEmployee.management &&
+                                                        funds >=
+                                                            getGiftCost(
+                                                                selectedEmployee.rarity
+                                                            )
+                                                            ? "bg-emerald-500 hover:bg-emerald-600 hover:scale-105 active:scale-95"
+                                                            : "bg-gray-400 cursor-not-allowed"
+                                                    }`}
+                                                    onClick={() =>
+                                                        handleGift(
+                                                            selectedEmployee
+                                                        )
+                                                    }
+                                                    disabled={
+                                                        (selectedEmployee.morale ||
+                                                            0) >= 100 ||
+                                                        selectedEmployee.management ||
+                                                        funds <
+                                                            getGiftCost(
+                                                                selectedEmployee.rarity
+                                                            )
+                                                    }
+                                                >
+                                                    Give
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Training Action */}
+                                        <div className="flex flex-col p-2 rounded-lg bg-white hover:bg-gray-50 transition-colors">
+                                            <div className="flex justify-between items-center">
+                                                <div className="flex items-center">
+                                                    <div className="text-2xl mr-2">
+                                                        🧠
+                                                    </div>
+                                                    <div>
+                                                        <div className="font-medium text-[color:var(--color-principalBrown)]">
+                                                            Training
+                                                        </div>
+                                                        <div className="text-sm text-gray-500">
+                                                            Level{" "}
+                                                            {
+                                                                selectedEmployee.level
+                                                            }{" "}
+                                                            →{" "}
+                                                            {selectedEmployee.level +
+                                                                1}{" "}
+                                                            (+5 to all skills)
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center">
+                                                    <span className="mr-2 text-red-500 font-medium">
+                                                        {formatCurrency(
+                                                            getTrainingCost(
+                                                                selectedEmployee.rarity
+                                                            )
+                                                        )}
+                                                    </span>
+                                                    <button
+                                                        className={`px-3 py-1 rounded text-white font-medium transform transition-transform ${
+                                                            !selectedEmployee.management &&
+                                                            funds >=
+                                                                getTrainingCost(
+                                                                    selectedEmployee.rarity
+                                                                )
+                                                                ? "bg-blue-500 hover:bg-blue-600 hover:scale-105 active:scale-95"
+                                                                : "bg-gray-400 cursor-not-allowed"
+                                                        }`}
+                                                        onClick={() =>
+                                                            handleTraining(
+                                                                selectedEmployee
+                                                            )
+                                                        }
+                                                        disabled={
+                                                            selectedEmployee.management ||
+                                                            funds <
+                                                                getTrainingCost(
+                                                                    selectedEmployee.rarity
+                                                                )
+                                                        }
+                                                    >
+                                                        Train
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Fire Action */}
+                                        <div className="flex justify-between items-center p-2 rounded-lg bg-white hover:bg-gray-50 transition-colors">
+                                            <div className="flex items-center">
+                                                <div className="text-2xl mr-2">
+                                                    ❌
+                                                </div>
+                                                <div>
+                                                    <div className="font-medium text-[color:var(--color-principalBrown)]">
+                                                        Fire
+                                                    </div>
+                                                    <div className="text-sm text-gray-500">
+                                                        25% of salary as
+                                                        severance
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center">
+                                                <span className="mr-2 text-red-500 font-medium">
+                                                    {formatCurrency(
+                                                        getFireCost(
+                                                            selectedEmployee.salary
+                                                        )
+                                                    )}
+                                                </span>
+                                                <button
+                                                    className={`px-3 py-1 rounded text-white font-medium transform transition-transform ${
+                                                        selectedEmployee.id !==
+                                                            74 &&
+                                                        selectedEmployee.id !==
+                                                            75 &&
+                                                        funds >=
+                                                            getFireCost(
+                                                                selectedEmployee.salary
+                                                            )
+                                                            ? "bg-red-500 hover:bg-red-600 hover:scale-105 active:scale-95"
+                                                            : "bg-gray-400 cursor-not-allowed"
+                                                    }`}
+                                                    onClick={() =>
+                                                        handleFire(
+                                                            selectedEmployee
+                                                        )
+                                                    }
+                                                    disabled={
+                                                        selectedEmployee.id ===
+                                                            74 ||
+                                                        selectedEmployee.id ===
+                                                            75 ||
+                                                        funds <
+                                                            getFireCost(
+                                                                selectedEmployee.salary
+                                                            )
+                                                    }
+                                                >
+                                                    {selectedEmployee.id ===
+                                                        74 ||
+                                                    selectedEmployee.id === 75
+                                                        ? "Protected"
+                                                        : "Fire"}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {selectedEmployee?.management && (
                                 <div className="mt-2 text-center">
                                     <div className="bg-amber-100 border border-amber-300 text-amber-800 px-4 py-2 rounded">
                                         ⚠️ You have already performed an action
                                         on this employee during this period.
+                                    </div>
+                                </div>
+                            )}
+
+                            {errorMessage && (
+                                <div className="mt-2 text-center">
+                                    <div className="bg-red-100 border border-red-300 text-red-800 px-4 py-2 rounded">
+                                        ⚠️ {errorMessage}
                                     </div>
                                 </div>
                             )}
@@ -1109,8 +868,6 @@ const EmployeeManagement = ({ onBack, laborCost, funds = 50000 }) => {
 
 EmployeeManagement.propTypes = {
     onBack: PropTypes.func.isRequired,
-    laborCost: PropTypes.number.isRequired,
-    funds: PropTypes.number,
 };
 
 export default EmployeeManagement;

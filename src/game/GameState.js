@@ -656,37 +656,296 @@ class GameState {
     }
 
     /**
-     * Purchase a new restaurant
-     * @param {number} slotId - Restaurant slot ID
-     * @param {Object} restaurant - Restaurant data
+     * Remove an employee from the roster
+     * @param {string} employeeId - ID of the employee to fire
+     * @param {number} severanceCost - Severance cost to pay
      */
-    purchaseRestaurant(slotId, restaurant) {
+    fireEmployee(employeeId, severanceCost) {
+        console.log(
+            "Firing employee:",
+            employeeId,
+            "Severance cost:",
+            severanceCost
+        );
         this.updateGameState((state) => {
-            // Update slot to be purchased
-            const updatedSlots = state.restaurants.slots.map((slot) =>
-                slot.id === slotId
-                    ? { ...slot, purchased: true, barId: restaurant.id }
-                    : slot
+            // Prevent firing the initial employees (IDs 74 and 75)
+            if (employeeId === "74" || employeeId === "75") {
+                console.warn("Cannot fire initial employees (IDs 74 and 75)");
+                return state;
+            }
+
+            // Find the employee index
+            const employeeIndex = state.employees.roster.findIndex(
+                (emp) => emp.id === employeeId
+            );
+            if (employeeIndex === -1) {
+                console.log("Employee not found:", employeeId);
+                return state;
+            }
+
+            // Get the employee to be fired for cost calculations
+            const firedEmployee = state.employees.roster[employeeIndex];
+            console.log("Fired employee:", firedEmployee);
+
+            // Update roster and assigned staff
+            const updatedRoster = state.employees.roster.filter(
+                (emp) => emp.id !== employeeId
             );
 
-            // Add restaurant to bars list
-            const updatedBars = [...state.restaurants.bars, restaurant];
+            // Calculate new total labor cost
+            const newLaborCost = updatedRoster.reduce(
+                (total, emp) => total + (emp.salary || 0),
+                0
+            );
+            console.log("New labor cost:", newLaborCost);
+
+            // Check if restaurants is an array before using map
+            let updatedRestaurants = state.restaurants;
+
+            // Remove the employee from all restaurant staff assignments
+            if (Array.isArray(state.restaurants)) {
+                // Handle restaurants as array
+                updatedRestaurants = state.restaurants.map((restaurant) => {
+                    if (
+                        restaurant.staff &&
+                        restaurant.staff.includes(employeeId)
+                    ) {
+                        // Update restaurant staff cost
+                        const updatedStaff = restaurant.staff.filter(
+                            (id) => id !== employeeId
+                        );
+                        const newStaffCost = updatedStaff.reduce(
+                            (total, id) => {
+                                const emp = updatedRoster.find(
+                                    (e) => e.id === id
+                                );
+                                return total + (emp ? emp.salary : 0);
+                            },
+                            0
+                        );
+
+                        return {
+                            ...restaurant,
+                            staff: updatedStaff,
+                            staffCost: newStaffCost,
+                        };
+                    }
+                    return restaurant;
+                });
+            } else if (state.restaurants && state.restaurants.bars) {
+                // Handle restaurants as object with bars array
+                updatedRestaurants = {
+                    ...state.restaurants,
+                    bars: state.restaurants.bars.map((restaurant) => {
+                        if (
+                            restaurant.staff &&
+                            restaurant.staff.includes(employeeId)
+                        ) {
+                            // Update restaurant staff cost
+                            const updatedStaff = restaurant.staff.filter(
+                                (id) => id !== employeeId
+                            );
+                            const newStaffCost = updatedStaff.reduce(
+                                (total, id) => {
+                                    const emp = updatedRoster.find(
+                                        (e) => e.id === id
+                                    );
+                                    return total + (emp ? emp.salary : 0);
+                                },
+                                0
+                            );
+
+                            return {
+                                ...restaurant,
+                                staff: updatedStaff,
+                                staffCost: newStaffCost,
+                            };
+                        }
+                        return restaurant;
+                    }),
+                };
+            }
 
             return {
                 ...state,
-                restaurants: {
-                    ...state.restaurants,
-                    slots: updatedSlots,
-                    bars: updatedBars,
+                employees: {
+                    ...state.employees,
+                    roster: updatedRoster,
+                    laborCost: newLaborCost,
+                },
+                restaurants: updatedRestaurants,
+                finances: {
+                    ...state.finances,
+                    funds: state.finances.funds - (severanceCost || 0),
+                    expensesHistory: [
+                        ...state.finances.expensesHistory,
+                        {
+                            amount: severanceCost || 0,
+                            source: "Employee severance",
+                            period: state.gameProgress.currentPeriod,
+                        },
+                    ],
+                },
+            };
+        });
+    }
+
+    /**
+     * Train an employee to increase their skill level
+     * @param {string} employeeId - ID of the employee to train
+     * @param {number} cost - Cost of the training
+     */
+    trainEmployee(employeeId, cost) {
+        console.log("Training employee:", employeeId, "Cost:", cost);
+        this.updateGameState((state) => {
+            // Find the employee to train
+            const employeeIndex = state.employees.roster.findIndex(
+                (emp) => emp.id === employeeId
+            );
+            if (employeeIndex === -1) {
+                console.log("Employee not found:", employeeId);
+                return state;
+            }
+
+            // Get employee base data for skill stats
+            const employeeEntry = state.employees.roster[employeeIndex];
+            const baseEmployeeData = this.getEmployeeData(
+                employeeEntry.employeeId
+            );
+
+            console.log("Employee base data:", baseEmployeeData);
+
+            // Get current skill values from the roster entry (might have been upgraded before)
+            const currentCuisine =
+                employeeEntry.cuisine ||
+                (baseEmployeeData ? baseEmployeeData.cuisine : 0) ||
+                0;
+            const currentService =
+                employeeEntry.service ||
+                (baseEmployeeData ? baseEmployeeData.service : 0) ||
+                0;
+            const currentAmbiance =
+                employeeEntry.ambiance ||
+                (baseEmployeeData ? baseEmployeeData.ambiance : 0) ||
+                0;
+
+            console.log(
+                "Current skills - Cuisine:",
+                currentCuisine,
+                "Service:",
+                currentService,
+                "Ambiance:",
+                currentAmbiance
+            );
+
+            // Update employee level, stats, and mark as managed in this period
+            const updatedEmployees = [...state.employees.roster];
+            updatedEmployees[employeeIndex] = {
+                ...updatedEmployees[employeeIndex],
+                level: updatedEmployees[employeeIndex].level + 1,
+                // Increase cuisine, service, and ambiance stats by 5 each
+                cuisine: Math.min(100, currentCuisine + 5),
+                service: Math.min(100, currentService + 5),
+                ambiance: Math.min(100, currentAmbiance + 5),
+                management: true, // Mark that management action has been performed this period
+            };
+
+            console.log("Updated employee:", updatedEmployees[employeeIndex]);
+
+            // Ensure statistics object and its properties exist
+            const statistics = state.statistics || {};
+            const trainingsSessions = statistics.trainingsSessions || 0;
+
+            return {
+                ...state,
+                employees: {
+                    ...state.employees,
+                    roster: updatedEmployees,
                 },
                 finances: {
                     ...state.finances,
-                    funds: state.finances.funds - restaurant.purchasePrice,
+                    funds: state.finances.funds - cost,
+                    expensesHistory: [
+                        ...state.finances.expensesHistory,
+                        {
+                            amount: cost,
+                            source: "Employee training",
+                            period: state.gameProgress.currentPeriod,
+                        },
+                    ],
                 },
                 statistics: {
-                    ...state.statistics,
-                    restaurantsPurchased:
-                        state.statistics.restaurantsPurchased + 1,
+                    ...statistics,
+                    trainingsSessions: trainingsSessions + 1,
+                },
+            };
+        });
+    }
+
+    /**
+     * Give a gift to an employee to boost their morale
+     * @param {string} employeeId - ID of the employee to gift
+     * @param {number} cost - Cost of the gift
+     * @param {number} moraleBoost - Amount of morale to add
+     */
+    giftEmployee(employeeId, cost, moraleBoost = 30) {
+        console.log(
+            "Gifting employee:",
+            employeeId,
+            "Cost:",
+            cost,
+            "Morale boost:",
+            moraleBoost
+        );
+        this.updateGameState((state) => {
+            // Find the employee to gift
+            const employeeIndex = state.employees.roster.findIndex(
+                (emp) => emp.id === employeeId
+            );
+            if (employeeIndex === -1) {
+                console.log("Employee not found:", employeeId);
+                return state;
+            }
+
+            const currentMorale =
+                state.employees.roster[employeeIndex].morale || 0;
+            console.log("Current morale:", currentMorale);
+
+            // Update employee morale and mark as managed in this period
+            const updatedEmployees = [...state.employees.roster];
+            updatedEmployees[employeeIndex] = {
+                ...updatedEmployees[employeeIndex],
+                morale: Math.min(100, currentMorale + moraleBoost),
+                management: true, // Mark that management action has been performed this period
+            };
+
+            console.log("Updated employee:", updatedEmployees[employeeIndex]);
+
+            // Ensure statistics object and its properties exist
+            const statistics = state.statistics || {};
+            const giftsGiven = statistics.giftsGiven || 0;
+
+            return {
+                ...state,
+                employees: {
+                    ...state.employees,
+                    roster: updatedEmployees,
+                },
+                finances: {
+                    ...state.finances,
+                    funds: state.finances.funds - cost,
+                    expensesHistory: [
+                        ...state.finances.expensesHistory,
+                        {
+                            amount: cost,
+                            source: "Employee gift",
+                            period: state.gameProgress.currentPeriod,
+                        },
+                    ],
+                },
+                statistics: {
+                    ...statistics,
+                    giftsGiven: giftsGiven + 1,
                 },
             };
         });

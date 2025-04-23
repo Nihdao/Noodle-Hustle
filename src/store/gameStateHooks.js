@@ -254,12 +254,39 @@ export const useEmployees = () => {
         });
     }, [employees.roster]);
 
+    // Entraîner un employé (augmenter son niveau)
+    const trainEmployee = useCallback((employeeId, trainingCost) => {
+        if (!gameState.initialized) {
+            gameState.initialize();
+        }
+        gameState.trainEmployee(employeeId, trainingCost);
+    }, []);
+
+    // Donner un cadeau à un employé (augmenter le moral)
+    const giftEmployee = useCallback((employeeId, giftCost) => {
+        if (!gameState.initialized) {
+            gameState.initialize();
+        }
+        gameState.giftEmployee(employeeId, giftCost);
+    }, []);
+
+    // Licencier un employé
+    const fireEmployee = useCallback((employeeId, severanceCost) => {
+        if (!gameState.initialized) {
+            gameState.initialize();
+        }
+        gameState.fireEmployee(employeeId, severanceCost);
+    }, []);
+
     return {
         roster: employees.roster || [],
         rosterWithDetails: getRosterWithDetails(),
         laborCost: employees.laborCost || 0,
         hireEmployee,
         getEmployeeById,
+        trainEmployee,
+        giftEmployee,
+        fireEmployee,
     };
 };
 
