@@ -27,6 +27,7 @@ export class Preloader extends Scene {
         this.load.image("player_sprite", "deliveryrun/player_sprite.png");
         this.load.image("event_positive", "deliveryrun/event_positive.png");
         this.load.image("event_negative", "deliveryrun/event_negative.png");
+        this.load.image("background_run", "deliveryrun/background_run.png");
 
         // Load audio
         AudioManager.preloadAll(this);

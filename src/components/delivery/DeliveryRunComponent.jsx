@@ -1,12 +1,17 @@
 import { useEffect, useState } from "react";
 import { EventBus } from "../../game/EventBus";
-import { useGameState, useFinances } from "../../store/gameStateHooks";
+import {
+    useGameState,
+    useFinances,
+    useGameBuffs,
+} from "../../store/gameStateHooks";
 import { useSound } from "../../hooks/useSound";
 
 const DeliveryRunComponent = () => {
     const appGameState = useGameState();
     const { formatCurrency } = useFinances();
     const { playClickSound } = useSound();
+    const { activeBuffs } = useGameBuffs();
 
     // State for delivery results data and UI control
     const [resultsData, setResultsData] = useState(null);
@@ -16,9 +21,38 @@ const DeliveryRunComponent = () => {
 
     // Get business rank from gameState
     const businessRank = appGameState?.gameProgress?.businessRank || 200;
+    const totalBalance = appGameState?.finances?.totalBalance || 0;
+
+    // Get debt amounts from gameState
+    const debtAmount = appGameState?.finances?.debt?.amount || 0;
+
+    // Calculate unused employee costs
+    const calculateUnusedEmployeeCost = () => {
+        // Get all employees from gameState
+        const employees = appGameState?.employees?.roster || [];
+        const restaurants = appGameState?.restaurants?.bars || [];
+
+        // Find employees that are not assigned to any restaurant
+        const unassignedEmployees = employees.filter((employee) => {
+            // Check if employee is assigned to any restaurant
+            return !restaurants.some(
+                (restaurant) =>
+                    restaurant.staff && restaurant.staff.includes(employee.id)
+            );
+        });
+
+        // Calculate total cost of unassigned employees
+        return unassignedEmployees.reduce(
+            (total, employee) => total + (employee.salary || 0),
+            0
+        );
+    };
+
+    // Get unused employee cost
+    const unusedEmployeeCost = calculateUnusedEmployeeCost();
 
     useEffect(() => {
-        // Réinitialiser les états à chaque montage du composant
+        // Reset states when component mounts
         setResultsData(null);
         setShowResults(false);
         setShowRankDisplay(false);
@@ -29,31 +63,18 @@ const DeliveryRunComponent = () => {
             console.log("Delivery results ready:", data);
             setResultsData(data);
 
-            // If we're not already in results view (from skip button)
-            if (animationPhase === "running") {
-                // Show results after a short delay
-                setTimeout(() => {
-                    setAnimationPhase("results");
-                    setShowResults(true);
-                }, 300); // Reduced from 500ms to 300ms for faster animation
-            }
-        };
-
-        // Add event listener for skipping the animation
-        const handleSkipAnimation = () => {
-            if (animationPhase === "running") {
+            // Show results after a short delay
+            setTimeout(() => {
                 setAnimationPhase("results");
                 setShowResults(true);
-            }
+            }, 300);
         };
 
         EventBus.on("deliveryResultsReady", handleResultsReady);
-        EventBus.on("skipDeliveryAnimation", handleSkipAnimation);
 
         // Cleanup
         return () => {
             EventBus.off("deliveryResultsReady", handleResultsReady);
-            EventBus.off("skipDeliveryAnimation", handleSkipAnimation);
         };
     }, []);
 
@@ -84,6 +105,30 @@ const DeliveryRunComponent = () => {
         return { name: "Back-Alley Broth Shack", color: "#8B5CF6" };
     };
 
+    // Function to get buff icon element based on buff type
+    const getBuffIcon = (buffType) => {
+        const buffIcons = {
+            deliveryFlow: "🚚",
+            mentalClarity: "🧠",
+            smartSpending: "💰",
+            recruitmentGuru: "👥",
+        };
+
+        return buffIcons[buffType] || "✨";
+    };
+
+    // Function to get color based on buff type
+    const getBuffColor = (buffType) => {
+        const buffColors = {
+            deliveryFlow: "text-blue-500",
+            mentalClarity: "text-yellow-500",
+            smartSpending: "text-red-500",
+            recruitmentGuru: "text-green-500",
+        };
+
+        return buffColors[buffType] || "text-purple-500";
+    };
+
     // Function to summarize events impact for a restaurant
     const getEventsSummary = (restaurant) => {
         if (!restaurant.events || restaurant.events.length === 0) {
@@ -107,6 +152,57 @@ const DeliveryRunComponent = () => {
             total: Math.round(positive + negative),
             count: restaurant.events.length,
         };
+    };
+
+    // Get next rank threshold
+    const getNextRankThreshold = () => {
+        // Use rankDetails from rank.json through appGameState
+        const nextRankDetails =
+            appGameState?.gameProgressData?.nextRankThreshold || null;
+
+        if (!nextRankDetails) return null;
+
+        return {
+            rank: nextRankDetails.rank,
+            balanceRequired: nextRankDetails.balanceRequired,
+        };
+    };
+
+    // Render active buffs panel
+    const renderActiveBuffs = () => {
+        if (!activeBuffs || activeBuffs.length === 0) return null;
+
+        return (
+            <div className="absolute top-20 right-4 bg-whiteCream bg-opacity-90 rounded-lg shadow-lg p-3 max-w-xs">
+                <h3 className="text-principalBrown text-sm font-bold mb-2">
+                    Active Buffs
+                </h3>
+                <div className="space-y-2">
+                    {activeBuffs.map((buff) => (
+                        <div
+                            key={buff.id}
+                            className="flex items-center text-xs gap-2 p-1.5 bg-white bg-opacity-50 rounded-md"
+                        >
+                            <span className="text-lg">
+                                {getBuffIcon(buff.type)}
+                            </span>
+                            <div className="flex-1">
+                                <div
+                                    className={`font-bold ${getBuffColor(
+                                        buff.type
+                                    )}`}
+                                >
+                                    {buff.name}
+                                </div>
+                                <div className="text-gray-600 text-xs">
+                                    {buff.description}
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
     };
 
     // Render business performance results table
@@ -143,17 +239,10 @@ const DeliveryRunComponent = () => {
                         <tbody className="text-gray-600 text-sm">
                             {resultsData.restaurants.map(
                                 (restaurant, index) => {
-                                    // Demo values - in production these would come from the backend calculation
+                                    // Get values from restaurant data
                                     const maintenance =
-                                        restaurant.maintenance ||
-                                        Math.round(
-                                            restaurant.forecastedProfit * 0.1
-                                        );
-                                    const laborCost =
-                                        restaurant.staffCost ||
-                                        Math.round(
-                                            restaurant.forecastedProfit * 0.15
-                                        );
+                                        restaurant.maintenance || 0;
+                                    const laborCost = restaurant.staffCost || 0;
 
                                     // Calculate events impact
                                     const eventsSummary =
@@ -175,7 +264,38 @@ const DeliveryRunComponent = () => {
                                                 {index + 1}
                                             </td>
                                             <td className="py-3 px-6 text-left font-medium">
-                                                {restaurant.name}
+                                                <div className="flex items-center">
+                                                    <span className="mr-2">
+                                                        🍜
+                                                    </span>
+                                                    {restaurant.name}
+                                                </div>
+                                                {restaurant.staff &&
+                                                    restaurant.staff.length >
+                                                        0 && (
+                                                        <div className="mt-1 flex items-center">
+                                                            <span className="text-xs text-gray-500 mr-1">
+                                                                Staff:
+                                                            </span>
+                                                            {restaurant.staff.map(
+                                                                (
+                                                                    staffId,
+                                                                    idx
+                                                                ) => (
+                                                                    <span
+                                                                        key={
+                                                                            staffId
+                                                                        }
+                                                                        className="h-4 w-4 bg-green-500 rounded-full mr-1 text-[8px] text-white flex items-center justify-center"
+                                                                        title={`Staff ID: ${staffId}`}
+                                                                    >
+                                                                        {idx +
+                                                                            1}
+                                                                    </span>
+                                                                )
+                                                            )}
+                                                        </div>
+                                                    )}
                                             </td>
                                             <td className="py-3 px-6 text-right">
                                                 {formatCurrency(sales)}
@@ -258,6 +378,22 @@ const DeliveryRunComponent = () => {
                                     {formatCurrency(resultsData.totalProfit)}
                                 </td>
                             </tr>
+                            <tr className="bg-yellowWhite bg-opacity-10 text-principalBrown">
+                                <td className="py-3 px-6 text-left" colSpan={6}>
+                                    Unused Employee Cost
+                                </td>
+                                <td className="py-3 px-6 text-right text-principalRed">
+                                    {formatCurrency(unusedEmployeeCost)}
+                                </td>
+                            </tr>
+                            <tr className="bg-yellowWhite bg-opacity-10 text-principalBrown">
+                                <td className="py-3 px-6 text-left" colSpan={6}>
+                                    Current Debt
+                                </td>
+                                <td className="py-3 px-6 text-right text-principalRed">
+                                    {formatCurrency(debtAmount)}
+                                </td>
+                            </tr>
                             <tr className="bg-yellowWhite bg-opacity-10 text-principalBrown font-bold">
                                 <td className="py-3 px-6 text-left" colSpan={6}>
                                     Management Funds
@@ -270,6 +406,109 @@ const DeliveryRunComponent = () => {
                             </tr>
                         </tfoot>
                     </table>
+                </div>
+
+                <div className="mt-6 bg-principalRed/10 p-4 rounded-lg">
+                    <h3 className="text-principalRed text-sm font-bold mb-2">
+                        Business Impact
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="bg-white bg-opacity-60 p-3 rounded-lg">
+                            <h4 className="text-principalBrown font-bold text-sm mb-2">
+                                Burnout Impact
+                            </h4>
+                            <div className="flex items-center">
+                                <div className="w-8 h-8 flex items-center justify-center mr-2">
+                                    {resultsData.burnoutChange > 0 ? (
+                                        <span className="text-xl text-principalRed">
+                                            😫
+                                        </span>
+                                    ) : (
+                                        <span className="text-xl text-emerald-600">
+                                            😌
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="flex flex-col">
+                                    <div className="flex items-center">
+                                        <span className="text-sm font-medium mr-2">
+                                            Change:
+                                        </span>
+                                        <span
+                                            className={`font-bold ${
+                                                resultsData.burnoutChange > 0
+                                                    ? "text-principalRed"
+                                                    : "text-emerald-600"
+                                            }`}
+                                        >
+                                            {resultsData.burnoutChange > 0
+                                                ? "+"
+                                                : ""}
+                                            {resultsData.burnoutChange}
+                                        </span>
+                                    </div>
+                                    <div className="text-xs text-gray-600 mt-1">
+                                        {resultsData.burnoutChange > 0
+                                            ? "Your stress levels are increasing. Consider taking some rest."
+                                            : "You're managing stress well, keep it up!"}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-white bg-opacity-60 p-3 rounded-lg">
+                            <h4 className="text-principalBrown font-bold text-sm mb-2">
+                                Rank Progress
+                            </h4>
+                            <div className="flex items-center">
+                                <div className="w-8 h-8 flex items-center justify-center mr-2">
+                                    {resultsData.rankChange < 0 ? (
+                                        <span className="text-xl text-emerald-600">
+                                            🏆
+                                        </span>
+                                    ) : resultsData.rankChange > 0 ? (
+                                        <span className="text-xl text-principalRed">
+                                            📉
+                                        </span>
+                                    ) : (
+                                        <span className="text-xl text-gray-500">
+                                            ⚖️
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="flex flex-col">
+                                    <div className="flex items-center">
+                                        <span className="text-sm font-medium mr-2">
+                                            Change:
+                                        </span>
+                                        <span
+                                            className={`font-bold ${
+                                                resultsData.rankChange < 0
+                                                    ? "text-emerald-600"
+                                                    : resultsData.rankChange > 0
+                                                    ? "text-principalRed"
+                                                    : "text-gray-600"
+                                            }`}
+                                        >
+                                            {resultsData.rankChange < 0
+                                                ? "+"
+                                                : resultsData.rankChange > 0
+                                                ? "-"
+                                                : ""}
+                                            {Math.abs(resultsData.rankChange) ||
+                                                "No change"}
+                                        </span>
+                                    </div>
+                                    <div className="text-xs text-gray-600 mt-1">
+                                        Total Balance:{" "}
+                                        <span className="font-medium">
+                                            {formatCurrency(totalBalance)}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 {animationPhase === "results" && (
@@ -312,6 +551,9 @@ const DeliveryRunComponent = () => {
         // Get rank details for the new rank
         const newRankDetails = getNoodleRankName(newRank);
 
+        // Get next rank threshold information
+        const nextRankInfo = getNextRankThreshold();
+
         return (
             <div className="bg-yellowWhite shadow-2xl rounded-xl p-6 w-full max-w-5xl mx-auto mt-4 transition-discrete duration-500 animate-fade-in">
                 <h2 className="text-3xl font-bold text-principalRed text-center mb-6">
@@ -322,6 +564,31 @@ const DeliveryRunComponent = () => {
                 <div className="bg-whiteCream rounded-lg p-6 shadow-inner relative overflow-hidden">
                     {/* Noodle pattern background */}
                     <div className="absolute inset-0 bg-[url('/assets/deliveryrun/noodle_pattern.png')] bg-repeat opacity-5"></div>
+
+                    {/* Rank calculation explanation */}
+                    <div className="mb-6 bg-principalRed/10 p-3 rounded-lg text-center">
+                        <p className="text-sm text-principalBrown">
+                            Your rank is based on your total accumulated balance
+                            of{" "}
+                            <span className="font-bold">
+                                {formatCurrency(totalBalance)}
+                            </span>
+                        </p>
+                        {nextRankInfo && (
+                            <p className="text-xs text-principalRed mt-1">
+                                Next rank (#
+                                <span className="font-bold">
+                                    {nextRankInfo.rank}
+                                </span>
+                                ) requires:{" "}
+                                <span className="font-bold">
+                                    {formatCurrency(
+                                        nextRankInfo.balanceRequired
+                                    )}
+                                </span>
+                            </p>
+                        )}
+                    </div>
 
                     {/* Main progress bar container */}
                     <div className="relative mt-8 mb-16">
@@ -364,6 +631,24 @@ const DeliveryRunComponent = () => {
                                 <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-principalRed"></div>
                             </div>
                         </div>
+
+                        {/* Previous rank marker (if changed) */}
+                        {isImproved && (
+                            <div
+                                className="absolute top-0 -translate-y-3 transition-all duration-500"
+                                style={{
+                                    left: `calc(${
+                                        ((200 - businessRank) / 199) * 100
+                                    }% - 8px)`,
+                                }}
+                            >
+                                <div className="w-4 h-4 rounded-full border-2 border-gray-400 bg-gray-200 opacity-70 flex items-center justify-center">
+                                    <span className="text-[7px] text-gray-600 font-bold">
+                                        old
+                                    </span>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Rank labels */}
@@ -490,7 +775,7 @@ const DeliveryRunComponent = () => {
                 <div className="bg-gradient-to-r from-principalBrown to-principalBrown/90 text-yellowWhite p-4 flex justify-between items-center shadow-lg border-b border-principalRed/50">
                     <div className="flex items-center gap-4">
                         <img
-                            src="/noodles.png"
+                            src="/assets/noodles.png"
                             alt="Logo"
                             className="h-10 w-10"
                         />
@@ -517,19 +802,8 @@ const DeliveryRunComponent = () => {
                     </div>
                 </div>
 
-                {/* Skip Animation Button at bottom */}
-                {animationPhase === "running" && (
-                    <div className="absolute bottom-4 right-4 pointer-events-auto">
-                        <button
-                            onClick={() =>
-                                EventBus.emit("skipDeliveryAnimation")
-                            }
-                            className="bg-principalBrown text-yellowWhite px-4 py-2 rounded-lg shadow-lg hover:bg-principalBrown-light transition-all duration-300"
-                        >
-                            Skip Animation
-                        </button>
-                    </div>
-                )}
+                {/* Active Buffs Panel */}
+                {renderActiveBuffs()}
             </div>
         );
     };

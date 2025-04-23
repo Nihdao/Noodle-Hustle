@@ -681,14 +681,9 @@ const HubComponent = () => {
 
                     {/* Period Indicator - inside sidebar */}
                     <div className="bg-[color:var(--color-principalRed)] text-[color:var(--color-whiteCream)] p-2 flex shadow-md z-10 w-full">
-                        <div className="px-6 border-r border-white/30">
+                        <div className="px-6">
                             <span className="font-bold text-base">
                                 Period {currentPeriod}
-                            </span>
-                        </div>
-                        <div className="px-6">
-                            <span className="text-base">
-                                Investor Clash in {investorClashIn}
                             </span>
                         </div>
                     </div>

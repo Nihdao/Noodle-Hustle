@@ -11,27 +11,99 @@ export class DeliveryRun extends Phaser.Scene {
         this.events = {};
         this.finished = false;
         this.started = false;
+        this.activeBuffs = [];
+        this.deliveryFlowBuff = null;
     }
 
-    init(data) {
-        // Get data passed from the HubScreen
-        this.activeRestaurants = data.restaurants || [];
-        this.playerStats = data.playerStats || {};
-        this.funds = data.funds || 0;
-        this.currentPeriod = data.currentPeriod || 1;
+    init() {
+        // Get data directly from the GameState instead of passed data
+        const gameStateData = gameState.getGameState();
+
+        // Get restaurants from GameState
+        const restaurants = gameStateData.restaurants.bars || [];
+
+        console.log(
+            "DeliveryRun: Init - Starting restaurant profit calculations"
+        );
+
+        // Process restaurant data to get complete info
+        this.activeRestaurants = restaurants.map((restaurant) => {
+            // Get the base restaurant data if it's a reference
+            const baseData = restaurant.restaurantId
+                ? gameState.getRestaurantData(restaurant.restaurantId)
+                : null;
+
+            // Calculate forecasted profit (simple calculation, can be enhanced)
+            const staffCost = restaurant.staffCost || 0;
+            const maintenance =
+                restaurant.maintenance ||
+                (baseData ? baseData.maintenance : 100);
+
+            // Use base data properties if available, otherwise use instance properties
+            const salesVolume = baseData
+                ? baseData.salesVolume
+                : restaurant.salesVolume || 600;
+
+            // Simple profit calculation
+            const forecastedProfit = Math.round(
+                salesVolume - maintenance - staffCost
+            );
+
+            console.log(`DeliveryRun: Restaurant ${restaurant.name} (ID: ${restaurant.id}):
+                - Sales Volume: ${salesVolume}
+                - Maintenance: ${maintenance}
+                - Staff Cost: ${staffCost}
+                - Forecasted Profit: ${forecastedProfit}`);
+
+            return {
+                ...baseData,
+                ...restaurant,
+                forecastedProfit,
+                staffCost,
+                maintenance,
+                staff: restaurant.staff || [],
+            };
+        });
+
+        // Get player stats from GameState
+        this.playerStats = gameStateData.playerStats || {};
+
+        // Get funds and period from GameState
+        this.funds = gameStateData.finances?.funds || 0;
+        this.currentPeriod = gameStateData.gameProgress?.currentPeriod || 1;
+
+        // Initialize game progress data object
         this.gameProgressData = {};
+
+        // Get active buffs from GameState
+        this.activeBuffs = gameState.getActiveBuffs() || [];
+
+        // Check specifically for delivery flow buff
+        this.deliveryFlowBuff = this.activeBuffs.find(
+            (buff) => buff.type === "deliveryFlow"
+        );
+
+        console.log(
+            "DeliveryRun: Initialized with",
+            this.activeRestaurants.length,
+            "restaurants"
+        );
+        console.log("DeliveryFlow buff:", this.deliveryFlowBuff);
     }
 
     preload() {
         // Load delivery run assets if not already loaded
         if (!this.textures.exists("player_sprite")) {
-            this.load.image("player_sprite");
+            this.load.image(
+                "player_sprite",
+                "assets/deliveryrun/player_sprite.png"
+            );
         }
 
-        // Load noodles background pattern if not already loaded
-        if (!this.textures.exists("noodles")) {
-            this.load.image("noodles", "noodles.png");
-        }
+        this.load.image(
+            "background_run",
+            "assets/deliveryrun/background_run.png"
+        );
 
         this.load.image(
             "event_positive",
@@ -56,14 +128,11 @@ export class DeliveryRun extends Phaser.Scene {
         const width = this.cameras.main.width;
         const height = this.cameras.main.height;
 
-        // Dark orange/brown background (darker than MainMenu)
-        this.add.rectangle(0, 0, width, height, 0xa02515).setOrigin(0);
-
         // Add repeating noodles pattern with diagonal scrolling (more subtle)
-        this.noodlesPattern = this.add
-            .tileSprite(0, 0, width, height, "noodles")
+        this.backgroundRun = this.add
+            .tileSprite(0, 0, width, height, "background_run")
             .setOrigin(0)
-            .setAlpha(0.15); // More transparent than MainMenu for subtlety
+            .setAlpha(0.9); // More transparent than MainMenu for subtlety
 
         // Set up layout for restaurant tracks
         this.setupLayout();
@@ -72,7 +141,7 @@ export class DeliveryRun extends Phaser.Scene {
         this.cameras.main.fadeIn(1000, 0, 0, 0);
 
         // After a brief delay, show "Business Open" text
-        this.time.delayedCall(1500, () => {
+        this.time.delayedCall(500, () => {
             this.showBusinessOpen();
         });
     }
@@ -161,6 +230,23 @@ export class DeliveryRun extends Phaser.Scene {
                 fill: "#ffffff",
             });
             this.trackGroups[i].add(restaurantName);
+
+            // Staff icons
+            if (restaurant.staff && restaurant.staff.length > 0) {
+                let staffIconX = 10;
+                const staffIconY = y + 50;
+
+                restaurant.staff.forEach((staffId, index) => {
+                    // Create staff icon (simple colored circle for now)
+                    const staffIcon = this.add.circle(
+                        staffIconX + index * 25,
+                        staffIconY,
+                        10,
+                        0x10b981
+                    );
+                    this.trackGroups[i].add(staffIcon);
+                });
+            }
 
             // Restaurant profit/loss
             const profitText = this.add.text(
@@ -397,18 +483,70 @@ export class DeliveryRun extends Phaser.Scene {
                     (e) => Math.abs(e.progress - checkpoint) < 0.05
                 )
             ) {
-                // 70% chance for positive event, 30% for negative
-                const isPositive = Math.random() < 0.7;
+                // Apply Delivery Flow buff if it exists
+                let positiveChance = 0.6; // Base 60% chance for positive event
+
+                if (this.deliveryFlowBuff) {
+                    // Reduce chance of negative events based on buff level
+                    const reductionPercent = this.deliveryFlowBuff.value || 0;
+                    positiveChance = Math.min(
+                        0.95,
+                        positiveChance + reductionPercent / 100
+                    );
+                    console.log(
+                        `DeliveryRun: DeliveryFlow buff applied - Positive event chance increased to ${positiveChance.toFixed(
+                            2
+                        )} (${reductionPercent}% reduction in negative events)`
+                    );
+                }
+
+                // Determine if the event is positive or negative
+                const isPositive = Math.random() < positiveChance;
 
                 // Create event data
+                let impactValue;
+                if (isPositive) {
+                    // Positive impacts range from +5% to +20%
+                    impactValue = 0.05 + Math.random() * 0.15;
+                } else {
+                    // Negative impacts range from -5% to -15%
+                    impactValue = -(0.05 + Math.random() * 0.1);
+
+                    // Apply penalty reduction if buff has special ability
+                    if (
+                        this.deliveryFlowBuff &&
+                        this.deliveryFlowBuff.special === "penaltyReduction"
+                    ) {
+                        const oldImpact = impactValue;
+                        impactValue *= 1 - this.deliveryFlowBuff.value / 100;
+                        console.log(
+                            `DeliveryRun: Penalty reduction applied - Impact reduced from ${oldImpact.toFixed(
+                                2
+                            )} to ${impactValue.toFixed(2)} (${
+                                this.deliveryFlowBuff.value
+                            }% reduction)`
+                        );
+                    }
+                }
+
+                const eventMessage = this.getRandomEventMessage(isPositive);
+
                 const eventData = {
                     progress: checkpoint,
                     positive: isPositive,
-                    message: this.getRandomEventMessage(isPositive),
-                    impact: isPositive
-                        ? Math.random() * 0.2
-                        : -Math.random() * 0.15, // +20% max or -15% max
+                    message: eventMessage,
+                    impact: impactValue,
                 };
+
+                console.log(`DeliveryRun: Event generated for restaurant ${
+                    restaurantData.restaurant.name
+                } at ${(checkpoint * 100).toFixed(0)}%:
+                    - Type: ${isPositive ? "Positive" : "Negative"}
+                    - Message: ${eventMessage}
+                    - Impact: ${(impactValue * 100).toFixed(2)}%
+                    - Forecasted Effect: ${Math.round(
+                        restaurantData.restaurant.forecastedProfit * impactValue
+                    )}`);
 
                 // Store the event
                 restaurantData.events.push(eventData);
@@ -426,7 +564,11 @@ export class DeliveryRun extends Phaser.Scene {
             "Perfect broth today!",
             "Influencer visited!",
             "New menu item is a hit!",
-            "Extended hours is going well!",
+            "Food critic gave a thumbs up!",
+            "Staff working efficiently!",
+            "Extended hours going well!",
+            "Delivery service is popular!",
+            "Customer shared on social media!",
         ];
 
         const negativeMessages = [
@@ -435,6 +577,11 @@ export class DeliveryRun extends Phaser.Scene {
             "Delivery delayed!",
             "Supplier sent wrong ingredients!",
             "Staff called in sick!",
+            "Refrigerator malfunction!",
+            "Plumbing issue in kitchen!",
+            "Bad weather reduced customers!",
+            "Competing restaurant opened nearby!",
+            "Price of ingredients increased!",
         ];
 
         const messages = isPositive ? positiveMessages : negativeMessages;
@@ -588,6 +735,14 @@ export class DeliveryRun extends Phaser.Scene {
         // Calculate final results for each restaurant
         let totalProfit = 0;
 
+        console.log("DeliveryRun: Processing final results");
+
+        // Get mental clarity buff for burnout calculation if it exists
+        const mentalClarityBuff = this.activeBuffs.find(
+            (buff) => buff.type === "mentalClarity"
+        );
+        let burnoutChange = 0;
+
         Object.keys(this.playerSprites).forEach((restaurantId) => {
             const restaurantData = this.playerSprites[restaurantId];
             const restaurant = restaurantData.restaurant;
@@ -599,97 +754,131 @@ export class DeliveryRun extends Phaser.Scene {
             );
 
             // Apply impact to forecasted profit
-            const adjustedProfit = Math.round(
-                restaurant.forecastedProfit * (1 + totalImpact)
-            );
+            const rawProfit = restaurant.forecastedProfit;
+            const impactAmount = Math.round(rawProfit * totalImpact);
+            const adjustedProfit = rawProfit + impactAmount;
+
+            console.log(`DeliveryRun: Final profit calculation for ${
+                restaurant.name
+            }:
+                - Base forecasted profit: ${rawProfit}
+                - Total event impact: ${(totalImpact * 100).toFixed(2)}%
+                - Impact amount: ${impactAmount}
+                - Final adjusted profit: ${adjustedProfit}`);
 
             // Update restaurant data
             restaurant.actualProfit = adjustedProfit;
+            restaurant.events = restaurantData.events;
             totalProfit += adjustedProfit;
+
+            // Add to burnout based on restaurant performance
+            if (adjustedProfit < 0) {
+                burnoutChange += 5; // Increase burnout for negative profit
+                console.log(
+                    `DeliveryRun: ${restaurant.name} had negative profit, adding 5 to burnout`
+                );
+            }
         });
+
+        // Base burnout change based on overall performance
+        console.log(
+            `DeliveryRun: Total profit across all restaurants: ${totalProfit}`
+        );
+
+        if (totalProfit < 0) {
+            burnoutChange += 10; // Large burnout increase for overall loss
+            console.log("DeliveryRun: Overall loss, adding 10 to burnout");
+        } else if (totalProfit > 0) {
+            burnoutChange -= 5; // Small burnout decrease for overall profit
+            console.log("DeliveryRun: Overall profit, reducing burnout by 5");
+        }
+
+        // Apply mental clarity buff if it exists
+        if (mentalClarityBuff) {
+            const reductionPercent = mentalClarityBuff.value || 0;
+            const oldBurnoutChange = burnoutChange;
+            burnoutChange = Math.floor(
+                burnoutChange * (1 - reductionPercent / 100)
+            );
+            console.log(
+                `DeliveryRun: Mental Clarity buff applied - Burnout change reduced from ${oldBurnoutChange} to ${burnoutChange} (${reductionPercent}% reduction)`
+            );
+        }
+
+        // Determine rank change based on profit
+        // Simple algorithm: if profit is substantial, improve rank
+        let rankChange = 0;
+        if (totalProfit > 5000) {
+            rankChange = -1; // Rank improved (lower number is better)
+            console.log(`DeliveryRun: Profit exceeds 5000, rank improved by 1`);
+        } else if (totalProfit < -2000) {
+            rankChange = 1; // Rank worsened
+            console.log(`DeliveryRun: Loss exceeds 2000, rank worsened by 1`);
+        }
 
         // Store results for React component to display
         this.gameProgressData = {
             restaurants: this.activeRestaurants,
             totalProfit: totalProfit,
-            burnoutChange: Math.floor(Math.random() * 5) - 2, // Random burnout change for demo
-            rankChange: Math.random() > 0.6 ? -1 : 0, // 40% chance to improve rank
+            burnoutChange: burnoutChange,
+            rankChange: rankChange,
+            activeBuffs: this.activeBuffs,
         };
+
+        console.log("DeliveryRun: Final results calculated:", {
+            totalProfit,
+            burnoutChange,
+            rankChange,
+            activeBuffsCount: this.activeBuffs.length,
+        });
 
         // Emit event to signal results are ready
         EventBus.emit("deliveryResultsReady", this.gameProgressData);
 
         // Wait for the React component to signal when to return to hub
-        // Do not automatically proceed to HubScreen
         this.setupReturnToHubListener();
     }
 
     setupReturnToHubListener() {
         // Listen for return to hub event from React
         EventBus.once("returnToHub", () => {
-            console.log("Returning to hub");
+            console.log("DeliveryRun: Returning to hub");
             this.cameras.main.fadeOut(1000, 0, 0, 0);
+
             this.time.delayedCall(1000, () => {
-                // Arrêter la musique et la scène actuelle
+                // Send the results to GameState for processing
+                const results = {
+                    totalProfit: this.gameProgressData.totalProfit,
+                    rankChange: this.gameProgressData.rankChange || 0,
+                    burnoutChange: this.gameProgressData.burnoutChange,
+                    restaurants: this.activeRestaurants,
+                };
+
+                console.log(
+                    "DeliveryRun: Sending final results to GameState:",
+                    results
+                );
+
+                // Process results in GameState
+                gameState.processDeliveryResults(results);
+
+                // Stop music and scene
                 audioManager.stopMusic();
 
-                // Réinitialiser les variables importantes
+                // Reset important variables
                 this.activeRestaurants = [];
                 this.playerSprites = {};
                 this.events = {};
                 this.finished = false;
                 this.started = false;
 
-                // Arrêter complètement cette scène avant de démarrer HubScreen
+                // Stop this scene completely before starting HubScreen
                 this.scene.stop();
                 this.scene.start("HubScreen");
             });
         });
     }
 
-    update() {
-        // Make the pattern scroll diagonally (top-left to bottom-right) but slower than MainMenu
-        if (this.noodlesPattern) {
-            this.noodlesPattern.tilePositionX += 0.2;
-            this.noodlesPattern.tilePositionY += 0.2;
-        }
-
-        // Update logic if needed
-    }
-
-    /**
-     * Process delivery results in the game state
-     * This is called when the user clicks "Return to Hub" in the UI
-     */
-    finalizeDeliveryResults() {
-        // Send the results to GameState for processing
-        const results = {
-            totalProfit: this.totalProfit,
-            rankChange: this.rankChange || 0,
-            restaurants: this.restaurants,
-        };
-
-        // Process results in GameState (update funds, rank, burnout)
-        gameState.processDeliveryResults(results);
-
-        // Emit event to show personal time resolution
-        this.events.emit("readyForPersonalTime");
-
-        // Note: We don't return to the hub here - that will be handled by React components
-        // after the personal time is resolved
-    }
-
-    // Update the returnToHub method to first finalize results
-    returnToHub() {
-        // First finalize the results if not done already
-        if (!this.resultsFinalized) {
-            this.finalizeDeliveryResults();
-            this.resultsFinalized = true;
-        }
-
-        this.deliveryComplete = true;
-        this.scene.stop("PlayerUI");
-        this.scene.start("HubScreen");
-    }
+    update() {}
 }
 

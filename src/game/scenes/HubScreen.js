@@ -1,33 +1,11 @@
 import Phaser from "phaser";
 import { EventBus } from "../EventBus";
 import { audioManager } from "../AudioManager";
+import gameState from "../GameState";
 
 export class HubScreen extends Phaser.Scene {
     constructor() {
         super("HubScreen");
-
-        // Initialize game state
-        this.gameState = {
-            playerName: "",
-            rank: 200,
-            funds: 500000,
-            burnout: 33,
-            period: 1,
-            investorClashIn: 3,
-            noddleBars: {
-                forecastedProfit: 12657,
-            },
-            employees: {
-                laborCost: 8985,
-            },
-            debts: {
-                repayment: 1500,
-            },
-            personalTime: {
-                planned: "Home",
-            },
-            forecastProfit: 2172,
-        };
 
         // Fairy dialogue system
         this.fairyMessages = [
@@ -121,9 +99,20 @@ export class HubScreen extends Phaser.Scene {
             .setOrigin(0)
             .setAlpha(0.5);
 
-        // Get player name from localStorage
-        this.gameState.playerName =
-            localStorage.getItem("playerName") || "Player";
+        // Initialize or get singleton GameState
+        if (!gameState.initialized) {
+            console.log(
+                "HubScreen: GameState not initialized, initializing now"
+            );
+            gameState.initialize();
+        }
+
+        // Get the current game state from singleton
+        const currentGameState = gameState.getGameState();
+        console.log(
+            "HubScreen: Retrieved current game state:",
+            currentGameState
+        );
 
         // Create the fairy sprite (just for Phaser side visuals in the game area)
         if (this.textures.exists("fairy")) {
@@ -176,17 +165,17 @@ export class HubScreen extends Phaser.Scene {
 
             // Show initial welcome message
             this.time.delayedCall(1000, () => {
-                this.showMessage(this.fairyMessages[0]);
+                // Customize welcome message based on player name from GameState
+                const playerName = currentGameState.playerName || "Player";
+                this.showMessage(
+                    `Welcome back, ${playerName}! Ready for another day of noodle business?`
+                );
             });
         }
 
         // Register this scene with the event bus for React components to access
         console.log("HubScreen: Registering scene with EventBus");
         EventBus.registerScene(this);
-
-        // Initialize audio manager and play music based on current period
-        audioManager.init(this.sound);
-        audioManager.playHubMusic(this.gameState.period);
 
         // Listen for menu changes from React
         EventBus.on("menuChanged", this.handleMenuChange, this);
@@ -199,6 +188,19 @@ export class HubScreen extends Phaser.Scene {
 
         // Set up methods for React to call
         this.setupReactInteractions();
+
+        // Initialize audio manager and play music based on current period from GameState
+        audioManager.init(this.sound);
+        const currentPeriod = currentGameState.gameProgress?.currentPeriod || 1;
+        audioManager.playHubMusic(currentPeriod);
+
+        // Listen for game state updates
+        EventBus.on("gameStateUpdated", this.handleGameStateUpdate, this);
+    }
+
+    handleGameStateUpdate(updatedState) {
+        console.log("HubScreen: Game state updated", updatedState);
+        // We don't need to store the state here since we'll get it from the singleton when needed
     }
 
     setupAudioEventListeners() {
@@ -545,35 +547,32 @@ export class HubScreen extends Phaser.Scene {
         // Method to start a new period
         this.startPeriod = () => {
             console.log("Starting new period in Phaser scene");
-            this.gameState.period += 1;
-            this.gameState.investorClashIn -= 1;
 
-            if (this.gameState.investorClashIn <= 0) {
-                // Handle investor clash event
-                console.log("Investor clash triggered!");
-                this.gameState.investorClashIn = 3;
+            // Use GameState to handle period advancement logic
+            gameState.startPeriod();
+
+            // Get updated state after period change
+            const updatedState = gameState.getGameState();
+
+            // Display fairy message based on updated state
+            const currentPeriod = updatedState.gameProgress?.currentPeriod || 1;
+            const investorClashIn =
+                updatedState.gameProgress?.investorClashIn || 0;
+            const burnout = updatedState.playerStats?.burnout || 0;
+
+            if (investorClashIn === 1) {
+                // Investor meeting is next period
                 this.showMessage(
-                    "Investor meeting coming up! Make sure your business is looking profitable!"
+                    "Investor meeting coming up next period! Make sure your business is looking profitable!"
                 );
             } else {
                 this.showMessage(
-                    `Starting Period ${this.gameState.period}! Let's make this a profitable one!`
+                    `Starting Period ${currentPeriod}! Let's make this a profitable one!`
                 );
             }
 
-            // Update funds
-            this.gameState.funds += this.gameState.forecastProfit;
-
-            // Random chance to change burnout
-            const burnoutChange = Phaser.Math.Between(-5, 10);
-            this.gameState.burnout = Phaser.Math.Clamp(
-                this.gameState.burnout + burnoutChange,
-                0,
-                100
-            );
-
             // Show burnout warning if too high
-            if (this.gameState.burnout > 70) {
+            if (burnout > 70) {
                 this.time.delayedCall(1500, () => {
                     this.showMessage(
                         "Your burnout is too high! Take some personal time to recover."
@@ -581,34 +580,17 @@ export class HubScreen extends Phaser.Scene {
                 });
             }
 
-            // Recalculate profits
-            this.recalculateProfits();
-
-            // La musique sera mise à jour via l'événement updatePeriodMusic
-
-            // Dispatch event so React UI can update
-            this.events.emit("gameStateUpdated", this.gameState);
-
-            // Reset the recruitment flag for new period
-            const currentRecruitmentPeriod = localStorage.getItem(
-                "recruitmentDoneInPeriod"
-            );
-            if (
-                currentRecruitmentPeriod &&
-                parseInt(currentRecruitmentPeriod) < this.gameState.period
-            ) {
-                // We don't need to set the item to the current period, just ensure it's not equal
-                // This allows the recruitment component to reset its state naturally
-                console.log("Recruitment flag should reset for new period");
-
-                // Clean up recruitment candidates from localStorage
-                localStorage.removeItem("periodRecruitmentCandidates");
-            }
+            // Update audio based on period
+            audioManager.playHubMusic(currentPeriod);
         };
 
         // Method to open buffs panel
         this.openBuffsPanel = () => {
             console.log("Opening buffs panel in Phaser scene");
+
+            // Use GameState's method to open buffs panel
+            gameState.openBuffsPanel();
+
             this.showMessage(
                 "Buffs can give you temporary advantages. Choose wisely!"
             );
@@ -630,24 +612,9 @@ export class HubScreen extends Phaser.Scene {
         };
     }
 
-    recalculateProfits() {
-        // Simple algorithm to calculate profits
-        this.gameState.noddleBars.forecastedProfit = Phaser.Math.Between(
-            10000,
-            15000
-        );
-        this.gameState.employees.laborCost = Phaser.Math.Between(8000, 9500);
-        this.gameState.debts.repayment = 1500;
-
-        // Calculate total forecast profit
-        this.gameState.forecastProfit =
-            this.gameState.noddleBars.forecastedProfit -
-            this.gameState.employees.laborCost -
-            this.gameState.debts.repayment;
-    }
-
     getGameState() {
-        return this.gameState;
+        // Instead of returning the internal state, get the state from the singleton
+        return gameState.getGameState();
     }
 
     update() {
