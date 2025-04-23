@@ -10,7 +10,7 @@
         "maxAmbiance": 5,
         "maintenance": 100,
         "basePrice": 0,
-        "salesVolume": 120,
+        "salesVolume": 600,
         "serviceCap": 100,
         "productCap": 100,
         "ambianceCap": 100
@@ -26,7 +26,7 @@
         "maxAmbiance": 5,
         "maintenance": 150,
         "basePrice": 4000,
-        "salesVolume": 350,
+        "salesVolume": 1750,
         "serviceCap": 120,
         "productCap": 110,
         "ambianceCap": 105
@@ -42,7 +42,7 @@
         "maxAmbiance": 4,
         "maintenance": 180,
         "basePrice": 6000,
-        "salesVolume": 500,
+        "salesVolume": 2500,
         "serviceCap": 130,
         "productCap": 120,
         "ambianceCap": 115
@@ -58,7 +58,7 @@
         "maxAmbiance": 6,
         "maintenance": 220,
         "basePrice": 8000,
-        "salesVolume": 700,
+        "salesVolume": 3500,
         "serviceCap": 135,
         "productCap": 140,
         "ambianceCap": 120
@@ -74,7 +74,7 @@
         "maxAmbiance": 3,
         "maintenance": 200,
         "basePrice": 9000,
-        "salesVolume": 800,
+        "salesVolume": 4000,
         "serviceCap": 120,
         "productCap": 145,
         "ambianceCap": 130
@@ -90,7 +90,7 @@
         "maxAmbiance": 6,
         "maintenance": 250,
         "basePrice": 11000,
-        "salesVolume": 1000,
+        "salesVolume": 5000,
         "serviceCap": 140,
         "productCap": 135,
         "ambianceCap": 155
@@ -106,7 +106,7 @@
         "maxAmbiance": 5,
         "maintenance": 300,
         "basePrice": 14000,
-        "salesVolume": 1200,
+        "salesVolume": 6000,
         "serviceCap": 160,
         "productCap": 170,
         "ambianceCap": 140
@@ -122,7 +122,7 @@
         "maxAmbiance": 6,
         "maintenance": 360,
         "basePrice": 18000,
-        "salesVolume": 1500,
+        "salesVolume": 7500,
         "serviceCap": 180,
         "productCap": 160,
         "ambianceCap": 150
@@ -138,7 +138,7 @@
         "maxAmbiance": 8,
         "maintenance": 420,
         "basePrice": 22000,
-        "salesVolume": 1800,
+        "salesVolume": 9000,
         "serviceCap": 170,
         "productCap": 150,
         "ambianceCap": 190
@@ -154,7 +154,7 @@
         "maxAmbiance": 6,
         "maintenance": 400,
         "basePrice": 25000,
-        "salesVolume": 2000,
+        "salesVolume": 10000,
         "serviceCap": 150,
         "productCap": 140,
         "ambianceCap": 200
@@ -170,7 +170,7 @@
         "maxAmbiance": 6,
         "maintenance": 480,
         "basePrice": 30000,
-        "salesVolume": 2400,
+        "salesVolume": 12000,
         "serviceCap": 210,
         "productCap": 180,
         "ambianceCap": 180
@@ -186,7 +186,7 @@
         "maxAmbiance": 8,
         "maintenance": 520,
         "basePrice": 35000,
-        "salesVolume": 2800,
+        "salesVolume": 14000,
         "serviceCap": 200,
         "productCap": 220,
         "ambianceCap": 210
@@ -202,7 +202,7 @@
         "maxAmbiance": 9,
         "maintenance": 580,
         "basePrice": 40000,
-        "salesVolume": 3200,
+        "salesVolume": 16000,
         "serviceCap": 230,
         "productCap": 250,
         "ambianceCap": 240
@@ -218,7 +218,7 @@
         "maxAmbiance": 7,
         "maintenance": 650,
         "basePrice": 48000,
-        "salesVolume": 3800,
+        "salesVolume": 19000,
         "serviceCap": 250,
         "productCap": 260,
         "ambianceCap": 230
@@ -234,7 +234,7 @@
         "maxAmbiance": 8,
         "maintenance": 700,
         "basePrice": 56000,
-        "salesVolume": 4400,
+        "salesVolume": 22000,
         "serviceCap": 260,
         "productCap": 270,
         "ambianceCap": 250
@@ -250,7 +250,7 @@
         "maxAmbiance": 10,
         "maintenance": 750,
         "basePrice": 60000,
-        "salesVolume": 4800,
+        "salesVolume": 24000,
         "serviceCap": 240,
         "productCap": 290,
         "ambianceCap": 270
@@ -266,7 +266,7 @@
         "maxAmbiance": 9,
         "maintenance": 800,
         "basePrice": 70000,
-        "salesVolume": 5600,
+        "salesVolume": 28000,
         "serviceCap": 280,
         "productCap": 270,
         "ambianceCap": 290
@@ -282,7 +282,7 @@
         "maxAmbiance": 10,
         "maintenance": 880,
         "basePrice": 80000,
-        "salesVolume": 6400,
+        "salesVolume": 32000,
         "serviceCap": 300,
         "productCap": 280,
         "ambianceCap": 295
@@ -298,7 +298,7 @@
         "maxAmbiance": 10,
         "maintenance": 900,
         "basePrice": 95000,
-        "salesVolume": 7600,
+        "salesVolume": 38000,
         "serviceCap": 295,
         "productCap": 300,
         "ambianceCap": 285
@@ -314,7 +314,7 @@
         "maxAmbiance": 10,
         "maintenance": 1000,
         "basePrice": 120000,
-        "salesVolume": 9600,
+        "salesVolume": 48000,
         "serviceCap": 300,
         "productCap": 300,
         "ambianceCap": 300

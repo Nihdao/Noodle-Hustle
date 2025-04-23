@@ -20,7 +20,6 @@ import DebtsManagement from "./debts/DebtsManagement";
 import NoodleBarActions from "./noodleBars/NoodleBarActions";
 import NoodleBarAssign from "./noodleBars/NoodleBarAssign";
 import NoodleBarUpgrade from "./noodleBars/NoodleBarUpgrade";
-import MeetingRoom from "./meeting/MeetingRoom";
 import OptionsModal from "./modals/OptionsModal";
 import BuffsModal from "./modals/BuffsModal";
 
@@ -32,15 +31,17 @@ const HubComponent = () => {
     const { funds, debt, formatCurrency } = useFinances();
     const { personalTime } = useSocial();
     const { bars: noodleBars } = useRestaurants();
-    const { laborCost } = useEmployees();
+    const { rosterWithDetails } = useEmployees();
     const { playerRank } = useNoodleBarOperations();
 
     // Données dérivées des hooks ou du state général
     const playerName = state?.playerStats?.playerName || "Player";
     const businessRank = playerRank || 200;
 
-    // Valeurs qui n'ont pas encore de hook dédié
-    const meeting = state?.meetings || { supportGauge: 55 };
+    // Calculate unused employee cost (employees not assigned to any restaurant)
+    const unusedEmployeeCost = rosterWithDetails
+        .filter((emp) => !emp.assigned)
+        .reduce((total, emp) => total + (emp.salary || 0), 0);
 
     // Calculer le profit prévisionnel en utilisant les données des restaurants
     const forecastProfit = noodleBars.reduce((total, bar) => {
@@ -474,9 +475,9 @@ const HubComponent = () => {
                                 Employees
                             </h2>
                             <p className="text-sm text-[color:var(--color-principalBrown)]">
-                                Cost:{" "}
+                                Unused cost:{" "}
                                 <span className="text-red-500 font-semibold">
-                                    {formatCurrency(laborCost)}
+                                    {formatCurrency(unusedEmployeeCost)}
                                 </span>
                             </p>
                         </div>
@@ -513,50 +514,9 @@ const HubComponent = () => {
                                 Debts
                             </h2>
                             <p className="text-sm text-[color:var(--color-principalBrown)]">
-                                Repayment:{" "}
+                                Due this period:{" "}
                                 <span className="text-red-500 font-semibold">
-                                    {formatCurrency(debt.periodRepayment || 0)}
-                                </span>
-                            </p>
-                        </div>
-                    </button>
-                </div>
-
-                {/* Meeting Room */}
-                <div className="bg-[color:var(--color-whiteCream)] my-2">
-                    <button
-                        onClick={() => handleMenuClick("MeetingRoom")}
-                        onMouseEnter={() => setHoveredMenuItem("MeetingRoom")}
-                        onMouseLeave={() => setHoveredMenuItem(null)}
-                        style={styles.menuItem(
-                            hoveredMenuItem === "MeetingRoom"
-                        )}
-                    >
-                        <div
-                            style={styles.menuItemIcon(
-                                hoveredMenuItem === "MeetingRoom"
-                            )}
-                        >
-                            <img
-                                src="/assets/hub/meeting.svg"
-                                alt="Meeting Room Icon"
-                                className="w-6 h-6"
-                                style={{
-                                    filter:
-                                        hoveredMenuItem === "MeetingRoom"
-                                            ? "brightness(2)"
-                                            : "none",
-                                }}
-                            />
-                        </div>
-                        <div>
-                            <h2 className="text-lg font-bold text-[color:var(--color-principalBrown)]">
-                                Meeting Room
-                            </h2>
-                            <p className="text-sm text-[color:var(--color-principalBrown)]">
-                                Support:{" "}
-                                <span className="text-blue-500 font-semibold">
-                                    {meeting?.supportGauge || 50}%
+                                    {formatCurrency(debt.amount || 0)}
                                 </span>
                             </p>
                         </div>
@@ -607,7 +567,7 @@ const HubComponent = () => {
             return (
                 <EmployeeManagement
                     onBack={handleEmployeeBack}
-                    laborCost={laborCost}
+                    laborCost={unusedEmployeeCost}
                 />
             );
         } else if (activeEmployeeSection === "recruitment") {
@@ -623,7 +583,7 @@ const HubComponent = () => {
             <EmployeeActions
                 onActionSelect={handleEmployeeAction}
                 onBack={() => handleMenuClick("Home")}
-                laborCost={laborCost}
+                laborCost={unusedEmployeeCost}
             />
         );
     };
@@ -675,8 +635,6 @@ const HubComponent = () => {
                 return renderStaffSidebar();
             case "Debts":
                 return renderDebtsSidebar();
-            case "MeetingRoom":
-                return <MeetingRoom onBack={() => handleMenuClick("Home")} />;
             case "PersonalTime":
                 return (
                     <SocialManagement
@@ -694,7 +652,7 @@ const HubComponent = () => {
         return (
             <DebtsManagement
                 onBack={() => handleMenuClick("Home")}
-                funds={funds}
+                debts={debt.amount}
             />
         );
     };

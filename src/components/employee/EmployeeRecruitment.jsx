@@ -2,8 +2,13 @@ import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { EventBus } from "../../game/EventBus";
 import MenuContainer from "../common/MenuContainer";
+import employeesData from "../../data/employees.json";
+import { useEmployees } from "../../store/gameStateHooks";
+import gameState from "../../game/GameState";
 
 const EmployeeRecruitment = ({ onBack, funds }) => {
+    const { rosterWithDetails: currentEmployees, hireEmployee } =
+        useEmployees();
     const [hoveredMenuItem, setHoveredMenuItem] = useState(null);
     const [candidates, setCandidates] = useState([]);
     const [recruitmentDone, setRecruitmentDone] = useState(false);
@@ -13,9 +18,16 @@ const EmployeeRecruitment = ({ onBack, funds }) => {
     const [detailsPosition, setDetailsPosition] = useState({ x: 0, y: 0 });
     const [showDetails, setShowDetails] = useState(false);
     const [currentPeriod, setCurrentPeriod] = useState(1);
+    const [hoveredTooltip, setHoveredTooltip] = useState(false);
 
-    const RECRUITMENT_COST = 5000;
-    const STORAGE_KEY_CANDIDATES = "periodRecruitmentCandidates";
+    const RECRUITMENT_COST = 300;
+
+    // Create a map of existing employee IDs for quick lookup
+    const existingEmployeeIds = new Set(
+        currentEmployees.map((emp) =>
+            emp.employeeId ? emp.employeeId.toString() : ""
+        )
+    );
 
     const formatCurrency = (value) => {
         return new Intl.NumberFormat("fr-FR").format(value) + " ¥";
@@ -27,53 +39,40 @@ const EmployeeRecruitment = ({ onBack, funds }) => {
         let period = 1;
         if (window.gameRef && window.gameRef.getGameState) {
             const gameState = window.gameRef.getGameState();
-            period = gameState.period || 1;
+            period = gameState.gameProgress?.currentPeriod || 1;
             setCurrentPeriod(period);
         }
 
-        // Check localStorage for recruitment status
-        const recruitmentPeriod = localStorage.getItem(
-            "recruitmentDoneInPeriod"
-        );
-        if (recruitmentPeriod && parseInt(recruitmentPeriod) === period) {
-            setRecruitmentDone(true);
+        // Check if recruitment has been done in the current period
+        const recruitmentDoneInPeriod =
+            gameState.isRecruitmentDoneInCurrentPeriod();
+        setRecruitmentDone(recruitmentDoneInPeriod);
 
+        if (recruitmentDoneInPeriod) {
             // Load saved candidates if available
-            const savedCandidatesData = localStorage.getItem(
-                STORAGE_KEY_CANDIDATES
-            );
-            if (savedCandidatesData) {
-                try {
-                    const savedCandidates = JSON.parse(savedCandidatesData);
-                    // Check if the saved candidates are for the current period
-                    if (savedCandidates.period === period) {
-                        setCandidates(savedCandidates.candidates);
-                    }
-                } catch (error) {
-                    console.error("Error parsing saved candidates:", error);
-                }
-            }
+            const savedCandidates = gameState.getRecruitmentCandidates();
+            setCandidates(savedCandidates);
         } else {
-            setRecruitmentDone(false);
             setCandidates([]);
         }
 
         // Listen for period changes
         const handleGameStateUpdate = (updatedState) => {
-            if (updatedState && updatedState.period !== currentPeriod) {
-                setCurrentPeriod(updatedState.period);
+            if (
+                updatedState &&
+                updatedState.gameProgress &&
+                updatedState.gameProgress.currentPeriod !== currentPeriod
+            ) {
+                setCurrentPeriod(updatedState.gameProgress.currentPeriod);
                 // Reset recruitment status for new period
-                const storedPeriod = localStorage.getItem(
-                    "recruitmentDoneInPeriod"
-                );
-                if (
-                    !storedPeriod ||
-                    parseInt(storedPeriod) !== updatedState.period
-                ) {
-                    setRecruitmentDone(false);
+                const recruitmentDoneInNewPeriod =
+                    gameState.isRecruitmentDoneInCurrentPeriod();
+                setRecruitmentDone(recruitmentDoneInNewPeriod);
+
+                if (recruitmentDoneInNewPeriod) {
+                    setCandidates(gameState.getRecruitmentCandidates());
+                } else {
                     setCandidates([]);
-                    // Clear saved candidates when period changes
-                    localStorage.removeItem(STORAGE_KEY_CANDIDATES);
                 }
             }
         };
@@ -142,178 +141,80 @@ const EmployeeRecruitment = ({ onBack, funds }) => {
         // Determine how many candidates to generate (up to 5)
         const candidateCount = Math.floor(Math.random() * 3) + 3; // 3-5 candidates
 
-        // Generate random candidates based on rarity drop chances
-        for (let i = 0; i < candidateCount; i++) {
-            const candidate = generateRandomEmployee();
+        // Get available employees (exclude ones the player already has)
+        const availableEmployees = employeesData.filter(
+            (emp) => !existingEmployeeIds.has(emp.id.toString())
+        );
+
+        if (availableEmployees.length === 0) {
+            console.warn("No more available employees to recruit!");
+            return;
+        }
+
+        // Randomly select candidates based on rarity
+        for (
+            let i = 0;
+            i < candidateCount && availableEmployees.length > 0;
+            i++
+        ) {
+            // Determine rarity based on drop chances
+            const rarityRoll = Math.random() * 100;
+            let targetRarity;
+
+            if (rarityRoll < 50) {
+                targetRarity = "D";
+            } else if (rarityRoll < 75) {
+                targetRarity = "C";
+            } else if (rarityRoll < 90) {
+                targetRarity = "B";
+            } else if (rarityRoll < 98) {
+                targetRarity = "A";
+            } else {
+                targetRarity = "S";
+            }
+
+            // Filter available employees by target rarity
+            const rarityEmployees = availableEmployees.filter(
+                (emp) => emp.rarity === targetRarity
+            );
+
+            // If no employees of target rarity, try to get any available employee
+            const employeePool =
+                rarityEmployees.length > 0
+                    ? rarityEmployees
+                    : availableEmployees;
+
+            if (employeePool.length === 0) continue;
+
+            // Select a random employee from the pool
+            const randomIndex = Math.floor(Math.random() * employeePool.length);
+            const selectedEmployee = employeePool[randomIndex];
+
+            // Remove this employee from available pool to avoid duplicates
+            const employeeIndex = availableEmployees.findIndex(
+                (emp) => emp.id === selectedEmployee.id
+            );
+            if (employeeIndex !== -1) {
+                availableEmployees.splice(employeeIndex, 1);
+            }
+
+            // Contract fee is now 50% of salary
+            const contractFee = Math.floor(selectedEmployee.salary * 0.5);
+
+            // Create the candidate with relevant info
+            const candidate = {
+                ...selectedEmployee,
+                mood: 3, // Start with happy mood
+                contractFee,
+            };
+
             newCandidates.push(candidate);
         }
 
         setCandidates(newCandidates);
 
-        // Save candidates to localStorage for persistence
-        const candidatesData = {
-            period: currentPeriod,
-            candidates: newCandidates,
-        };
-        localStorage.setItem(
-            STORAGE_KEY_CANDIDATES,
-            JSON.stringify(candidatesData)
-        );
-    };
-
-    const generateRandomEmployee = () => {
-        // Determine rarity based on drop chances
-        const rarityRoll = Math.random() * 100;
-        let rarity;
-
-        if (rarityRoll < 50) {
-            rarity = "D";
-        } else if (rarityRoll < 75) {
-            rarity = "C";
-        } else if (rarityRoll < 90) {
-            rarity = "B";
-        } else if (rarityRoll < 98) {
-            rarity = "A";
-        } else {
-            rarity = "S";
-        }
-
-        // Random name generation (simplified)
-        const firstNames = [
-            "Hiroshi",
-            "Yuki",
-            "Kenji",
-            "Aiko",
-            "Takeshi",
-            "Sakura",
-            "Ryu",
-            "Hana",
-            "Daiki",
-            "Mai",
-        ];
-        const lastNames = [
-            "Tanaka",
-            "Sato",
-            "Watanabe",
-            "Yamamoto",
-            "Nakamura",
-            "Ito",
-            "Kobayashi",
-            "Suzuki",
-            "Kato",
-            "Takahashi",
-        ];
-
-        const firstName =
-            firstNames[Math.floor(Math.random() * firstNames.length)];
-        const lastName =
-            lastNames[Math.floor(Math.random() * lastNames.length)];
-        const name = `${firstName} ${lastName}`;
-
-        // Generate base stats based on rarity
-        const rarityMultiplier = {
-            D: 0.6,
-            C: 0.8,
-            B: 1.0,
-            A: 1.3,
-            S: 1.6,
-        };
-
-        const baseSkill = Math.floor(Math.random() * 30) + 20; // Base skill between 20-50
-        const multiplier = rarityMultiplier[rarity];
-
-        // Generate traits
-        const traits = ["Empathetic", "Analytical", "Authoritative"];
-        const trait = traits[Math.floor(Math.random() * traits.length)];
-
-        // Generate debate traits
-        const debateTraits = [
-            "Diplomatic",
-            "Logical",
-            "Assertive",
-            "Commanding",
-            "Sympathetic",
-            "Strategic",
-            "Reflective",
-        ];
-        const debateTrait =
-            debateTraits[Math.floor(Math.random() * debateTraits.length)];
-
-        // Calculate salary based on rarity and skills
-        const baseSalary = {
-            D: 2500,
-            C: 3500,
-            B: 5000,
-            A: 7000,
-            S: 10000,
-        };
-
-        const salary = Math.floor(
-            baseSalary[rarity] * (0.9 + Math.random() * 0.3)
-        ); // ±15% variation
-
-        // Calculate contract fee (generally 30% of salary)
-        const contractFee = Math.floor(salary * 0.3);
-
-        return {
-            id: Date.now() + Math.floor(Math.random() * 1000),
-            name,
-            level: 1,
-            mood: 3, // Start with happy mood
-            trait,
-            rarity,
-            salary,
-            contractFee,
-            skills: {
-                cooking: Math.floor(
-                    baseSkill * multiplier * (0.7 + Math.random() * 0.6)
-                ),
-                service: Math.floor(
-                    baseSkill * multiplier * (0.7 + Math.random() * 0.6)
-                ),
-                management: Math.floor(
-                    baseSkill * multiplier * (0.7 + Math.random() * 0.6)
-                ),
-                debate: Math.floor(
-                    baseSkill * multiplier * (0.7 + Math.random() * 0.6)
-                ),
-            },
-            debateStats: {
-                trait: debateTrait,
-                interventionCost: Math.floor(
-                    20 + 50 * rarityMultiplier[rarity] * Math.random()
-                ),
-                relevance: Math.floor(
-                    30 + 60 * rarityMultiplier[rarity] * Math.random()
-                ),
-                repartee: Math.floor(
-                    30 + 60 * rarityMultiplier[rarity] * Math.random()
-                ),
-            },
-            description: generateDescription(trait, rarity),
-            assigned: null,
-        };
-    };
-
-    const generateDescription = (trait, rarity) => {
-        const traitDescriptions = {
-            Empathetic:
-                "Connects well with customers and staff. Creates a positive atmosphere.",
-            Analytical:
-                "Excels at optimizing operations and spotting inefficiencies.",
-            Authoritative:
-                "Natural leader who maintains high standards and discipline.",
-        };
-
-        const rarityDescriptions = {
-            D: "A novice with basic training. Shows some potential with proper guidance.",
-            C: "Reliable worker with some experience in the restaurant industry.",
-            B: "Experienced professional with solid skills and industry knowledge.",
-            A: "Exceptional talent with impressive credentials and expertise.",
-            S: "Legendary in the industry. Their reputation alone attracts customers.",
-        };
-
-        return `${traitDescriptions[trait]} ${rarityDescriptions[rarity]}`;
+        // Save candidates to game state
+        gameState.saveRecruitmentCandidates(newCandidates);
     };
 
     const handleStartRecruitment = () => {
@@ -321,23 +222,41 @@ const EmployeeRecruitment = ({ onBack, funds }) => {
 
         setIsLoading(true);
 
+        // Deduct the recruitment cost via event
+        EventBus.emit("deductFunds", {
+            amount: RECRUITMENT_COST,
+            source: "Employee Recruitment",
+            period: currentPeriod,
+        });
+
         // Trigger fairy animation through event bus
         EventBus.emit("startRecruitment");
 
         // Recruitment now marked as done for this period
         setRecruitmentDone(true);
 
-        // Store in localStorage which period recruitment was done
-        localStorage.setItem(
-            "recruitmentDoneInPeriod",
-            currentPeriod.toString()
-        );
+        // Mark recruitment as done in game state
+        gameState.markEmployeeRecruitmentDone();
     };
 
     const handleHireEmployee = (candidate) => {
-        const totalCost = candidate.salary + candidate.contractFee;
+        const contractFee = candidate.contractFee;
+        const totalCost = candidate.salary + contractFee;
 
-        if (funds < totalCost) return;
+        if (funds < totalCost) {
+            console.error("Insufficient funds");
+            return;
+        }
+
+        // Prepare employee data for hiring
+        const employeeData = {
+            id: candidate.id,
+            salary: candidate.salary,
+        };
+
+        // Hire the employee through the game state
+        hireEmployee(employeeData);
+        console.log(`Hired ${candidate.name} for ${formatCurrency(totalCost)}`);
 
         // Remove from candidates
         const updatedCandidates = candidates.filter(
@@ -345,27 +264,14 @@ const EmployeeRecruitment = ({ onBack, funds }) => {
         );
         setCandidates(updatedCandidates);
 
-        // Update localStorage with remaining candidates
-        const candidatesData = {
-            period: currentPeriod,
-            candidates: updatedCandidates,
-        };
-        localStorage.setItem(
-            STORAGE_KEY_CANDIDATES,
-            JSON.stringify(candidatesData)
-        );
+        // Update the candidates in game state
+        gameState.saveRecruitmentCandidates(updatedCandidates);
 
         // Close details if this was the selected candidate
         if (selectedCandidate && selectedCandidate.id === candidate.id) {
             setSelectedCandidate(null);
             setShowDetails(false);
         }
-
-        // In a real implementation, we would:
-        // 1. Deduct funds
-        // 2. Add employee to the player's roster
-        // 3. Update game state
-        console.log(`Hired ${candidate.name} for ${formatCurrency(totalCost)}`);
     };
 
     const handleSelectCandidate = (candidate) => {
@@ -548,6 +454,24 @@ const EmployeeRecruitment = ({ onBack, funds }) => {
             justifyContent: "center",
             gap: "0.5rem",
         }),
+        tooltip: {
+            position: "absolute",
+            backgroundColor: "rgba(0, 0, 0, 0.8)",
+            color: "white",
+            padding: "0.5rem 0.75rem",
+            borderRadius: "0.375rem",
+            zIndex: 100,
+            maxWidth: "250px",
+            boxShadow: "0 2px 10px rgba(0, 0, 0, 0.2)",
+            fontSize: "0.75rem",
+            lineHeight: "1.3",
+            top: "calc(100% + 5px)",
+            left: "50%",
+            transform: "translateX(-50%)",
+            opacity: hoveredTooltip ? 1 : 0,
+            visibility: hoveredTooltip ? "visible" : "hidden",
+            transition: "opacity 0.2s, visibility 0.2s",
+        },
     };
 
     return (
@@ -557,24 +481,6 @@ const EmployeeRecruitment = ({ onBack, funds }) => {
                 <p style={styles.headerSubtitle}>
                     Find and hire talented staff for your restaurants
                 </p>
-                <div className="mt-2 flex justify-between items-center">
-                    <div className="flex items-center">
-                        <span className="font-medium text-[color:var(--color-principalBrown)]">
-                            Recruitment Cost:{" "}
-                        </span>
-                        <span className="ml-2 text-lg font-semibold text-red-500">
-                            {formatCurrency(RECRUITMENT_COST)}
-                        </span>
-                    </div>
-                    <div className="flex items-center">
-                        <span className="font-medium text-[color:var(--color-principalBrown)]">
-                            Available Funds:{" "}
-                        </span>
-                        <span className="ml-2 text-lg font-semibold text-emerald-600">
-                            {formatCurrency(funds)}
-                        </span>
-                    </div>
-                </div>
             </div>
 
             {/* Contenu principal - Recruitment button or candidates */}
@@ -655,9 +561,8 @@ const EmployeeRecruitment = ({ onBack, funds }) => {
                             Available Candidates ({candidates.length})
                         </h3>
 
-                        <div className="grid grid-cols-3 gap-4">
+                        <div className="grid grid-cols-3 gap-1">
                             {candidates.map((candidate) => {
-                                const moodInfo = getMoodEmoji(candidate.mood);
                                 return (
                                     <div
                                         key={candidate.id}
@@ -679,7 +584,9 @@ const EmployeeRecruitment = ({ onBack, funds }) => {
                                     >
                                         {/* Level badge in top left */}
                                         <div style={styles.levelBadge}>
-                                            <span>Lv.{candidate.level}</span>
+                                            <span>
+                                                Lv.{candidate.level || 1}
+                                            </span>
                                         </div>
 
                                         {/* Rarity badge in top right */}
@@ -691,21 +598,8 @@ const EmployeeRecruitment = ({ onBack, funds }) => {
                                             {candidate.rarity}
                                         </div>
 
-                                        {/* Trait badge */}
-                                        <div
-                                            style={{
-                                                ...styles.traitBadge(
-                                                    candidate.trait
-                                                ),
-                                                top: "3rem",
-                                                left: "0.5rem",
-                                            }}
-                                        >
-                                            {candidate.trait}
-                                        </div>
-
                                         {/* Content with centered layout */}
-                                        <div className="mt-16 flex flex-col items-center">
+                                        <div className="mt-9 flex flex-col items-center">
                                             {/* Placeholder for future sprite */}
                                             <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 flex-shrink-0">
                                                 <span className="text-xl">
@@ -732,26 +626,12 @@ const EmployeeRecruitment = ({ onBack, funds }) => {
                                                     </div>
                                                     <div className="flex justify-between items-center mt-1">
                                                         <span className="text-gray-500">
-                                                            Contract:
+                                                            Contract Fee:
                                                         </span>
                                                         <span className="font-medium text-red-500">
                                                             {formatCurrency(
                                                                 candidate.contractFee
                                                             )}
-                                                        </span>
-                                                    </div>
-                                                </div>
-
-                                                {/* Mood at bottom */}
-                                                <div className="mt-2 flex justify-center items-center text-xs">
-                                                    <div className="flex items-center">
-                                                        <span
-                                                            className="text-xl"
-                                                            style={{
-                                                                color: moodInfo.color,
-                                                            }}
-                                                        >
-                                                            {moodInfo.emoji}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -780,7 +660,7 @@ const EmployeeRecruitment = ({ onBack, funds }) => {
                         className="w-[700px] max-h-[80vh]"
                         scrollable={true}
                         maxHeight="80vh"
-                        title={`${selectedCandidate.name} - ${selectedCandidate.trait} ${selectedCandidate.rarity}`}
+                        title={`${selectedCandidate.name} - ${selectedCandidate.rarity}`}
                     >
                         <div className="p-5">
                             <div className="flex mb-6">
@@ -800,48 +680,70 @@ const EmployeeRecruitment = ({ onBack, funds }) => {
                                                 <div className="ml-2 px-2 py-1 bg-[color:var(--color-principalRed)] text-white text-sm font-bold rounded">
                                                     <span>
                                                         Lv.
-                                                        {
-                                                            selectedCandidate.level
-                                                        }
+                                                        {selectedCandidate.level ||
+                                                            1}
                                                     </span>
                                                 </div>
-                                            </div>
-                                            <div
-                                                className="mt-1 inline-block"
-                                                style={styles.traitBadge(
-                                                    selectedCandidate.trait
-                                                )}
-                                            >
-                                                {selectedCandidate.trait}
                                             </div>
                                         </div>
                                     </div>
 
                                     <div className="space-y-3 text-[color:var(--color-principalBrown)]">
-                                        <div className="flex justify-between items-center p-2 bg-[color:var(--color-yellowWhite)] rounded-lg">
-                                            <span className="font-medium">
-                                                Mood:
+                                        <div className="flex justify-between items-center p-2 bg-[color:var(--color-yellowWhite)] rounded-lg relative">
+                                            <span className="font-medium flex items-center">
+                                                Morale :
+                                                <div
+                                                    className="ml-1 w-4 h-4 bg-gray-200 rounded-full flex items-center justify-center text-gray-700 text-xs cursor-help"
+                                                    onMouseEnter={() =>
+                                                        setHoveredTooltip(true)
+                                                    }
+                                                    onMouseLeave={() =>
+                                                        setHoveredTooltip(false)
+                                                    }
+                                                >
+                                                    ?
+                                                </div>
+                                                {hoveredTooltip && (
+                                                    <div style={styles.tooltip}>
+                                                        <p>
+                                                            <strong>
+                                                                Morale Impact:
+                                                            </strong>
+                                                        </p>
+                                                        <p className="mt-1">
+                                                            • High (≥80):
+                                                            Performance boost
+                                                        </p>
+                                                        <p>
+                                                            • Low (≤30):
+                                                            Performance penalty
+                                                        </p>
+                                                    </div>
+                                                )}
                                             </span>
                                             <div className="flex items-center gap-2">
+                                                <span className="text-sm font-medium">
+                                                    {
+                                                        getMoodEmoji(
+                                                            selectedCandidate.mood ||
+                                                                3
+                                                        ).label
+                                                    }
+                                                </span>
                                                 <span
                                                     className="text-2xl"
                                                     style={{
                                                         color: getMoodEmoji(
-                                                            selectedCandidate.mood
+                                                            selectedCandidate.mood ||
+                                                                3
                                                         ).color,
                                                     }}
                                                 >
                                                     {
                                                         getMoodEmoji(
-                                                            selectedCandidate.mood
+                                                            selectedCandidate.mood ||
+                                                                3
                                                         ).emoji
-                                                    }
-                                                </span>
-                                                <span className="text-sm font-medium">
-                                                    {
-                                                        getMoodEmoji(
-                                                            selectedCandidate.mood
-                                                        ).label
                                                     }
                                                 </span>
                                             </div>
@@ -860,7 +762,7 @@ const EmployeeRecruitment = ({ onBack, funds }) => {
 
                                         <div className="flex justify-between items-center p-2 bg-[color:var(--color-yellowWhite)] rounded-lg">
                                             <span className="font-medium">
-                                                Contract Fee:
+                                                Contract Fee (50% of Salary):
                                             </span>
                                             <span className="text-red-500 font-medium">
                                                 {formatCurrency(
@@ -868,24 +770,6 @@ const EmployeeRecruitment = ({ onBack, funds }) => {
                                                 )}
                                             </span>
                                         </div>
-
-                                        <div className="flex justify-between items-center p-2 bg-[color:var(--color-yellowWhite)] rounded-lg">
-                                            <span className="font-medium">
-                                                Total Hire Cost:
-                                            </span>
-                                            <span className="text-red-500 font-bold">
-                                                {formatCurrency(
-                                                    selectedCandidate.salary +
-                                                        selectedCandidate.contractFee
-                                                )}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <div className="mt-4 p-3 bg-[color:var(--color-yellowWhite)] rounded-lg">
-                                        <p className="text-sm italic text-[color:var(--color-principalBrown)]">
-                                            {selectedCandidate.description}
-                                        </p>
                                     </div>
 
                                     {/* Hire Action */}
@@ -912,17 +796,12 @@ const EmployeeRecruitment = ({ onBack, funds }) => {
                                             }
                                             className="w-full py-2 rounded hover:opacity-90 transition-opacity"
                                         >
-                                            Hire {selectedCandidate.name} (
-                                            {formatCurrency(
-                                                selectedCandidate.salary +
-                                                    selectedCandidate.contractFee
-                                            )}
-                                            )
+                                            Hire {selectedCandidate.name}
                                         </button>
                                     </div>
                                 </div>
 
-                                {/* Right Column - Restaurant Skills and Debate Stats */}
+                                {/* Right Column - Restaurant Skills */}
                                 <div className="w-1/2 pl-4 border-l border-gray-200">
                                     {/* Restaurant Skills Section */}
                                     <div className="bg-[color:var(--color-yellowWhite)] rounded-lg p-3 mb-4">
@@ -934,12 +813,11 @@ const EmployeeRecruitment = ({ onBack, funds }) => {
                                             <div>
                                                 <div className="flex justify-between mb-1">
                                                     <span className="text-sm font-medium text-[color:var(--color-principalBrown)]">
-                                                        🍳 Cooking
+                                                        🍳 Cuisine
                                                     </span>
                                                     <span className="text-sm font-medium text-[color:var(--color-principalBrown)]">
                                                         {
-                                                            selectedCandidate
-                                                                .skills.cooking
+                                                            selectedCandidate.cuisine
                                                         }
                                                         /100
                                                     </span>
@@ -948,8 +826,7 @@ const EmployeeRecruitment = ({ onBack, funds }) => {
                                                     <div
                                                         className="h-full rounded-full transition-all"
                                                         style={styles.skillBar(
-                                                            selectedCandidate
-                                                                .skills.cooking,
+                                                            selectedCandidate.cuisine,
                                                             "#F97316"
                                                         )}
                                                     ></div>
@@ -963,8 +840,7 @@ const EmployeeRecruitment = ({ onBack, funds }) => {
                                                     </span>
                                                     <span className="text-sm font-medium text-[color:var(--color-principalBrown)]">
                                                         {
-                                                            selectedCandidate
-                                                                .skills.service
+                                                            selectedCandidate.service
                                                         }
                                                         /100
                                                     </span>
@@ -973,8 +849,7 @@ const EmployeeRecruitment = ({ onBack, funds }) => {
                                                     <div
                                                         className="h-full rounded-full transition-all"
                                                         style={styles.skillBar(
-                                                            selectedCandidate
-                                                                .skills.service,
+                                                            selectedCandidate.service,
                                                             "#0EA5E9"
                                                         )}
                                                     ></div>
@@ -984,13 +859,11 @@ const EmployeeRecruitment = ({ onBack, funds }) => {
                                             <div>
                                                 <div className="flex justify-between mb-1">
                                                     <span className="text-sm font-medium text-[color:var(--color-principalBrown)]">
-                                                        📊 Management
+                                                        🎭 Ambiance
                                                     </span>
                                                     <span className="text-sm font-medium text-[color:var(--color-principalBrown)]">
                                                         {
-                                                            selectedCandidate
-                                                                .skills
-                                                                .management
+                                                            selectedCandidate.ambiance
                                                         }
                                                         /100
                                                     </span>
@@ -999,9 +872,7 @@ const EmployeeRecruitment = ({ onBack, funds }) => {
                                                     <div
                                                         className="h-full rounded-full transition-all"
                                                         style={styles.skillBar(
-                                                            selectedCandidate
-                                                                .skills
-                                                                .management,
+                                                            selectedCandidate.ambiance,
                                                             "#8B5CF6"
                                                         )}
                                                     ></div>
@@ -1010,117 +881,29 @@ const EmployeeRecruitment = ({ onBack, funds }) => {
                                         </div>
                                     </div>
 
-                                    {/* Debate Stats Section */}
+                                    {/* Level Information */}
                                     <div className="bg-[color:var(--color-yellowWhite)] rounded-lg p-3 mb-4">
                                         <h4 className="font-bold mb-3 text-[color:var(--color-principalBrown)]">
-                                            🗣️ Debate Skills
+                                            📈 Employee Growth
                                         </h4>
 
-                                        <div className="space-y-3">
-                                            <div className="flex justify-between items-center p-2 bg-white rounded-lg">
-                                                <span className="font-medium text-sm text-[color:var(--color-principalBrown)]">
-                                                    Debate Trait:
-                                                </span>
-                                                <span className="text-[color:var(--color-principalBrown)] font-semibold px-2 py-0.5 bg-gray-100 rounded">
-                                                    {
-                                                        selectedCandidate
-                                                            .debateStats.trait
-                                                    }
-                                                </span>
-                                            </div>
+                                        <div className="flex justify-between items-center p-2 bg-white rounded-lg mb-2">
+                                            <span className="font-medium text-sm text-[color:var(--color-principalBrown)]">
+                                                Current Level:
+                                            </span>
+                                            <span className="text-[color:var(--color-principalBrown)] font-semibold px-2 py-0.5 bg-gray-100 rounded">
+                                                {selectedCandidate.level || 1}
+                                            </span>
+                                        </div>
 
-                                            <div className="flex justify-between items-center p-2 bg-white rounded-lg">
-                                                <span className="font-medium text-sm text-[color:var(--color-principalBrown)]">
-                                                    Intervention Cost:
-                                                </span>
-                                                <span className="text-red-500 font-medium">
-                                                    {
-                                                        selectedCandidate
-                                                            .debateStats
-                                                            .interventionCost
-                                                    }{" "}
-                                                    pts
-                                                </span>
-                                            </div>
-
-                                            <div>
-                                                <div className="flex justify-between mb-1">
-                                                    <span className="text-sm font-medium text-[color:var(--color-principalBrown)]">
-                                                        Relevance
-                                                    </span>
-                                                    <span className="text-sm font-medium text-[color:var(--color-principalBrown)]">
-                                                        {
-                                                            selectedCandidate
-                                                                .debateStats
-                                                                .relevance
-                                                        }
-                                                        /100
-                                                    </span>
-                                                </div>
-                                                <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                                                    <div
-                                                        className="h-full rounded-full transition-all"
-                                                        style={styles.skillBar(
-                                                            selectedCandidate
-                                                                .debateStats
-                                                                .relevance,
-                                                            "#EC4899"
-                                                        )}
-                                                    ></div>
-                                                </div>
-                                            </div>
-
-                                            <div>
-                                                <div className="flex justify-between mb-1">
-                                                    <span className="text-sm font-medium text-[color:var(--color-principalBrown)]">
-                                                        Repartee
-                                                    </span>
-                                                    <span className="text-sm font-medium text-[color:var(--color-principalBrown)]">
-                                                        {
-                                                            selectedCandidate
-                                                                .debateStats
-                                                                .repartee
-                                                        }
-                                                        /100
-                                                    </span>
-                                                </div>
-                                                <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                                                    <div
-                                                        className="h-full rounded-full transition-all"
-                                                        style={styles.skillBar(
-                                                            selectedCandidate
-                                                                .debateStats
-                                                                .repartee,
-                                                            "#10B981"
-                                                        )}
-                                                    ></div>
-                                                </div>
-                                            </div>
-
-                                            <div>
-                                                <div className="flex justify-between mb-1">
-                                                    <span className="text-sm font-medium text-[color:var(--color-principalBrown)]">
-                                                        Overall Debate
-                                                    </span>
-                                                    <span className="text-sm font-medium text-[color:var(--color-principalBrown)]">
-                                                        {
-                                                            selectedCandidate
-                                                                .skills.debate
-                                                        }
-                                                        /100
-                                                    </span>
-                                                </div>
-                                                <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                                                    <div
-                                                        className="h-full rounded-full transition-all"
-                                                        style={styles.skillBar(
-                                                            selectedCandidate
-                                                                .skills.debate,
-                                                            "#6366F1"
-                                                        )}
-                                                    ></div>
-                                                </div>
-                                            </div>
+                                        <div className="flex justify-between items-center p-2 bg-white rounded-lg">
+                                            <span className="font-medium text-sm text-[color:var(--color-principalBrown)]">
+                                                Level Cap:
+                                            </span>
+                                            <span className="text-[color:var(--color-principalRed)] font-semibold px-2 py-0.5 bg-gray-100 rounded">
+                                                {selectedCandidate.levelCap ||
+                                                    5}
+                                            </span>
                                         </div>
                                     </div>
                                 </div>

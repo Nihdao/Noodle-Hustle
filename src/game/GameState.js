@@ -632,9 +632,17 @@ class GameState {
 
             const newRoster = [...state.employees.roster, newEmployeeEntry];
             const newLaborCost = newRoster.reduce(
-                (total, emp) => total + emp.salary,
+                (total, emp) => total + (emp.salary || 0),
                 0
             );
+
+            // Calculate contract fee (50% of salary)
+            const contractFee = Math.floor(employee.salary * 0.5);
+            const totalCost = employee.salary + contractFee;
+
+            // Ensure statistics object exists with proper initialization
+            const statistics = state.statistics || {};
+            const employeesHired = statistics.employeesHired || 0;
 
             return {
                 ...state,
@@ -645,11 +653,19 @@ class GameState {
                 },
                 finances: {
                     ...state.finances,
-                    funds: state.finances.funds - employee.salary, // Initial payment
+                    funds: state.finances.funds - totalCost, // Deduct salary + contract fee
+                    expensesHistory: [
+                        ...state.finances.expensesHistory,
+                        {
+                            amount: totalCost,
+                            source: "Employee Hiring",
+                            period: state.gameProgress.currentPeriod,
+                        },
+                    ],
                 },
                 statistics: {
-                    ...state.statistics,
-                    employeesHired: state.statistics.employeesHired + 1,
+                    ...statistics,
+                    employeesHired: employeesHired + 1,
                 },
             };
         });
@@ -658,113 +674,60 @@ class GameState {
     /**
      * Remove an employee from the roster
      * @param {string} employeeId - ID of the employee to fire
-     * @param {number} severanceCost - Severance cost to pay
      */
-    fireEmployee(employeeId, severanceCost) {
-        console.log(
-            "Firing employee:",
-            employeeId,
-            "Severance cost:",
-            severanceCost
-        );
-        this.updateGameState((state) => {
-            // Prevent firing the initial employees (IDs 74 and 75)
-            if (employeeId === "74" || employeeId === "75") {
-                console.warn("Cannot fire initial employees (IDs 74 and 75)");
-                return state;
-            }
+    fireEmployee(employeeId) {
+        console.log("Firing employee:", employeeId);
 
-            // Find the employee index
+        // Check if the employee is one of the initial employees that should be protected
+        if (employeeId === 74 || employeeId === 75) {
+            console.warn("Cannot fire initial employees with IDs 74 or 75");
+            return;
+        }
+
+        this.updateGameState((state) => {
+            // Find the employee to fire
             const employeeIndex = state.employees.roster.findIndex(
                 (emp) => emp.id === employeeId
             );
-            if (employeeIndex === -1) {
-                console.log("Employee not found:", employeeId);
-                return state;
-            }
+            if (employeeIndex === -1) return state;
 
-            // Get the employee to be fired for cost calculations
-            const firedEmployee = state.employees.roster[employeeIndex];
-            console.log("Fired employee:", firedEmployee);
+            // Get the employee
+            const employee = state.employees.roster[employeeIndex];
 
-            // Update roster and assigned staff
+            // Create updated roster without the fired employee
             const updatedRoster = state.employees.roster.filter(
                 (emp) => emp.id !== employeeId
             );
 
-            // Calculate new total labor cost
+            // Recalculate labor cost
             const newLaborCost = updatedRoster.reduce(
                 (total, emp) => total + (emp.salary || 0),
                 0
             );
-            console.log("New labor cost:", newLaborCost);
 
-            // Check if restaurants is an array before using map
-            let updatedRestaurants = state.restaurants;
+            // Remove from restaurant if assigned
+            let updatedRestaurants = [...state.restaurants];
+            const restaurantIndex = updatedRestaurants.findIndex(
+                (restaurant) =>
+                    restaurant.staff &&
+                    restaurant.staff.some((staffId) => staffId === employeeId)
+            );
 
-            // Remove the employee from all restaurant staff assignments
-            if (Array.isArray(state.restaurants)) {
-                // Handle restaurants as array
-                updatedRestaurants = state.restaurants.map((restaurant) => {
-                    if (
-                        restaurant.staff &&
-                        restaurant.staff.includes(employeeId)
-                    ) {
-                        // Update restaurant staff cost
-                        const updatedStaff = restaurant.staff.filter(
-                            (id) => id !== employeeId
-                        );
-                        const newStaffCost = updatedStaff.reduce(
-                            (total, id) => {
-                                const emp = updatedRoster.find(
-                                    (e) => e.id === id
-                                );
-                                return total + (emp ? emp.salary : 0);
-                            },
-                            0
-                        );
-
-                        return {
-                            ...restaurant,
-                            staff: updatedStaff,
-                            staffCost: newStaffCost,
-                        };
-                    }
-                    return restaurant;
-                });
-            } else if (state.restaurants && state.restaurants.bars) {
-                // Handle restaurants as object with bars array
-                updatedRestaurants = {
-                    ...state.restaurants,
-                    bars: state.restaurants.bars.map((restaurant) => {
-                        if (
-                            restaurant.staff &&
-                            restaurant.staff.includes(employeeId)
-                        ) {
-                            // Update restaurant staff cost
-                            const updatedStaff = restaurant.staff.filter(
-                                (id) => id !== employeeId
-                            );
-                            const newStaffCost = updatedStaff.reduce(
-                                (total, id) => {
-                                    const emp = updatedRoster.find(
-                                        (e) => e.id === id
-                                    );
-                                    return total + (emp ? emp.salary : 0);
-                                },
-                                0
-                            );
-
-                            return {
-                                ...restaurant,
-                                staff: updatedStaff,
-                                staffCost: newStaffCost,
-                            };
-                        }
-                        return restaurant;
-                    }),
+            if (restaurantIndex !== -1) {
+                // Remove employee from restaurant staff
+                updatedRestaurants[restaurantIndex] = {
+                    ...updatedRestaurants[restaurantIndex],
+                    staff: updatedRestaurants[restaurantIndex].staff.filter(
+                        (staffId) => staffId !== employeeId
+                    ),
                 };
             }
+
+            // Ensure severance pay is at least 50 (minimum firing cost)
+            const severancePay = Math.max(
+                50,
+                Math.floor(employee.salary * 0.5)
+            );
 
             return {
                 ...state,
@@ -773,19 +736,19 @@ class GameState {
                     roster: updatedRoster,
                     laborCost: newLaborCost,
                 },
-                restaurants: updatedRestaurants,
                 finances: {
                     ...state.finances,
-                    funds: state.finances.funds - (severanceCost || 0),
+                    funds: state.finances.funds - severancePay,
                     expensesHistory: [
                         ...state.finances.expensesHistory,
                         {
-                            amount: severanceCost || 0,
-                            source: "Employee severance",
+                            amount: severancePay,
+                            source: "Severance pay",
                             period: state.gameProgress.currentPeriod,
                         },
                     ],
                 },
+                restaurants: updatedRestaurants,
             };
         });
     }
@@ -852,7 +815,7 @@ class GameState {
 
             console.log("Updated employee:", updatedEmployees[employeeIndex]);
 
-            // Ensure statistics object and its properties exist
+            // Ensure the statistics object exists with proper initialization
             const statistics = state.statistics || {};
             const trainingsSessions = statistics.trainingsSessions || 0;
 
@@ -902,26 +865,20 @@ class GameState {
             const employeeIndex = state.employees.roster.findIndex(
                 (emp) => emp.id === employeeId
             );
-            if (employeeIndex === -1) {
-                console.log("Employee not found:", employeeId);
-                return state;
-            }
+            if (employeeIndex === -1) return state;
 
-            const currentMorale =
-                state.employees.roster[employeeIndex].morale || 0;
-            console.log("Current morale:", currentMorale);
-
-            // Update employee morale and mark as managed in this period
+            // Update employee morale
             const updatedEmployees = [...state.employees.roster];
             updatedEmployees[employeeIndex] = {
                 ...updatedEmployees[employeeIndex],
-                morale: Math.min(100, currentMorale + moraleBoost),
+                morale: Math.min(
+                    100,
+                    updatedEmployees[employeeIndex].morale + moraleBoost
+                ),
                 management: true, // Mark that management action has been performed this period
             };
 
-            console.log("Updated employee:", updatedEmployees[employeeIndex]);
-
-            // Ensure statistics object and its properties exist
+            // Ensure the statistics object exists with proper initialization
             const statistics = state.statistics || {};
             const giftsGiven = statistics.giftsGiven || 0;
 
@@ -968,6 +925,66 @@ class GameState {
                 },
             };
         });
+    }
+
+    /**
+     * Mark employee recruitment action as done for the current period
+     */
+    markEmployeeRecruitmentDone() {
+        this.updateGameState((state) => {
+            return {
+                ...state,
+                employeeRecruitment: {
+                    ...state.employeeRecruitment,
+                    searchActionDoneInPeriod: state.gameProgress.currentPeriod,
+                    candidates: state.employeeRecruitment?.candidates || [],
+                },
+            };
+        });
+    }
+
+    /**
+     * Save recruitment candidates for the current period
+     * @param {Array} candidates - Array of employee candidates
+     */
+    saveRecruitmentCandidates(candidates) {
+        this.updateGameState((state) => {
+            return {
+                ...state,
+                employeeRecruitment: {
+                    ...state.employeeRecruitment,
+                    candidates: candidates,
+                },
+            };
+        });
+    }
+
+    /**
+     * Check if recruitment has been done in the current period
+     * @returns {boolean} - Whether recruitment has been done in current period
+     */
+    isRecruitmentDoneInCurrentPeriod() {
+        if (!this.initialized) {
+            this.initialize();
+        }
+
+        const currentPeriod = this.state.gameProgress.currentPeriod;
+        const lastRecruitmentPeriod =
+            this.state.employeeRecruitment?.searchActionDoneInPeriod || 0;
+
+        return currentPeriod === lastRecruitmentPeriod;
+    }
+
+    /**
+     * Get current recruitment candidates
+     * @returns {Array} - Current recruitment candidates
+     */
+    getRecruitmentCandidates() {
+        if (!this.initialized) {
+            this.initialize();
+        }
+
+        return this.state.employeeRecruitment?.candidates || [];
     }
 }
 
