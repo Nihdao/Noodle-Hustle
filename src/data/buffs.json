@@ -68,40 +68,6 @@
                 }
             ]
         },
-        "investorWhisperer": {
-            "name": "Investor Whisperer",
-            "confidantid": "ginji",
-            "description": "Boosts performance of employees in investor debate battles",
-            "icon": "/assets/buffs/investor_whisperer.png",
-            "levels": [
-                {
-                    "level": 1,
-                    "effect": "+5% to Relevance stats",
-                    "value": 5
-                },
-                {
-                    "level": 2,
-                    "effect": "+10% to Relevance stats",
-                    "value": 10
-                },
-                {
-                    "level": 3,
-                    "effect": "+15% to Relevance stats",
-                    "value": 15
-                },
-                {
-                    "level": 4,
-                    "effect": "+25% to Relevance stats",
-                    "value": 25
-                },
-                {
-                    "level": 5,
-                    "effect": "10% chance to deal a Critical Hit (2x damage)",
-                    "value": 10,
-                    "special": "criticalHit"
-                }
-            ]
-        },
         "mentalClarity": {
             "name": "Mental Clarity",
             "confidantid": "yuna",

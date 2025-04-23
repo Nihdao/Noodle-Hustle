@@ -676,13 +676,18 @@ class GameState {
      * @param {string} employeeId - ID of the employee to fire
      */
     fireEmployee(employeeId) {
-        console.log("Firing employee:", employeeId);
-
-        // Check if the employee is one of the initial employees that should be protected
-        if (employeeId === 74 || employeeId === 75) {
-            console.warn("Cannot fire initial employees with IDs 74 or 75");
-            return;
+        // Prevent firing the two initial employees (IDs 74 and 75)
+        if (
+            employeeId === "74" ||
+            employeeId === "75" ||
+            employeeId === 74 ||
+            employeeId === 75
+        ) {
+            console.warn("Cannot fire initial employees (IDs 74 and 75)");
+            return false;
         }
+
+        console.log("Firing employee:", employeeId);
 
         this.updateGameState((state) => {
             // Find the employee to fire
@@ -759,89 +764,65 @@ class GameState {
      * @param {number} cost - Cost of the training
      */
     trainEmployee(employeeId, cost) {
-        console.log("Training employee:", employeeId, "Cost:", cost);
         this.updateGameState((state) => {
-            // Find the employee to train
-            const employeeIndex = state.employees.roster.findIndex(
-                (emp) => emp.id === employeeId
-            );
-            if (employeeIndex === -1) {
-                console.log("Employee not found:", employeeId);
-                return state;
+            // Initialize statistics object if it doesn't exist
+            if (!state.statistics) {
+                state.statistics = {};
             }
 
-            // Get employee base data for skill stats
-            const employeeEntry = state.employees.roster[employeeIndex];
-            const baseEmployeeData = this.getEmployeeData(
-                employeeEntry.employeeId
+            // Initialize trainingsSessions if it doesn't exist
+            if (!state.statistics.trainingsSessions) {
+                state.statistics.trainingsSessions = 0;
+            }
+
+            // Find the employee to train
+            const employee = state.employees.roster.find(
+                (e) => e.id === employeeId
             );
 
-            console.log("Employee base data:", baseEmployeeData);
+            if (!employee) {
+                console.error(`Employee with ID ${employeeId} not found`);
+                return false;
+            }
 
-            // Get current skill values from the roster entry (might have been upgraded before)
-            const currentCuisine =
-                employeeEntry.cuisine ||
-                (baseEmployeeData ? baseEmployeeData.cuisine : 0) ||
-                0;
-            const currentService =
-                employeeEntry.service ||
-                (baseEmployeeData ? baseEmployeeData.service : 0) ||
-                0;
-            const currentAmbiance =
-                employeeEntry.ambiance ||
-                (baseEmployeeData ? baseEmployeeData.ambiance : 0) ||
-                0;
+            // 2. Check if employee is at max level
+            if (employee.level >= employee.levelCap) {
+                console.warn(
+                    `Employee ${employee.name} is already at max level`
+                );
+                return false;
+            }
+
+            // 3. Check if we have enough money
+            if (state.finances.funds < cost) {
+                console.warn("Not enough funds to train employee");
+                return false;
+            }
+
+            // 4. Update employee level and skills
+            employee.level += 1;
+
+            // 5. Update finances
+            state.finances.funds -= cost;
+
+            // Add to expenses history
+            state.finances.expensesHistory.push({
+                period: state.gameProgress.currentPeriod,
+                amount: cost,
+                description: `Formation de ${employee.name}`,
+                category: "training",
+            });
+
+            // 6. Update statistics
+            state.statistics.trainingsSessions += 1;
+
+            // Update the state
+            this.saveGameState();
 
             console.log(
-                "Current skills - Cuisine:",
-                currentCuisine,
-                "Service:",
-                currentService,
-                "Ambiance:",
-                currentAmbiance
+                `Employee ${employee.name} successfully trained to level ${employee.level}`
             );
-
-            // Update employee level, stats, and mark as managed in this period
-            const updatedEmployees = [...state.employees.roster];
-            updatedEmployees[employeeIndex] = {
-                ...updatedEmployees[employeeIndex],
-                level: updatedEmployees[employeeIndex].level + 1,
-                // Increase cuisine, service, and ambiance stats by 5 each
-                cuisine: Math.min(100, currentCuisine + 5),
-                service: Math.min(100, currentService + 5),
-                ambiance: Math.min(100, currentAmbiance + 5),
-                management: true, // Mark that management action has been performed this period
-            };
-
-            console.log("Updated employee:", updatedEmployees[employeeIndex]);
-
-            // Ensure the statistics object exists with proper initialization
-            const statistics = state.statistics || {};
-            const trainingsSessions = statistics.trainingsSessions || 0;
-
-            return {
-                ...state,
-                employees: {
-                    ...state.employees,
-                    roster: updatedEmployees,
-                },
-                finances: {
-                    ...state.finances,
-                    funds: state.finances.funds - cost,
-                    expensesHistory: [
-                        ...state.finances.expensesHistory,
-                        {
-                            amount: cost,
-                            source: "Employee training",
-                            period: state.gameProgress.currentPeriod,
-                        },
-                    ],
-                },
-                statistics: {
-                    ...statistics,
-                    trainingsSessions: trainingsSessions + 1,
-                },
-            };
+            return true;
         });
     }
 
@@ -849,62 +830,68 @@ class GameState {
      * Give a gift to an employee to boost their morale
      * @param {string} employeeId - ID of the employee to gift
      * @param {number} cost - Cost of the gift
-     * @param {number} moraleBoost - Amount of morale to add
      */
-    giftEmployee(employeeId, cost, moraleBoost = 30) {
-        console.log(
-            "Gifting employee:",
-            employeeId,
-            "Cost:",
-            cost,
-            "Morale boost:",
-            moraleBoost
-        );
+    giftEmployee(employeeId, cost) {
         this.updateGameState((state) => {
+            // Initialize statistics object if it doesn't exist
+            if (!state.statistics) {
+                state.statistics = {};
+            }
+
+            // Initialize giftsGiven if it doesn't exist
+            if (!state.statistics.giftsGiven) {
+                state.statistics.giftsGiven = 0;
+            }
+
             // Find the employee to gift
-            const employeeIndex = state.employees.roster.findIndex(
-                (emp) => emp.id === employeeId
+            const employee = state.employees.roster.find(
+                (e) => e.id === employeeId
             );
-            if (employeeIndex === -1) return state;
 
-            // Update employee morale
-            const updatedEmployees = [...state.employees.roster];
-            updatedEmployees[employeeIndex] = {
-                ...updatedEmployees[employeeIndex],
-                morale: Math.min(
-                    100,
-                    updatedEmployees[employeeIndex].morale + moraleBoost
-                ),
-                management: true, // Mark that management action has been performed this period
-            };
+            if (!employee) {
+                console.error(`Employee with ID ${employeeId} not found`);
+                return false;
+            }
 
-            // Ensure the statistics object exists with proper initialization
-            const statistics = state.statistics || {};
-            const giftsGiven = statistics.giftsGiven || 0;
+            // 2. Check if we have enough money
+            if (state.finances.funds < cost) {
+                console.warn("Not enough funds to gift employee");
+                return false;
+            }
 
-            return {
-                ...state,
-                employees: {
-                    ...state.employees,
-                    roster: updatedEmployees,
-                },
-                finances: {
-                    ...state.finances,
-                    funds: state.finances.funds - cost,
-                    expensesHistory: [
-                        ...state.finances.expensesHistory,
-                        {
-                            amount: cost,
-                            source: "Employee gift",
-                            period: state.gameProgress.currentPeriod,
-                        },
-                    ],
-                },
-                statistics: {
-                    ...statistics,
-                    giftsGiven: giftsGiven + 1,
-                },
-            };
+            // 3. Update employee morale
+            // Morale boost is based on cost: higher cost = higher boost
+            const moraleBoost = Math.floor(cost / 10); // Simple formula, adjust as needed
+            employee.morale = Math.min(100, employee.morale + moraleBoost);
+
+            // 4. Update finances
+            state.finances.funds -= cost;
+
+            // Add to expenses history
+            state.finances.expensesHistory.push({
+                period: state.gameProgress.currentPeriod,
+                amount: cost,
+                description: `Cadeau pour ${employee.name}`,
+                category: "gift",
+            });
+
+            // 5. Update statistics
+            state.statistics.giftsGiven =
+                (state.statistics.giftsGiven || 0) + 1;
+
+            // Set a flag in employee.management to indicate this action was performed this period
+            if (!employee.management) {
+                employee.management = {};
+            }
+            employee.management.giftedThisPeriod = true;
+
+            // Update the state
+            this.saveGameState();
+
+            console.log(
+                `Successfully gave a gift to ${employee.name}, morale increased by ${moraleBoost} points`
+            );
+            return true;
         });
     }
 

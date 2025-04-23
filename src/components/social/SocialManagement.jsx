@@ -50,16 +50,13 @@ const SocialManagement = ({
         if (gameState && gameState.getGameState) {
             const state = gameState.getGameState();
             setCurrentPeriod(state.gameProgress?.currentPeriod || 1);
-        }
 
-        // Vérifier si une action a déjà été effectuée cette période
-        const actionDonePeriod = localStorage.getItem(
-            "socialActionDoneInPeriod"
-        );
-        if (actionDonePeriod && parseInt(actionDonePeriod) === currentPeriod) {
-            setActionPerformed(true);
-        } else {
-            setActionPerformed(false);
+            // Vérifier si une action a déjà été effectuée cette période en utilisant gameState
+            if (state.social?.socialActionDoneInPeriod) {
+                setActionPerformed(true);
+            } else {
+                setActionPerformed(false);
+            }
         }
 
         // Écouter les changements de période
@@ -70,8 +67,9 @@ const SocialManagement = ({
             ) {
                 setCurrentPeriod(updatedState.gameProgress.currentPeriod);
                 // Réinitialiser l'état d'action pour la nouvelle période
-                setActionPerformed(false);
-                localStorage.removeItem("socialActionDoneInPeriod");
+                setActionPerformed(
+                    updatedState.social?.socialActionDoneInPeriod || false
+                );
             }
         };
 
@@ -147,20 +145,49 @@ const SocialManagement = ({
         // Close the details panel
         setShowDetails(false);
 
+        // Apply burnout reduction based on location
+        const currentState = gameState.getGameState();
+        const currentBurnout = currentState.playerStats?.burnout || 0;
+        let newBurnout;
+
+        if (selectedLocation.name === "Home") {
+            // 25% reduction for Home
+            newBurnout = Math.max(0, Math.floor(currentBurnout * 0.75));
+        } else {
+            // 10% reduction for other locations
+            newBurnout = Math.max(0, Math.floor(currentBurnout * 0.9));
+        }
+
+        // Update burnout in game state
+        if (currentBurnout !== newBurnout) {
+            gameState.updateGameState((state) => ({
+                ...state,
+                playerStats: {
+                    ...state.playerStats,
+                    burnout: newBurnout,
+                },
+            }));
+        }
+
         // Vérifier s'il peut y avoir une rencontre avec un confident
         const possibleConfidants = checkPossibleConfidantEncounters(
             selectedLocation.name
         );
-        console.log(possibleConfidants);
-        // Marquer l'action comme effectuée pour cette période
+
+        // Marquer l'action comme effectuée pour cette période dans le gameState
+        gameState.updateGameState((state) => ({
+            ...state,
+            social: {
+                ...state.social,
+                socialActionDoneInPeriod: true,
+            },
+        }));
+
+        // Update local state
         setActionPerformed(true);
-        localStorage.setItem(
-            "socialActionDoneInPeriod",
-            currentPeriod.toString()
-        );
 
         // Si des confidants peuvent être rencontrés, 50% de chance d'en rencontrer un
-        if (possibleConfidants.length > 0) {
+        if (possibleConfidants.length > 0 && Math.random() > 0.5) {
             // Sélectionner un confident aléatoire parmi les possibles
             const randomIndex = Math.floor(
                 Math.random() * possibleConfidants.length
@@ -171,11 +198,10 @@ const SocialManagement = ({
             const relationshipLevel = getCurrentRelationshipLevel(
                 selectedConfidant.id
             );
-            console.log(relationshipLevel);
-            console.log(selectedConfidant.maxLevel);
+
             // Si déjà au niveau max, afficher un message générique
             if (relationshipLevel >= selectedConfidant.maxLevel) {
-                showGenericLocationMessage(selectedLocation.name);
+                showGenericLocationMessage(selectedLocation.name, newBurnout);
                 return;
             }
 
@@ -183,7 +209,7 @@ const SocialManagement = ({
             startConfidantConversation(selectedConfidant, relationshipLevel);
         } else {
             // Pas de rencontre, afficher un message générique
-            showGenericLocationMessage(selectedLocation.name);
+            showGenericLocationMessage(selectedLocation.name, newBurnout);
         }
     };
 
@@ -268,7 +294,7 @@ const SocialManagement = ({
     };
 
     // Afficher un message générique pour le lieu
-    const showGenericLocationMessage = (locationName) => {
+    const showGenericLocationMessage = (locationName, newBurnout) => {
         // Messages génériques par lieu
         const messages = {
             Home: [
@@ -298,9 +324,14 @@ const SocialManagement = ({
             ],
         };
 
+        // Get current and previous burnout
+        const currentState = gameState.getGameState();
+        const currentBurnout = currentState.playerStats?.burnout || 0;
+        const burnoutReduction = locationName === "Home" ? "25%" : "10%";
+
         // Sélectionner un message aléatoire pour ce lieu
         const locationMessages = messages[locationName] || [
-            "Vous passez un moment agréable.",
+            "You spend a pleasant moment.",
         ];
         const randomIndex = Math.floor(Math.random() * locationMessages.length);
 
@@ -566,6 +597,9 @@ const SocialManagement = ({
                                         <h4 className="font-semibold mb-2">
                                             Possible Encounters:
                                         </h4>
+                                        <p className="text-xs text-gray-500 mb-2">
+                                            50% chance to meet a confidant
+                                        </p>
                                         <div className="space-y-2">
                                             {getLocationConfidants(
                                                 selectedLocation.name
@@ -728,9 +762,9 @@ const SocialManagement = ({
                                                                         : "justify-end"
                                                                 } animate-fadeInUp`}
                                                                 style={{
-                                                                    animation: `fadeInUp 0.3s ease-out ${
+                                                                    animation: `fadeInUp 3s ease-out ${
                                                                         index *
-                                                                        0.1
+                                                                        0.3
                                                                     }s both`,
                                                                     opacity: 0,
                                                                 }}
@@ -866,9 +900,20 @@ const SocialManagement = ({
                                 {genericMessage}
                             </p>
 
-                            <p className="text-sm text-green-600 mb-6">
-                                Your burnout has been reduced!
-                            </p>
+                            <div className="bg-green-50 p-3 rounded-lg mb-6">
+                                <p className="text-green-700 font-medium">
+                                    Your burnout has been reduced by{" "}
+                                    {selectedLocation &&
+                                    selectedLocation.name === "Home"
+                                        ? "25%"
+                                        : "10%"}
+                                    !
+                                </p>
+                                <p className="text-sm text-green-600 mt-1">
+                                    Taking personal time helps maintain your
+                                    mental health.
+                                </p>
+                            </div>
 
                             <button
                                 onClick={() => setShowGenericMessage(false)}
@@ -894,7 +939,7 @@ const SocialManagement = ({
             </div>
 
             {/* Add keyframes for fadeInUp animation at the end of the file */}
-            <style jsx="true">{`
+            <style global={true}>{`
                 @keyframes fadeInUp {
                     from {
                         opacity: 0;
