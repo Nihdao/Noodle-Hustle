@@ -22,6 +22,7 @@ import NoodleBarAssign from "./noodleBars/NoodleBarAssign";
 import NoodleBarUpgrade from "./noodleBars/NoodleBarUpgrade";
 import OptionsModal from "./modals/OptionsModal";
 import BuffsModal from "./modals/BuffsModal";
+import BusinessRankDisplay from "./common/BusinessRankDisplay";
 
 const HubComponent = () => {
     // Utiliser uniquement les hooks spécifiques
@@ -60,6 +61,7 @@ const HubComponent = () => {
     const [activeEmployeeSection, setActiveEmployeeSection] = useState(null);
     const [isOptionsModalOpen, setIsOptionsModalOpen] = useState(false);
     const [isBuffsModalOpen, setIsBuffsModalOpen] = useState(false);
+    const [isRankDetailsOpen, setIsRankDetailsOpen] = useState(false);
 
     // Sons
     const { playClickSound, playBackSound } = useSound();
@@ -814,13 +816,53 @@ const HubComponent = () => {
                 </div>
 
                 {/* Game Area - with just the background */}
-                <div style={styles.mainContent}></div>
+                <div style={styles.mainContent}>
+                    {/* Rank details popup */}
+                    {isRankDetailsOpen && (
+                        <div className="fixed top-20 right-8 z-50 transition-all duration-300 ease-in-out animate-fadeIn">
+                            <div className="relative">
+                                <button
+                                    onClick={() => setIsRankDetailsOpen(false)}
+                                    className="absolute -top-3 -right-3 bg-principalRed text-whiteCream rounded-full w-8 h-8 flex items-center justify-center hover:bg-principalRed-light transition-colors z-10 shadow-md"
+                                >
+                                    ✕
+                                </button>
+                                <BusinessRankDisplay
+                                    showDetails
+                                    className="w-96 shadow-xl"
+                                />
+                            </div>
+                        </div>
+                    )}
+                </div>
 
                 {/* Rank, Funds and Burnout - Absolute positioned in top right */}
                 <div style={styles.statsPanelTopRight}>
-                    <div style={styles.statsItem}>
+                    <div
+                        style={{ ...styles.statsItem, cursor: "pointer" }}
+                        onClick={() => {
+                            playClickSound();
+                            setIsRankDetailsOpen(!isRankDetailsOpen);
+                        }}
+                        className="hover:bg-yellowWhite/70 transition-colors rounded-md group relative"
+                    >
                         <span style={styles.statsLabel}>RANK</span>
-                        <span style={styles.statsValue}>{businessRank}</span>
+                        <span style={styles.statsValue}>
+                            {businessRank}
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                                className="w-4 h-4 ml-1 inline-block text-principalRed/70 group-hover:text-principalRed transition-colors group-hover:translate-y-[1px] transform duration-300"
+                            >
+                                <path
+                                    fillRule="evenodd"
+                                    d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                                    clipRule="evenodd"
+                                />
+                            </svg>
+                        </span>
+                        <div className="absolute -bottom-1 left-0 w-full h-0.5 bg-principalRed scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
                     </div>
 
                     <div style={styles.divider}></div>
@@ -952,6 +994,27 @@ const HubComponent = () => {
             <BuffsModal
                 isOpen={isBuffsModalOpen}
                 onClose={() => setIsBuffsModalOpen(false)}
+            />
+
+            {/* Add fadeIn animation for the rank details panel */}
+            <style
+                dangerouslySetInnerHTML={{
+                    __html: `
+                @keyframes fadeIn {
+                    from {
+                        opacity: 0;
+                        transform: translateY(-10px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+                .animate-fadeIn {
+                    animation: fadeIn 0.3s ease-out forwards;
+                }
+            `,
+                }}
             />
         </div>
     );

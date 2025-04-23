@@ -15,6 +15,7 @@ import confidantsData from "../data/confidants.json";
 import buffsData from "../data/buffs.json";
 import employeesData from "../data/employees.json";
 import restaurantsData from "../data/restaurants.json";
+import rankData from "../data/rank.json";
 
 class GameState {
     constructor() {
@@ -176,16 +177,47 @@ class GameState {
             // Update finances
             const updatedFunds = state.finances.funds + totalProfit;
 
-            // Update business rank
+            // Update totalBalance if profit is positive
+            const totalBalance = state.finances.totalBalance || 0;
+            const updatedTotalBalance =
+                totalProfit > 0 ? totalBalance + totalProfit : totalBalance;
+
+            // Check for rank change based on totalBalance
             const currentRank = state.gameProgress.businessRank || 200;
-            const newRank = Math.max(
-                1,
-                Math.min(200, currentRank + rankChange)
+
+            // Find the appropriate rank based on totalBalance
+            const rankDetails = [...rankData.rankDetails].sort(
+                (a, b) => a.rank - b.rank
             );
+            let newRank = currentRank;
+
+            // If balance has increased, check if we qualify for a higher rank
+            if (updatedTotalBalance > totalBalance) {
+                for (const rankDetail of rankDetails) {
+                    if (
+                        updatedTotalBalance >= rankDetail.balanceRequired &&
+                        rankDetail.rank < currentRank
+                    ) {
+                        newRank = rankDetail.rank;
+                        break;
+                    }
+                }
+            }
+
+            // Check if we've reached a milestone
+            const milestone = rankData.milestones.find((m) => m.at === newRank);
+            if (milestone && newRank < currentRank) {
+                // Emit milestone event
+                this.events.emit("rankMilestoneReached", {
+                    rank: newRank,
+                    description: milestone.description,
+                    reward: milestone.reward,
+                });
+            }
 
             // Update burnout based on rank change and profit
             let burnoutChange = 0;
-            if (rankChange < 0) {
+            if (newRank < currentRank) {
                 // Rank improved (lower number is better)
                 burnoutChange = -10; // Reduce burnout when rank improves
             } else if (rankChange > 0 || totalProfit < 0) {
@@ -210,11 +242,15 @@ class GameState {
                 Math.min(100, state.playerStats.burnout + burnoutChange)
             );
 
+            // Get current business category based on rank
+            const currentCategory = this.getBusinessCategoryFromRank(newRank);
+
             return {
                 ...state,
                 finances: {
                     ...state.finances,
                     funds: updatedFunds,
+                    totalBalance: updatedTotalBalance,
                     // Add to income history if positive, expense history if negative
                     incomeHistory:
                         totalProfit > 0
@@ -242,12 +278,14 @@ class GameState {
                 gameProgress: {
                     ...state.gameProgress,
                     businessRank: newRank,
+                    businessCategory: currentCategory,
                     // Store rank history
                     rankHistory: [
                         ...(state.gameProgress.rankHistory || []),
                         {
                             period: state.gameProgress.currentPeriod,
                             rank: newRank,
+                            totalBalance: updatedTotalBalance,
                         },
                     ],
                 },
@@ -270,9 +308,117 @@ class GameState {
             profit: totalProfit,
             rankChange,
             burnout: this.state.playerStats.burnout,
+            totalBalance: this.state.finances.totalBalance,
+            businessRank: this.state.gameProgress.businessRank,
+            businessCategory: this.state.gameProgress.businessCategory,
         });
 
         return this.state;
+    }
+
+    /**
+     * Get business category based on current rank
+     * @param {number} rank - Current business rank
+     * @returns {string} Business category
+     */
+    getBusinessCategoryFromRank(rank) {
+        for (const rankInfo of rankData.ranks) {
+            if (
+                rank >= rankInfo.rankRange.min &&
+                rank <= rankInfo.rankRange.max
+            ) {
+                return rankInfo.category;
+            }
+        }
+        return "Unknown";
+    }
+
+    /**
+     * Get rank details based on current rank
+     * @param {number} rank - Current business rank
+     * @returns {Object} Rank details including title
+     */
+    getRankDetails(rank) {
+        const details = rankData.rankDetails.find((r) => r.rank === rank);
+        if (!details) {
+            return {
+                rank,
+                title: "Unknown",
+                balanceRequired: 0,
+            };
+        }
+        return details;
+    }
+
+    /**
+     * Get next rank threshold
+     * @returns {Object} Next rank details including required balance
+     */
+    getNextRankThreshold() {
+        const currentRank = this.state.gameProgress.businessRank || 200;
+        const nextRanks = rankData.rankDetails
+            .filter((r) => r.rank < currentRank)
+            .sort((a, b) => b.rank - a.rank);
+
+        if (nextRanks.length === 0) {
+            return null; // Already at highest rank
+        }
+
+        return nextRanks[0];
+    }
+
+    /**
+     * Update game state when funds are added or removed
+     * @param {number} amount - Amount to add (positive) or remove (negative)
+     * @param {string} source - Source of the transaction
+     * @param {string} category - Category for expenses (optional)
+     * @returns {boolean} Success status
+     */
+    updateFunds(amount, source, category = "") {
+        if (!this.initialized) {
+            this.initialize();
+        }
+
+        this.updateGameState((state) => {
+            const currentFunds = state.finances.funds || 0;
+            const updatedFunds = currentFunds + amount;
+
+            // Only increase totalBalance if it's income
+            let totalBalance = state.finances.totalBalance || 0;
+            if (amount > 0) {
+                totalBalance += amount;
+            }
+
+            // Create transaction record
+            const transaction = {
+                amount: Math.abs(amount),
+                source,
+                period: state.gameProgress.currentPeriod,
+            };
+
+            if (category) {
+                transaction.category = category;
+            }
+
+            return {
+                ...state,
+                finances: {
+                    ...state.finances,
+                    funds: updatedFunds,
+                    totalBalance,
+                    incomeHistory:
+                        amount > 0
+                            ? [...state.finances.incomeHistory, transaction]
+                            : state.finances.incomeHistory,
+                    expensesHistory:
+                        amount < 0
+                            ? [...state.finances.expensesHistory, transaction]
+                            : state.finances.expensesHistory,
+                },
+            };
+        });
+
+        return true;
     }
 
     /**

@@ -134,7 +134,7 @@ const NoodleBarActions = ({ onActionSelect, onBack, forecastedProfit }) => {
             </div>
 
             {/* Fixed back button at the bottom */}
-            <div className="fixed bottom-0 left-0 w-1/3 p-4 border-t border-[color:var(--color-principalBrown)] border-opacity-20 bg-[color:var(--color-yellowWhite)] flex justify-between z-10">
+            <div className="fixed bottom-0 left-0 w-full p-4 border-t border-[color:var(--color-principalBrown)] border-opacity-20 bg-[color:var(--color-yellowWhite)] flex justify-between z-10">
                 <button
                     onClick={onBack}
                     onMouseEnter={() => setHoveredAction("Back")}

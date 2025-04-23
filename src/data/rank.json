@@ -1,0 +1,258 @@
+{
+    "description": "Progression ranks for the Noodle Balance game based on totalBalance",
+    "ranks": [
+        {
+            "rankRange": {
+                "min": 151,
+                "max": 200
+            },
+            "category": "Back-Alley Broth Shack",
+            "description": "A humble beginning with just a pot and a dream.",
+            "balanceThreshold": 0
+        },
+        {
+            "rankRange": {
+                "min": 101,
+                "max": 150
+            },
+            "category": "Street Stand",
+            "description": "More customers are taking notice of your quality noodles.",
+            "balanceThreshold": 1000
+        },
+        {
+            "rankRange": {
+                "min": 51,
+                "max": 100
+            },
+            "category": "Local Noodle Spot",
+            "description": "Your stand has evolved into a fixed location with regular customers.",
+            "balanceThreshold": 5000
+        },
+        {
+            "rankRange": {
+                "min": 21,
+                "max": 50
+            },
+            "category": "Master Noodle Bar",
+            "description": "Recognized for excellence and craftsmanship in noodle preparation.",
+            "balanceThreshold": 15000
+        },
+        {
+            "rankRange": {
+                "min": 11,
+                "max": 20
+            },
+            "category": "Heavenly Noodle Chain",
+            "description": "Multiple successful locations and a well-known brand name.",
+            "balanceThreshold": 50000
+        },
+        {
+            "rankRange": {
+                "min": 1,
+                "max": 10
+            },
+            "category": "Ramen Temple",
+            "description": "The pinnacle of noodle artistry, renowned throughout the region.",
+            "balanceThreshold": 100000
+        }
+    ],
+    "rankDetails": [
+        {
+            "rank": 200,
+            "balanceRequired": 0,
+            "title": "Unknown Noodle Maker"
+        },
+        {
+            "rank": 190,
+            "balanceRequired": 200,
+            "title": "Broth Beginner"
+        },
+        {
+            "rank": 180,
+            "balanceRequired": 400,
+            "title": "Alley Cook"
+        },
+        {
+            "rank": 170,
+            "balanceRequired": 600,
+            "title": "Back-Street Chef"
+        },
+        {
+            "rank": 160,
+            "balanceRequired": 800,
+            "title": "Corner Noodle Vendor"
+        },
+        {
+            "rank": 150,
+            "balanceRequired": 1000,
+            "title": "Recognized Street Vendor"
+        },
+        {
+            "rank": 140,
+            "balanceRequired": 1500,
+            "title": "Popular Street Stand"
+        },
+        {
+            "rank": 130,
+            "balanceRequired": 2000,
+            "title": "Busy Street Corner Favorite"
+        },
+        {
+            "rank": 120,
+            "balanceRequired": 2500,
+            "title": "Well-Known Cart"
+        },
+        {
+            "rank": 110,
+            "balanceRequired": 3500,
+            "title": "City's Secret Gem"
+        },
+        {
+            "rank": 100,
+            "balanceRequired": 5000,
+            "title": "Neighborhood Noodle Joint"
+        },
+        {
+            "rank": 90,
+            "balanceRequired": 6500,
+            "title": "Local Favorite Spot"
+        },
+        {
+            "rank": 80,
+            "balanceRequired": 8000,
+            "title": "District Noodle Bar"
+        },
+        {
+            "rank": 70,
+            "balanceRequired": 10000,
+            "title": "Respected Noodle House"
+        },
+        {
+            "rank": 60,
+            "balanceRequired": 12500,
+            "title": "City's Notable Noodle Bar"
+        },
+        {
+            "rank": 50,
+            "balanceRequired": 15000,
+            "title": "Master of Broths"
+        },
+        {
+            "rank": 45,
+            "balanceRequired": 18000,
+            "title": "Noodle Artisan"
+        },
+        {
+            "rank": 40,
+            "balanceRequired": 22000,
+            "title": "Acclaimed Chef"
+        },
+        {
+            "rank": 35,
+            "balanceRequired": 27000,
+            "title": "Culinary Innovator"
+        },
+        {
+            "rank": 30,
+            "balanceRequired": 33000,
+            "title": "Noodle Maestro"
+        },
+        {
+            "rank": 25,
+            "balanceRequired": 40000,
+            "title": "Regional Star Chef"
+        },
+        {
+            "rank": 20,
+            "balanceRequired": 50000,
+            "title": "Noodle Empire Builder"
+        },
+        {
+            "rank": 18,
+            "balanceRequired": 60000,
+            "title": "Culinary Network"
+        },
+        {
+            "rank": 16,
+            "balanceRequired": 70000,
+            "title": "Renowned Chain Owner"
+        },
+        {
+            "rank": 14,
+            "balanceRequired": 80000,
+            "title": "Noodle Dynasty Creator"
+        },
+        {
+            "rank": 12,
+            "balanceRequired": 90000,
+            "title": "Heavenly Broth Master"
+        },
+        {
+            "rank": 10,
+            "balanceRequired": 100000,
+            "title": "Legendary Ramen Artist"
+        },
+        {
+            "rank": 8,
+            "balanceRequired": 125000,
+            "title": "Noodle Sage"
+        },
+        {
+            "rank": 6,
+            "balanceRequired": 150000,
+            "title": "Culinary Icon"
+        },
+        {
+            "rank": 4,
+            "balanceRequired": 180000,
+            "title": "Noodle World Luminary"
+        },
+        {
+            "rank": 2,
+            "balanceRequired": 220000,
+            "title": "Supreme Ramen Emperor"
+        },
+        {
+            "rank": 1,
+            "balanceRequired": 250000,
+            "title": "Immortal Noodle God"
+        }
+    ],
+    "milestones": [
+        {
+            "at": 200,
+            "description": "First day as a noodle entrepreneur.",
+            "reward": "Starting funds and your first noodle cart."
+        },
+        {
+            "at": 150,
+            "description": "Your street stand is now recognized by locals.",
+            "reward": "Unlock additional employee slot."
+        },
+        {
+            "at": 100,
+            "description": "Graduated from street vendor to established business.",
+            "reward": "Unlock second noodle bar location opportunity."
+        },
+        {
+            "at": 50,
+            "description": "Your mastery in noodle making is acknowledged citywide.",
+            "reward": "Unlock premium ingredient suppliers."
+        },
+        {
+            "at": 20,
+            "description": "Your brand has expanded across multiple locations.",
+            "reward": "Attract higher quality employee candidates."
+        },
+        {
+            "at": 10,
+            "description": "Your noodle cuisine is now legendary in the region.",
+            "reward": "Unlock prestigious downtown location."
+        },
+        {
+            "at": 1,
+            "description": "You have reached the pinnacle of noodle artistry!",
+            "reward": "Special end-game event and ultimate recognition."
+        }
+    ]
+}

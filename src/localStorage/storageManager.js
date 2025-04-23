@@ -7,6 +7,7 @@
 import confidantsData from "../data/confidants.json";
 import employeesData from "../data/employees.json";
 import restaurantsData from "../data/restaurants.json";
+import rankData from "../data/rank.json";
 
 // Constants for storage keys
 export const STORAGE_KEYS = {
@@ -29,6 +30,11 @@ export const createNewGameSave = (playerName) => {
     );
     // Starter bar : id 1
     const starterBar = restaurantsData.find((r) => r.id === 1);
+
+    // Get initial category based on starting rank
+    const initialRank = 200;
+    const initialCategory = getBusinessCategoryFromRank(initialRank);
+
     return {
         // Basic info
         createdAt: new Date().toISOString(),
@@ -39,12 +45,21 @@ export const createNewGameSave = (playerName) => {
             currentPeriod: 1,
             completedIntro: true,
             investorClashIn: 5, // Countdown to next investor meeting
-            businessRank: 200, // Lower is better (1 is highest)
+            businessRank: initialRank, // Lower is better (1 is highest)
+            businessCategory: initialCategory,
+            rankHistory: [
+                {
+                    period: 1,
+                    rank: initialRank,
+                    totalBalance: 0,
+                },
+            ],
         },
 
         // Financial data
         finances: {
             funds: 1000, // Current available money
+            totalBalance: 0, // Cumulative income over time
             debt: {
                 amount: 500,
             },
@@ -198,6 +213,18 @@ export const createNewGameSave = (playerName) => {
         candidates: [], // Sera rempli avec des ID d'employés plutôt que des objets complets
     };
 };
+
+/**
+ * Helper function to get business category from rank
+ */
+function getBusinessCategoryFromRank(rank) {
+    for (const rankInfo of rankData.ranks) {
+        if (rank >= rankInfo.rankRange.min && rank <= rankInfo.rankRange.max) {
+            return rankInfo.category;
+        }
+    }
+    return "Unknown";
+}
 
 /**
  * Game settings structure
