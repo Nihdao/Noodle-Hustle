@@ -774,6 +774,66 @@ export const useNoodleBarOperations = () => {
         });
     }, []);
 
+    // Calculate forecasted total profit including maluses
+    const getForcastedTotalProfit = useCallback(() => {
+        return noodleBars.reduce((total, bar) => {
+            // Get base values or defaults
+            const salesVolume =
+                bar.salesVolume ||
+                bar.forecastedProfit ||
+                bar.baseProfit ||
+                5000;
+            const staffCost = bar.staffCost || 0;
+            const maintenance = bar.maintenance || 100;
+
+            // Get restaurant staff
+            const staff = getRestaurantStaff(bar.id);
+
+            // Get target caps from restaurant
+            const cuisineTarget = bar.productCap || bar.maxProduct || 40;
+            const serviceTarget = bar.serviceCap || bar.maxService || 20;
+            const ambianceTarget = bar.ambianceCap || bar.maxAmbiance || 10;
+
+            // Calculate total stats from staff
+            const totalCuisine = staff.reduce(
+                (sum, emp) => sum + (emp.cuisine || 0),
+                0
+            );
+            const totalService = staff.reduce(
+                (sum, emp) => sum + (emp.service || 0),
+                0
+            );
+            const totalAmbiance = staff.reduce(
+                (sum, emp) => sum + (emp.ambiance || 0),
+                0
+            );
+
+            // Count unmet criteria
+            let criteresNonRemplis = 0;
+            if (totalCuisine < cuisineTarget) criteresNonRemplis++;
+            if (totalService < serviceTarget) criteresNonRemplis++;
+            if (totalAmbiance < ambianceTarget) criteresNonRemplis++;
+
+            // Calculate malus
+            let malusPercentage = 0;
+            if (criteresNonRemplis === 1) malusPercentage = 5;
+            else if (criteresNonRemplis === 2) malusPercentage = 15;
+            else if (criteresNonRemplis === 3) malusPercentage = 25;
+
+            // Apply malus to sales volume
+            const malusAmount =
+                criteresNonRemplis > 0
+                    ? Math.round(salesVolume * (malusPercentage / 100))
+                    : 0;
+
+            // Calculate net profit for this restaurant
+            const restaurantProfit =
+                salesVolume - staffCost - maintenance - malusAmount;
+
+            return total + restaurantProfit;
+        }, 0);
+    }, [noodleBars, getRestaurantStaff]);
+
     return {
         getRestaurantStaff,
         getRestaurantNameById,
@@ -782,6 +842,7 @@ export const useNoodleBarOperations = () => {
         handleAssignEmployee,
         upgradeRestaurant,
         sellRestaurant,
+        getForcastedTotalProfit,
         playerRank: state?.gameProgress?.businessRank || 200,
     };
 };

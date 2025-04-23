@@ -170,16 +170,11 @@ const EmployeeManagementModal = ({
         onRemoveEmployee(employeeId);
     };
 
-    const {
-        malusAmount,
-        malusPercentage,
-        count: criteresNonRemplisCount,
-    } = calculateMalus();
+    const { malusAmount, count: criteresNonRemplisCount } = calculateMalus();
 
-    const baseProfit = displayedBar.forecastedProfit || 0;
+    const baseProfit = displayedBar.salesVolume || 0;
     const staffCost = displayedBar.staffCost || 0;
     const maintenance = displayedBar.maintenance || 0;
-
     const netProfit =
         baseProfit -
         staffCost -
@@ -327,6 +322,12 @@ const EmployeeManagementModal = ({
                             </h3>
                             <p className="text-emerald-600 font-bold">
                                 {formatCurrency(getSalesVolume())}
+                                {criteresNonRemplisCount > 0 && (
+                                    <span className="text-red-500 text-xs">
+                                        {" "}
+                                        ({formatCurrency(-malusAmount)})
+                                    </span>
+                                )}
                             </p>
                         </div>
                         <div>
@@ -349,40 +350,25 @@ const EmployeeManagementModal = ({
                                     color: "var(--color-principalBrown)",
                                 }}
                             >
+                                Maintenance Cost
+                            </h3>
+                            <p className="text-red-500 font-bold">
+                                {formatCurrency(maintenance)}
+                            </p>
+                        </div>
+                        <div>
+                            <h3
+                                className="font-semibold"
+                                style={{
+                                    color: "var(--color-principalBrown)",
+                                }}
+                            >
                                 Net Profit
                             </h3>
                             <div className="flex items-center">
                                 <p className={`${profitClass} font-bold`}>
                                     {formatCurrency(netProfit)}
                                 </p>
-                                {criteresNonRemplisCount > 0 && (
-                                    <span className="text-red-500 ml-2 text-sm whitespace-nowrap flex items-center tooltip-container">
-                                        <span className="tooltip-text">
-                                            <strong>
-                                                Sales penalty: {malusPercentage}
-                                                %
-                                            </strong>
-                                            <div className="malus-detail">
-                                                {criteresNonRemplisCount} stats
-                                                cap not met
-                                            </div>
-                                        </span>
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            className="h-4 w-4 ml-1"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                            stroke="currentColor"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                            />
-                                        </svg>
-                                    </span>
-                                )}
                             </div>
                         </div>
                     </div>

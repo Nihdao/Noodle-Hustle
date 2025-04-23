@@ -1119,6 +1119,74 @@ class GameState {
 
         return this.state.employeeRecruitment?.candidates || [];
     }
+
+    /**
+     * Upgrades a restaurant property
+     * @param {string} restaurantId - The ID of the restaurant to upgrade
+     * @param {string} propertyId - The property to upgrade (cuisine, service, ambiance)
+     * @param {number} newLevel - The new level to set
+     * @param {number} cost - The cost of the upgrade
+     * @param {number} newCap - The new cap value for the stat
+     * @param {number} salesVolumeBonus - The sales volume bonus to add
+     */
+    upgradeRestaurant(
+        restaurantId,
+        propertyId,
+        newLevel,
+        cost,
+        newCap,
+        salesVolumeBonus
+    ) {
+        // Find the restaurant in our state
+        const restaurant = this.state.restaurants.bars.find(
+            (r) => r.id === restaurantId
+        );
+        if (!restaurant) {
+            console.error(`Restaurant with ID ${restaurantId} not found`);
+            return false;
+        }
+
+        // Update the upgrade level
+        if (!restaurant.upgrades) {
+            restaurant.upgrades = {};
+        }
+        restaurant.upgrades[propertyId] = newLevel;
+
+        // Update the corresponding cap based on the property
+        if (propertyId === "product") {
+            restaurant.productCap = newCap;
+        } else if (propertyId === "service") {
+            restaurant.serviceCap = newCap;
+        } else if (propertyId === "ambiance") {
+            restaurant.ambianceCap = newCap;
+        }
+
+        // Update the sales volume
+        restaurant.salesVolume += salesVolumeBonus;
+
+        // Deduct the cost
+        this.updateFunds(-cost, "Restaurant Upgrade", "upgrade");
+
+        // Log the upgrade
+        console.log(
+            `Upgraded ${restaurant.name}'s ${propertyId} to level ${newLevel}`
+        );
+        console.log(`New ${propertyId} cap: ${newCap}`);
+        console.log(`New sales volume: ${restaurant.salesVolume}`);
+        console.log(`Remaining funds: ${this.state.finances.funds}`);
+
+        // Notify listeners
+        this.events.emit("restaurantUpgraded", {
+            restaurantId,
+            propertyId,
+            newLevel,
+            cost,
+            newCap,
+            salesVolumeBonus,
+        });
+
+        return true;
+    }
 }
 
 // Create a singleton instance

@@ -33,7 +33,7 @@ const HubComponent = () => {
     const { personalTime } = useSocial();
     const { bars: noodleBars } = useRestaurants();
     const { rosterWithDetails } = useEmployees();
-    const { playerRank } = useNoodleBarOperations();
+    const { playerRank, getForcastedTotalProfit } = useNoodleBarOperations();
 
     // Données dérivées des hooks ou du state général
     const playerName = state?.playerStats?.playerName || "Player";
@@ -44,15 +44,8 @@ const HubComponent = () => {
         .filter((emp) => !emp.assigned)
         .reduce((total, emp) => total + (emp.salary || 0), 0);
 
-    // Calculer le profit prévisionnel en utilisant les données des restaurants
-    const forecastProfit = noodleBars.reduce((total, bar) => {
-        // Utiliser les propriétés du restaurant ou des valeurs par défaut
-        const salesVolume =
-            bar.salesVolume || bar.forecastedProfit || bar.baseProfit || 5000;
-        const staffCost = bar.staffCost || 0;
-        const maintenance = bar.maintenance || 100;
-        return total + (salesVolume - staffCost - maintenance);
-    }, 0);
+    // Use the forecasted profit calculation that includes maluses
+    const forecastProfit = getForcastedTotalProfit();
 
     // State for the selected submenu in the sidebar - these are UI states, not game state
     const [activeSubmenu, setActiveSubmenu] = useState("Home");

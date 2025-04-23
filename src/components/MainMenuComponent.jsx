@@ -80,8 +80,8 @@ function MainMenuComponent({
         <div className="main-menu-overlay">
             <MenuContainer animationState={animationState}>
                 <h1 className="menu-title">
-                    Noddle LifeBalance
-                    <span className="menu-subtitle">麺類のライフバランス</span>
+                    Noodle Balance
+                    <span className="menu-subtitle">麺類のバランス</span>
                 </h1>
 
                 <div className="menu-buttons">

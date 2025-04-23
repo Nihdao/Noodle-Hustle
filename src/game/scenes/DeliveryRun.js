@@ -331,57 +331,6 @@ export class DeliveryRun extends Phaser.Scene {
         }
     }
 
-    createHeader() {
-        const width = this.cameras.main.width;
-
-        // Header background
-        const headerBg = this.add
-            .rectangle(0, 0, width, this.headerArea.height, 0x660000)
-            .setOrigin(0);
-        this.headerElements = this.add.group();
-        this.headerElements.add(headerBg);
-
-        // Business Performance Report title
-        const title = this.add
-            .text(
-                20,
-                this.headerArea.height / 2,
-                "Business Performance Report",
-                {
-                    fontFamily: "Arial",
-                    fontSize: "32px",
-                    fontWeight: "bold",
-                    fill: "#ffffff",
-                }
-            )
-            .setOrigin(0, 0.5);
-        this.headerElements.add(title);
-
-        // Period and funds display
-        const periodText = this.add
-            .text(width - 20, 20, `Period: ${this.currentPeriod}`, {
-                fontFamily: "Arial",
-                fontSize: "18px",
-                fill: "#ffffff",
-            })
-            .setOrigin(1, 0);
-        this.headerElements.add(periodText);
-
-        const fundsText = this.add
-            .text(
-                width - 20,
-                this.headerArea.height - 20,
-                `Funds: ¥${this.funds.toLocaleString()}`,
-                {
-                    fontFamily: "Arial",
-                    fontSize: "24px",
-                    fill: "#ffffff",
-                }
-            )
-            .setOrigin(1, 1);
-        this.headerElements.add(fundsText);
-    }
-
     showBusinessOpen() {
         const width = this.cameras.main.width;
         const height = this.cameras.main.height;
@@ -432,7 +381,7 @@ export class DeliveryRun extends Phaser.Scene {
             this.tweens.add({
                 targets: restaurantData.sprite,
                 x: restaurantData.maxX,
-                duration: 5000, // 5 seconds to complete the run
+                duration: Phaser.Math.Between(5000, 8000), // Random duration between 5 and 8 seconds
                 ease: "Power1",
                 onUpdate: (tween) => {
                     // Update progress bar width
@@ -459,7 +408,7 @@ export class DeliveryRun extends Phaser.Scene {
 
         // Set a backup timer in case there are no active restaurants
         if (Object.keys(this.playerSprites).length === 0) {
-            this.time.delayedCall(5000, () => {
+            this.time.delayedCall(2000, () => {
                 this.showBusinessConcluded();
             });
         }
@@ -473,7 +422,7 @@ export class DeliveryRun extends Phaser.Scene {
         if (restaurantData.events.length >= 3) return;
 
         // These are checkpoints where events might trigger (30%, 50%, 70%)
-        const checkpoints = [0.3, 0.5, 0.7];
+        const checkpoints = [0.2, 0.4, 0.6];
 
         checkpoints.forEach((checkpoint) => {
             // Check if we're close to a checkpoint and haven't triggered an event there yet

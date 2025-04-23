@@ -3,8 +3,8 @@ import PropTypes from "prop-types";
 import MenuContainer from "../common/MenuContainer";
 import {
     UPGRADE_CATEGORIES,
-    UPGRADE_COST_MULTIPLIER,
-    UPGRADE_BASE_COSTS,
+    UPGRADE_COST_BY_LEVEL,
+    CAP_INCREASE_PER_LEVEL,
 } from "./constants/noodleBarConstants";
 import gameState from "../../game/GameState";
 import { useRestaurants, useFinances } from "../../store/gameStateHooks";
@@ -26,6 +26,45 @@ const NoodleBarUpgrade = ({ onBack }) => {
     });
     const [hoveredMenuItem, setHoveredMenuItem] = useState(null);
     const [hoveredUpgrade, setHoveredUpgrade] = useState(null);
+    const [localFunds, setLocalFunds] = useState(funds);
+
+    // Keep localFunds in sync with funds from hooks
+    useEffect(() => {
+        setLocalFunds(funds);
+    }, [funds]);
+
+    // Listen for restaurantUpgraded events to update UI immediately
+    useEffect(() => {
+        const handleRestaurantUpgraded = (data) => {
+            if (selectedBar && selectedBar.id === data.restaurantId) {
+                setSelectedBar((prevBar) => ({
+                    ...prevBar,
+                    salesVolume: prevBar.salesVolume + data.salesVolumeBonus,
+                    upgrades: {
+                        ...prevBar.upgrades,
+                        [data.propertyId]: data.newLevel,
+                    },
+                    [data.propertyId === "product"
+                        ? "productCap"
+                        : data.propertyId === "service"
+                        ? "serviceCap"
+                        : "ambianceCap"]: data.newCap,
+                }));
+
+                // Update local funds
+                setLocalFunds((prevFunds) => prevFunds - data.cost);
+            }
+        };
+
+        gameState.events.on("restaurantUpgraded", handleRestaurantUpgraded);
+
+        return () => {
+            gameState.events.off(
+                "restaurantUpgraded",
+                handleRestaurantUpgraded
+            );
+        };
+    }, [selectedBar]);
 
     // Set the first available restaurant as selected by default
     useEffect(() => {
@@ -89,15 +128,13 @@ const NoodleBarUpgrade = ({ onBack }) => {
     };
 
     // Calculate upgrade cost based on the current level
-    const calculateUpgradeCost = (categoryId, currentLevel) => {
-        const baseCost = UPGRADE_BASE_COSTS[categoryId];
-        const multiplier = UPGRADE_COST_MULTIPLIER[currentLevel] || 1;
-        return Math.round(baseCost * multiplier);
+    const calculateUpgradeCost = (currentLevel) => {
+        return UPGRADE_COST_BY_LEVEL(currentLevel);
     };
 
     // Check if player can afford the upgrade
     const canAffordUpgrade = (cost) => {
-        return funds >= cost;
+        return localFunds >= cost;
     };
 
     // Handle restaurant selection
@@ -143,19 +180,32 @@ const NoodleBarUpgrade = ({ onBack }) => {
         return bar?.upgrades?.[categoryId] || 1;
     }, []);
 
+    // Get max level for a category (from restaurant's max values)
+    const getMaxLevel = useCallback((bar, category) => {
+        if (!bar) return 20; // Default fallback
+        return bar[category.statMax] || 20; // maxProduct, maxService, or maxAmbiance
+    }, []);
+
+    // Get current stat cap value
+    const getCurrentStatCap = useCallback((bar, category) => {
+        if (!bar) return 100; // Default fallback
+        return bar[category.statCap] || 100; // productCap, serviceCap, or ambianceCap
+    }, []);
+
     // Handle upgrade click
     const handleUpgradeClick = (category) => {
         if (!selectedBar) return;
 
         const currentLevel = getCurrentUpgradeLevel(selectedBar, category.id);
+        const maxLevel = getMaxLevel(selectedBar, category);
 
         // Check if already at max level
-        if (currentLevel >= category.maxLevel) {
+        if (currentLevel >= maxLevel) {
             return;
         }
 
         // Calculate cost
-        const cost = calculateUpgradeCost(category.id, currentLevel);
+        const cost = calculateUpgradeCost(currentLevel);
 
         // Check if player can afford it
         if (!canAffordUpgrade(cost)) {
@@ -170,6 +220,14 @@ const NoodleBarUpgrade = ({ onBack }) => {
                 categoryName: category.name,
                 currentLevel,
                 newLevel: currentLevel + 1,
+                maxLevel: maxLevel,
+                currentCap: getCurrentStatCap(selectedBar, category),
+                newCap:
+                    getCurrentStatCap(selectedBar, category) +
+                    CAP_INCREASE_PER_LEVEL,
+                salesVolumeBonus: Math.round(
+                    selectedBar.salesVolume * category.salesVolumeBonus
+                ),
                 cost,
                 barId: selectedBar.id,
             },
@@ -186,12 +244,14 @@ const NoodleBarUpgrade = ({ onBack }) => {
             gameState.initialize();
         }
 
-        // Use gameState to upgrade restaurant
+        // Use gameState to upgrade restaurant - this will need to be updated in GameState.js to handle the new upgrade logic
         gameState.upgradeRestaurant(
             upgrade.barId,
             upgrade.categoryId,
             upgrade.newLevel,
-            upgrade.cost
+            upgrade.cost,
+            upgrade.newCap,
+            upgrade.salesVolumeBonus
         );
 
         // Close the confirmation modal
@@ -225,6 +285,13 @@ const NoodleBarUpgrade = ({ onBack }) => {
                             );
                             if (!bar) return null;
 
+                            // If this is the currently selected bar, use the selectedBar state
+                            // which has the most up-to-date information
+                            const displayBar =
+                                selectedBar && selectedBar.id === bar.id
+                                    ? selectedBar
+                                    : bar;
+
                             return (
                                 <div
                                     key={slot.id}
@@ -232,82 +299,49 @@ const NoodleBarUpgrade = ({ onBack }) => {
                                         p-3 rounded-lg cursor-pointer transition-all duration-200 border
                                         ${
                                             selectedBar &&
-                                            selectedBar.id === bar.id
+                                            selectedBar.id === displayBar.id
                                                 ? "bg-[color:var(--color-principalRed)] text-white border-[color:var(--color-principalRed-light)]"
                                                 : "bg-[color:var(--color-whiteCream)] hover:bg-[color:var(--color-principalRed-light)] hover:text-white border-[color:var(--color-principalBrown)] border-opacity-20"
                                         }
                                     `}
-                                    onClick={() => handleSelectBar(bar)}
+                                    onClick={() => handleSelectBar(displayBar)}
                                 >
                                     <div className="flex flex-col">
                                         <div className="flex justify-between">
                                             <h4 className="font-bold text-lg">
-                                                {bar.name}
+                                                {displayBar.name}
                                             </h4>
                                             <div className="font-semibold">
                                                 {formatCurrency(
-                                                    bar.baseProfit ||
-                                                        bar.salesVolume ||
-                                                        0
+                                                    displayBar.salesVolume || 0
                                                 )}
                                             </div>
                                         </div>
                                         <p className="text-sm opacity-80 mt-1">
-                                            {bar.description}
+                                            {displayBar.description}
                                         </p>
                                         <div className="mt-2 flex justify-between items-center">
                                             <div className="flex gap-2 text-xs">
-                                                <span>
-                                                    🍜{" "}
-                                                    {getCurrentUpgradeLevel(
-                                                        bar,
-                                                        "cuisine"
-                                                    )}
-                                                    /
-                                                    {
-                                                        UPGRADE_CATEGORIES[0]
-                                                            .maxLevel
-                                                    }
-                                                </span>
-                                                <span>
-                                                    💖{" "}
-                                                    {getCurrentUpgradeLevel(
-                                                        bar,
-                                                        "service"
-                                                    )}
-                                                    /
-                                                    {
-                                                        UPGRADE_CATEGORIES[1]
-                                                            .maxLevel
-                                                    }
-                                                </span>
-                                                <span>
-                                                    🎭{" "}
-                                                    {getCurrentUpgradeLevel(
-                                                        bar,
-                                                        "ambiance"
-                                                    )}
-                                                    /
-                                                    {
-                                                        UPGRADE_CATEGORIES[2]
-                                                            .maxLevel
-                                                    }
-                                                </span>
-                                                <span>
-                                                    💹{" "}
-                                                    {getCurrentUpgradeLevel(
-                                                        bar,
-                                                        "salesVolume"
-                                                    )}
-                                                    /
-                                                    {
-                                                        UPGRADE_CATEGORIES[3]
-                                                            .maxLevel
-                                                    }
-                                                </span>
+                                                {UPGRADE_CATEGORIES.map(
+                                                    (category) => (
+                                                        <span key={category.id}>
+                                                            {category.icon}{" "}
+                                                            {getCurrentUpgradeLevel(
+                                                                displayBar,
+                                                                category.id
+                                                            )}
+                                                            /
+                                                            {getMaxLevel(
+                                                                displayBar,
+                                                                category
+                                                            )}
+                                                        </span>
+                                                    )
+                                                )}
                                             </div>
                                             <div className="text-xs">
-                                                Staff: {bar.staff.length || 0}/3
+                                                Staff:{" "}
+                                                {displayBar.staff.length || 0}/3
                                             </div>
                                         </div>
                                     </div>
@@ -348,9 +382,7 @@ const NoodleBarUpgrade = ({ onBack }) => {
                                         </span>
                                         <span className="text-emerald-600 font-bold">
                                             {formatCurrency(
-                                                selectedBar.baseProfit ||
-                                                    selectedBar.salesVolume ||
-                                                    0
+                                                selectedBar.salesVolume || 0
                                             )}
                                         </span>
                                     </div>
@@ -360,7 +392,7 @@ const NoodleBarUpgrade = ({ onBack }) => {
                                         Available Funds:
                                     </span>
                                     <span className="text-emerald-600 font-bold text-lg">
-                                        {formatCurrency(funds)}
+                                        {formatCurrency(localFunds)}
                                     </span>
                                 </div>
                                 <button
@@ -400,17 +432,28 @@ const NoodleBarUpgrade = ({ onBack }) => {
                                         selectedBar,
                                         category.id
                                     );
-                                    const isMaxLevel =
-                                        currentLevel >= category.maxLevel;
-                                    const upgradeCost = calculateUpgradeCost(
-                                        category.id,
-                                        currentLevel
+                                    const maxLevel = getMaxLevel(
+                                        selectedBar,
+                                        category
                                     );
+                                    const currentCap = getCurrentStatCap(
+                                        selectedBar,
+                                        category
+                                    );
+                                    const isMaxLevel = currentLevel >= maxLevel;
+                                    const upgradeCost =
+                                        calculateUpgradeCost(currentLevel);
                                     const canAfford =
                                         canAffordUpgrade(upgradeCost);
                                     const isEnabled = !isMaxLevel && canAfford;
                                     const isHovered =
                                         hoveredUpgrade === category.id;
+
+                                    // Calculate sales volume bonus (10% of current sales volume)
+                                    const salesVolumeBonus = Math.round(
+                                        selectedBar.salesVolume *
+                                            category.salesVolumeBonus
+                                    );
 
                                     return (
                                         <div
@@ -470,7 +513,7 @@ const NoodleBarUpgrade = ({ onBack }) => {
                                                         >
                                                             Level:{" "}
                                                             {currentLevel}/
-                                                            {category.maxLevel}
+                                                            {maxLevel}
                                                         </div>
                                                         <div className="flex-1 bg-[color:var(--color-whiteCream)] h-2 rounded-full">
                                                             <div
@@ -478,27 +521,43 @@ const NoodleBarUpgrade = ({ onBack }) => {
                                                                 style={{
                                                                     width: `${
                                                                         (currentLevel /
-                                                                            category.maxLevel) *
+                                                                            maxLevel) *
                                                                         100
                                                                     }%`,
                                                                 }}
                                                             ></div>
                                                         </div>
-
-                                                        {!isMaxLevel &&
-                                                            isEnabled && (
-                                                                <div className="ml-2 text-xs text-emerald-600 font-semibold">
-                                                                    +
-                                                                    {Math.round(
-                                                                        (category.baseMultiplier -
-                                                                            1) *
-                                                                            100 *
-                                                                            0.2
-                                                                    )}
-                                                                    % profit
-                                                                </div>
-                                                            )}
                                                     </div>
+
+                                                    {/* Current Cap */}
+                                                    <div className="mt-2 text-sm text-[color:var(--color-principalBrown)]">
+                                                        Current{" "}
+                                                        {category.statCap.replace(
+                                                            "Cap",
+                                                            ""
+                                                        )}
+                                                        : {currentCap}
+                                                        {!isMaxLevel && (
+                                                            <span className="text-emerald-600 ml-2">
+                                                                (+
+                                                                {
+                                                                    CAP_INCREASE_PER_LEVEL
+                                                                }{" "}
+                                                                per upgrade)
+                                                            </span>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Sales Volume Bonus */}
+                                                    {!isMaxLevel && (
+                                                        <div className="mt-1 text-sm text-emerald-600">
+                                                            +
+                                                            {formatCurrency(
+                                                                salesVolumeBonus
+                                                            )}{" "}
+                                                            sales volume (+10%)
+                                                        </div>
+                                                    )}
                                                 </div>
 
                                                 <div className="ml-4 flex flex-col items-end">
@@ -570,7 +629,8 @@ const NoodleBarUpgrade = ({ onBack }) => {
                     confirmationModal.upgrade
                         ? {
                               ...confirmationModal.upgrade,
-                              currentFunds: funds,
+                              currentFunds: localFunds,
+                              capIncrease: CAP_INCREASE_PER_LEVEL,
                           }
                         : null
                 }
