@@ -353,7 +353,7 @@ const HubComponent = () => {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            gap: "0.rem",
+            gap: "0.3rem",
             cursor: "pointer",
             transform: isHovered ? "scale(1.05)" : "translateY(0)",
             fontSize: "1rem",
@@ -769,12 +769,12 @@ const HubComponent = () => {
                                 ...styles.startPeriodBottom,
                                 backgroundColor:
                                     hoveredMenuItem === "Start"
-                                        ? "rgba(49, 34, 24, 0.4)"
-                                        : "rgba(49, 34, 24, 0.3)",
+                                        ? "rgba(0, 0, 0, 0.4)"
+                                        : "rgba(0, 0, 0, 0.5)",
                             }}
                         >
                             <div style={styles.forecastProfit}>
-                                Forecast profit:{" "}
+                                Forecasted profit:{" "}
                                 <span
                                     style={{
                                         ...styles.forecastNumber,
@@ -785,7 +785,28 @@ const HubComponent = () => {
                                         transition: "all 0.3s ease",
                                     }}
                                 >
-                                    {formatCurrency(forecastProfit)}
+                                    <span
+                                        className={
+                                            forecastProfit -
+                                                unusedEmployeeCost -
+                                                debt.amount >=
+                                            0
+                                                ? "text-green-500 font-bold ml-2"
+                                                : "text-red-500 font-bold ml-2"
+                                        }
+                                    >
+                                        {formatCurrency(
+                                            forecastProfit -
+                                                unusedEmployeeCost -
+                                                debt.amount
+                                        )}
+                                        {forecastProfit -
+                                            unusedEmployeeCost -
+                                            debt.amount >=
+                                        0
+                                            ? " ▲"
+                                            : " ▼"}
+                                    </span>
                                 </span>
                             </div>
                         </div>

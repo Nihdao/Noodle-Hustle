@@ -201,7 +201,7 @@ const SocialManagement = ({
 
             // Si déjà au niveau max, afficher un message générique
             if (relationshipLevel >= selectedConfidant.maxLevel) {
-                showGenericLocationMessage(selectedLocation.name, newBurnout);
+                showGenericLocationMessage(selectedLocation.name);
                 return;
             }
 
@@ -209,7 +209,7 @@ const SocialManagement = ({
             startConfidantConversation(selectedConfidant, relationshipLevel);
         } else {
             // Pas de rencontre, afficher un message générique
-            showGenericLocationMessage(selectedLocation.name, newBurnout);
+            showGenericLocationMessage(selectedLocation.name);
         }
     };
 
@@ -294,7 +294,7 @@ const SocialManagement = ({
     };
 
     // Afficher un message générique pour le lieu
-    const showGenericLocationMessage = (locationName, newBurnout) => {
+    const showGenericLocationMessage = (locationName) => {
         // Messages génériques par lieu
         const messages = {
             Home: [
@@ -323,11 +323,6 @@ const SocialManagement = ({
                 "You buy some essentials while observing current trends.",
             ],
         };
-
-        // Get current and previous burnout
-        const currentState = gameState.getGameState();
-        const currentBurnout = currentState.playerStats?.burnout || 0;
-        const burnoutReduction = locationName === "Home" ? "25%" : "10%";
 
         // Sélectionner un message aléatoire pour ce lieu
         const locationMessages = messages[locationName] || [
@@ -510,7 +505,7 @@ const SocialManagement = ({
                 {/* Left sidebar - Locations list */}
                 <div className="h-full overflow-y-auto border-r border-[color:var(--color-principalBrown)] border-opacity-20">
                     <div className="p-4">
-                        <h3 className="text-lg font-semibold mb-4 text-[color:var(--color-principalBrown)]">
+                        <h3 className="text-lg font-semibold grid grid-cols-2 mb-4 text-[color:var(--color-principalBrown)]">
                             Available Locations
                         </h3>
 
@@ -536,24 +531,32 @@ const SocialManagement = ({
                                             <h4 className="font-bold text-[color:var(--color-principalBrown)]">
                                                 {location.name}
                                             </h4>
-                                            {/* Show number of confidants at this location */}
-                                            {getLocationConfidants(
-                                                location.name
-                                            ).length > 0 && (
-                                                <p className="text-xs text-[color:var(--color-principalRed)]">
-                                                    {
-                                                        getLocationConfidants(
+                                            {/* Burnout reduction info */}
+                                            <p className="text-xs">
+                                                <span className="text-green-600">
+                                                    Burnout: -
+                                                    {location.name === "Home"
+                                                        ? "25%"
+                                                        : "10%"}
+                                                </span>
+                                                {getLocationConfidants(
+                                                    location.name
+                                                ).length > 0 && (
+                                                    <span className="text-[color:var(--color-principalRed)] ml-2">
+                                                        {
+                                                            getLocationConfidants(
+                                                                location.name
+                                                            ).length
+                                                        }{" "}
+                                                        possible{" "}
+                                                        {getLocationConfidants(
                                                             location.name
-                                                        ).length
-                                                    }{" "}
-                                                    possible{" "}
-                                                    {getLocationConfidants(
-                                                        location.name
-                                                    ).length === 1
-                                                        ? "encounter"
-                                                        : "encounters"}
-                                                </p>
-                                            )}
+                                                        ).length === 1
+                                                            ? "encounter"
+                                                            : "encounters"}
+                                                    </span>
+                                                )}
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
@@ -580,15 +583,35 @@ const SocialManagement = ({
                         scrollable={true}
                         maxHeight="80vh"
                     >
-                        <div className="p-4 flex flex-col items-center">
-                            <img
-                                src={`/assets/locations/${selectedLocation.name}.png`}
-                                alt={selectedLocation.name}
-                                className="w-full max-w-xs rounded-lg shadow-md mb-4"
-                            />
+                        <div className="p-4 flex flex-row">
+                            <div className="w-1/3 pr-4">
+                                <img
+                                    src={`/assets/locations/${selectedLocation.name}.png`}
+                                    alt={selectedLocation.name}
+                                    className="w-full rounded-lg shadow-md"
+                                />
+                            </div>
 
-                            <div className="mt-2 mb-4 text-[color:var(--color-principalBrown)]">
+                            <div className="w-2/3 text-[color:var(--color-principalBrown)]">
                                 <p>{selectedLocation.description}</p>
+
+                                {/* Burnout reduction information card */}
+                                <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-100">
+                                    <h4 className="font-semibold mb-1 flex items-center">
+                                        <span className="mr-2">🧘‍♂️</span> Burnout
+                                        Reduction
+                                    </h4>
+                                    <p className="text-sm text-green-700">
+                                        Spending time at {selectedLocation.name}{" "}
+                                        will reduce your burnout by{" "}
+                                        <strong>
+                                            {selectedLocation.name === "Home"
+                                                ? "25% "
+                                                : "10% "}
+                                        </strong>
+                                        of its current value.
+                                    </p>
+                                </div>
 
                                 {/* Display confidants that can be found here */}
                                 {getLocationConfidants(selectedLocation.name)
@@ -660,10 +683,11 @@ const SocialManagement = ({
                                     </div>
                                 )}
                             </div>
-
+                        </div>
+                        <div className="px-4 pb-4">
                             <button
                                 onClick={handleSpendTimeAtLocation}
-                                className={`mt-4 w-full py-3 px-4 rounded-lg font-bold shadow-md transition-all ${
+                                className={`mt-2 w-full py-3 px-4 rounded-lg font-bold shadow-md transition-all ${
                                     actionPerformed
                                         ? "bg-gray-400 text-gray-100 cursor-not-allowed"
                                         : "bg-gradient-to-r from-principalRed to-principalRed-light text-whiteCream hover:shadow-lg hover:scale-105 active:scale-95"
@@ -939,7 +963,9 @@ const SocialManagement = ({
             </div>
 
             {/* Add keyframes for fadeInUp animation at the end of the file */}
-            <style global={true}>{`
+            <style
+                dangerouslySetInnerHTML={{
+                    __html: `
                 @keyframes fadeInUp {
                     from {
                         opacity: 0;
@@ -950,7 +976,9 @@ const SocialManagement = ({
                         transform: translateY(0);
                     }
                 }
-            `}</style>
+            `,
+                }}
+            />
         </div>
     );
 };

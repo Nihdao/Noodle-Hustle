@@ -10,6 +10,7 @@ function MenuContainer({
     scrollable = false,
     maxHeight = null,
     title = null,
+    onClose = null,
 }) {
     // Use Tailwind classes instead of inline styles where possible
     const containerBaseClasses = `
@@ -46,6 +47,9 @@ function MenuContainer({
         borderRadius: "4px",
         position: "relative",
         padding: scrollable ? "0" : "20px",
+        display: "flex",
+        flexDirection: "column",
+        maxHeight: scrollable && maxHeight ? maxHeight : "none",
     };
 
     // Background patterns
@@ -81,23 +85,48 @@ function MenuContainer({
 
             <div
                 style={innerStyle}
-                className={`${
-                    scrollable ? "overflow-scroll flex flex-col" : ""
-                }`}
+                className={`${scrollable ? "overflow-hidden" : ""}`}
             >
                 <div style={textureStyle} />
 
                 {title && (
-                    <div className="sticky top-0 z-10 border-b-2 border-[color:var(--color-yellowWhite-dark)] bg-[color:var(--color-whiteCream)] bg-opacity-95 p-3 text-center font-bold text-lg text-[color:var(--color-principalBrown)]">
-                        {title}
+                    <div className="sticky top-0 z-10 border-b-2 border-[color:var(--color-yellowWhite-dark)] bg-[color:var(--color-whiteCream)] bg-opacity-95 p-3 flex justify-between items-center">
+                        <div className="font-bold text-lg text-[color:var(--color-principalBrown)] flex-grow text-center">
+                            {title}
+                        </div>
+                        {onClose && (
+                            <button
+                                onClick={onClose}
+                                className="text-[color:var(--color-principalBrown)] hover:text-[color:var(--color-principalRed)] transition-colors"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-6 w-6"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M6 18L18 6M6 6l12 12"
+                                    />
+                                </svg>
+                            </button>
+                        )}
                     </div>
                 )}
 
                 <div
                     className={`
-                    ${scrollable ? "overflow-scroll overflow-x-hidden p-4" : ""}
-                    ${scrollable && maxHeight ? `max-h-${maxHeight}` : ""}
+                    ${scrollable ? "overflow-y-auto overflow-x-hidden" : ""}
+                    flex-grow
                 `}
+                    style={{
+                        maxHeight: scrollable && maxHeight ? maxHeight : "none",
+                        padding: scrollable ? "16px" : "0",
+                    }}
                 >
                     {children}
                 </div>
@@ -115,10 +144,12 @@ MenuContainer.propTypes = {
     className: PropTypes.string,
     /** Whether the container should allow scrolling for overflow content */
     scrollable: PropTypes.bool,
-    /** Max height for scrollable containers (Tailwind size value) */
+    /** Max height for scrollable containers (CSS value with units) */
     maxHeight: PropTypes.string,
     /** Optional title to display at the top of the container */
     title: PropTypes.string,
+    /** Optional close handler function */
+    onClose: PropTypes.func,
 };
 
 export default MenuContainer;
