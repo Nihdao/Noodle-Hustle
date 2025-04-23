@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import PropTypes from "prop-types";
 import MenuContainer from "../../common/MenuContainer";
 import { formatCurrency, getTotalStat } from "../utils/restaurantUtils";
-import { useNoodleBarOperations } from "../../../store/gameStateHooks";
+import {
+    useNoodleBarOperations,
+    useRestaurants,
+} from "../../../store/gameStateHooks";
 
 const EmployeeManagementModal = ({
     selectedBar,
@@ -15,55 +18,114 @@ const EmployeeManagementModal = ({
 }) => {
     const [employeeSearchTerm, setEmployeeSearchTerm] = useState("");
     const [activeTab, setActiveTab] = useState("All");
+    const [showMinimumEmployeeWarning, setShowMinimumEmployeeWarning] =
+        useState(false);
 
-    // Utiliser les fonctions centralisées du hook
-    const { getRestaurantNameById } = useNoodleBarOperations();
+    const { getRestaurantNameById, getRestaurantStaff } =
+        useNoodleBarOperations();
+    const { getRestaurantById } = useRestaurants();
 
-    // Safety functions to handle potentially undefined values
+    // IMPORTANT: Ne pas utiliser d'état local pour les données du restaurant
+    // Utiliser directement les données provenant des props et les hooks de récupération de données
+
+    // Au lieu d'un useEffect, on utilise directement les props et les hooks
+    const getCurrentRestaurantData = useCallback(() => {
+        if (!selectedBar?.id) return null;
+
+        // Récupérer les données fraîches à la demande
+        const freshData = getRestaurantById(selectedBar.id);
+        if (!freshData) return selectedBar;
+
+        // Combiner avec les données de staff actuelles
+        return {
+            ...freshData,
+            currentStaff: getRestaurantStaff(selectedBar.id) || [],
+        };
+    }, [selectedBar, getRestaurantById, getRestaurantStaff]);
+
+    // Utiliser directement la fonction pour obtenir les données actuelles
+    const displayedBar = getCurrentRestaurantData();
+
+    if (!displayedBar) return null;
+
     const getStaffCount = () => {
-        return Array.isArray(selectedBar?.currentStaff)
-            ? selectedBar.currentStaff.length
+        return Array.isArray(displayedBar?.currentStaff)
+            ? displayedBar.currentStaff.length
             : 0;
     };
 
     const getStaffSlots = () => {
-        return selectedBar?.staffSlots || 3;
+        return displayedBar?.staffSlots || 3;
     };
 
     const getCurrentStaff = () => {
-        return Array.isArray(selectedBar?.currentStaff)
-            ? selectedBar.currentStaff
+        return Array.isArray(displayedBar?.currentStaff)
+            ? displayedBar.currentStaff
             : [];
     };
 
     const safeTotalStat = (stat) => {
-        if (!Array.isArray(selectedBar?.currentStaff)) {
+        if (!Array.isArray(displayedBar?.currentStaff)) {
             return 0;
         }
-        return getTotalStat(selectedBar.currentStaff, stat);
+        return getTotalStat(displayedBar.currentStaff, stat);
     };
 
-    // Get proper profit and sales values with fallbacks
     const getSalesVolume = () => {
         return (
-            selectedBar?.salesVolume ||
-            selectedBar?.forecastedProfit ||
-            selectedBar?.baseProfit ||
+            displayedBar?.salesVolume ||
+            displayedBar?.forecastedProfit ||
+            displayedBar?.baseProfit ||
             0
         );
     };
 
-    // Get target values for each stat with fallbacks
     const getCuisineTarget = () =>
-        selectedBar?.productCap || selectedBar?.maxProduct || 40;
-    const getServiceTarget = () => selectedBar?.serviceCap || 20;
-    const getAmbianceTarget = () => selectedBar?.ambianceCap || 10;
+        displayedBar?.productCap || displayedBar?.maxProduct || 40;
+    const getServiceTarget = () =>
+        displayedBar?.serviceCap || displayedBar?.maxService || 20;
+    const getAmbianceTarget = () =>
+        displayedBar?.ambianceCap || displayedBar?.maxAmbiance || 10;
 
-    // Filter employees based on search and tab
+    const calculateMalus = () => {
+        const criteresNonRemplis = [];
+
+        if (safeTotalStat("cuisine") < getCuisineTarget()) {
+            criteresNonRemplis.push("cuisine");
+        }
+
+        if (safeTotalStat("service") < getServiceTarget()) {
+            criteresNonRemplis.push("service");
+        }
+
+        if (safeTotalStat("ambiance") < getAmbianceTarget()) {
+            criteresNonRemplis.push("ambiance");
+        }
+
+        const count = criteresNonRemplis.length;
+
+        let malusPercentage = 0;
+        if (count === 1) malusPercentage = 5;
+        else if (count === 2) malusPercentage = 15;
+        else if (count === 3) malusPercentage = 25;
+
+        const forecastedProfit = getSalesVolume();
+        const malusAmount =
+            count > 0
+                ? Math.round(forecastedProfit * (malusPercentage / 100))
+                : 0;
+
+        return {
+            count,
+            criteresNonRemplis,
+            malusPercentage,
+            malusAmount,
+        };
+    };
+
     const getFilteredEmployees = () => {
         let filtered = [...(allEmployees || [])];
 
-        // Apply search term filter
         if (employeeSearchTerm.trim() !== "") {
             filtered = filtered.filter((emp) =>
                 emp.name
@@ -72,7 +134,6 @@ const EmployeeManagementModal = ({
             );
         }
 
-        // Apply tab filter
         if (activeTab === "Available") {
             filtered = filtered.filter((emp) => !emp.assigned);
         } else if (activeTab === "Assigned") {
@@ -82,10 +143,14 @@ const EmployeeManagementModal = ({
         return filtered;
     };
 
-    // Récupérer le nom du restaurant à partir de son ID en utilisant le hook
     const getRestaurantName = (assignedId) => {
         if (!assignedId) return null;
         return getRestaurantNameById(assignedId);
+    };
+
+    const canRemoveEmployee = () => {
+        const currentStaffCount = getStaffCount();
+        return currentStaffCount > 1;
     };
 
     const handleEmployeeClick = (employee) => {
@@ -95,10 +160,32 @@ const EmployeeManagementModal = ({
     const handleRemoveEmployeeClick = (employeeId, e) => {
         e.preventDefault();
         e.stopPropagation();
+
+        if (!canRemoveEmployee()) {
+            setShowMinimumEmployeeWarning(true);
+            setTimeout(() => setShowMinimumEmployeeWarning(false), 3000);
+            return;
+        }
+
         onRemoveEmployee(employeeId);
     };
 
-    if (!selectedBar) return null;
+    const {
+        malusAmount,
+        malusPercentage,
+        count: criteresNonRemplisCount,
+    } = calculateMalus();
+
+    const baseProfit = displayedBar.forecastedProfit || 0;
+    const staffCost = displayedBar.staffCost || 0;
+    const maintenance = displayedBar.maintenance || 0;
+
+    const netProfit =
+        baseProfit -
+        staffCost -
+        maintenance -
+        (criteresNonRemplisCount > 0 ? malusAmount : 0);
+    const profitClass = netProfit < 0 ? "text-orange-500" : "text-emerald-600";
 
     return (
         <div
@@ -109,17 +196,101 @@ const EmployeeManagementModal = ({
                 transform: "translate(-50%, -50%)",
             }}
         >
+            <style>{`
+                .tooltip-container {
+                    position: relative;
+                    cursor: help;
+                }
+                .tooltip-text {
+                    visibility: hidden;
+                    position: absolute;
+                    bottom: 125%;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background-color: #333;
+                    color: white;
+                    text-align: center;
+                    padding: 8px 12px;
+                    border-radius: 6px;
+                    z-index: 100;
+                    opacity: 0;
+                    transition: opacity 0.3s;
+                    white-space: normal;
+                    width: max-content;
+                    max-width: 250px;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+                    font-size: 12px;
+                }
+                .tooltip-text::after {
+                    content: "";
+                    position: absolute;
+                    top: 100%;
+                    left: 50%;
+                    margin-left: -5px;
+                    border-width: 5px;
+                    border-style: solid;
+                    border-color: #333 transparent transparent transparent;
+                }
+                .tooltip-container:hover .tooltip-text {
+                    visibility: visible;
+                    opacity: 1;
+                }
+                .malus-detail {
+                    margin-top: 4px;
+                    font-size: 11px;
+                    opacity: 0.9;
+                }
+                .criteria-list {
+                    margin-top: 6px;
+                    text-align: left;
+                }
+                .criteria-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    margin-top: 2px;
+                }
+                .criteria-icon {
+                    color: #f87171;
+                }
+                .minimum-employee-warning {
+                    position: fixed;
+                    top: 20px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background-color: #f87171;
+                    color: white;
+                    padding: 10px 20px;
+                    border-radius: 8px;
+                    z-index: 1000;
+                    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+                    animation: fadeIn 0.3s ease-in-out;
+                }
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translate(-50%, -20px); }
+                    to { opacity: 1; transform: translate(-50%, 0); }
+                }
+            `}</style>
+
+            {showMinimumEmployeeWarning && (
+                <div className="minimum-employee-warning">
+                    <strong>
+                        At least one employee must remain in the restaurant!
+                    </strong>
+                </div>
+            )}
+
             <MenuContainer
                 animationState={showDetails ? "visible" : "hidden"}
                 className="w-[750px] max-h-[80vh]"
                 scrollable={true}
                 maxHeight="80vh"
-                title={selectedBar.name || "Restaurant"}
+                title={displayedBar.name || "Restaurant"}
             >
                 <div className="p-4">
                     <div className="flex justify-between mb-4 items-center">
                         <p className="italic text-[color:var(--color-principalBrown)] opacity-70">
-                            {selectedBar.description ||
+                            {displayedBar.description ||
                                 "No description available"}
                         </p>
                         <button
@@ -141,6 +312,79 @@ const EmployeeManagementModal = ({
                                 <line x1="6" y1="6" x2="18" y2="18"></line>
                             </svg>
                         </button>
+                    </div>
+
+                    {/* Sales Volume, Staff Cost, Net Profit summary - moved to top */}
+                    <div className="flex justify-around mb-6 bg-yellowWhite/80 p-4 rounded-lg">
+                        <div>
+                            <h3
+                                className="font-semibold"
+                                style={{
+                                    color: "var(--color-principalBrown)",
+                                }}
+                            >
+                                Sales Volume
+                            </h3>
+                            <p className="text-emerald-600 font-bold">
+                                {formatCurrency(getSalesVolume())}
+                            </p>
+                        </div>
+                        <div>
+                            <h3
+                                className="font-semibold"
+                                style={{
+                                    color: "var(--color-principalBrown)",
+                                }}
+                            >
+                                Staff Cost
+                            </h3>
+                            <p className="text-red-500 font-bold">
+                                {formatCurrency(staffCost)}
+                            </p>
+                        </div>
+                        <div>
+                            <h3
+                                className="font-semibold"
+                                style={{
+                                    color: "var(--color-principalBrown)",
+                                }}
+                            >
+                                Net Profit
+                            </h3>
+                            <div className="flex items-center">
+                                <p className={`${profitClass} font-bold`}>
+                                    {formatCurrency(netProfit)}
+                                </p>
+                                {criteresNonRemplisCount > 0 && (
+                                    <span className="text-red-500 ml-2 text-sm whitespace-nowrap flex items-center tooltip-container">
+                                        <span className="tooltip-text">
+                                            <strong>
+                                                Sales penalty: {malusPercentage}
+                                                %
+                                            </strong>
+                                            <div className="malus-detail">
+                                                {criteresNonRemplisCount} stats
+                                                cap not met
+                                            </div>
+                                        </span>
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            className="h-4 w-4 ml-1"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                            />
+                                        </svg>
+                                    </span>
+                                )}
+                            </div>
+                        </div>
                     </div>
 
                     {/* Two-column layout */}
@@ -281,6 +525,42 @@ const EmployeeManagementModal = ({
                                     }}
                                 >
                                     Performance Stats
+                                    {criteresNonRemplisCount > 0 && (
+                                        <span className="text-red-500 ml-2 text-sm font-normal tooltip-container">
+                                            <span className="tooltip-text">
+                                                <strong>
+                                                    Warning: Sales penalty!
+                                                </strong>
+                                                <div className="malus-detail">
+                                                    Each unmet stat negatively
+                                                    affects your profits:
+                                                </div>
+                                                <div className="malus-detail">
+                                                    • 1 stat: -5% profit
+                                                </div>
+                                                <div className="malus-detail">
+                                                    • 2 stats: -15% profit
+                                                </div>
+                                                <div className="malus-detail">
+                                                    • 3 stats: -25% profit
+                                                </div>
+                                            </span>
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                className="h-4 w-4 ml-1 inline"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke="currentColor"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                                                />
+                                            </svg>
+                                        </span>
+                                    )}
                                 </h3>
                                 <div className="space-y-3">
                                     <div>
@@ -290,36 +570,10 @@ const EmployeeManagementModal = ({
                                                     color: "var(--color-principalBrown)",
                                                 }}
                                             >
-                                                💴 Sales Volume (lv.1/10)
-                                            </span>
-                                            <span className="text-emerald-600 font-semibold">
-                                                {formatCurrency(
-                                                    getSalesVolume()
-                                                )}
-                                            </span>
-                                        </div>
-                                        <div className="h-2 bg-gray-200 rounded-full mt-1">
-                                            <div
-                                                className="h-full bg-emerald-500 rounded-full transition-all duration-500"
-                                                style={{
-                                                    width: `${
-                                                        (getSalesVolume() /
-                                                            10000) *
-                                                        100
-                                                    }%`,
-                                                }}
-                                            ></div>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <div className="flex justify-between text-sm">
-                                            <span
-                                                style={{
-                                                    color: "var(--color-principalBrown)",
-                                                }}
-                                            >
-                                                🍱 Cuisine (lv.1/10)
+                                                🍱 Cuisine (lv.
+                                                {displayedBar.upgrades
+                                                    ?.product || 1}
+                                                /{displayedBar.maxProduct})
                                             </span>
                                             <span className="flex">
                                                 <span
@@ -367,7 +621,10 @@ const EmployeeManagementModal = ({
                                                     color: "var(--color-principalBrown)",
                                                 }}
                                             >
-                                                💖 Service (lv.1/10)
+                                                💖 Service (lv.
+                                                {displayedBar.upgrades
+                                                    ?.service || 1}
+                                                /{displayedBar.maxService})
                                             </span>
                                             <span className="flex">
                                                 <span
@@ -415,7 +672,10 @@ const EmployeeManagementModal = ({
                                                     color: "var(--color-principalBrown)",
                                                 }}
                                             >
-                                                🎭 Ambiance (lv.1/10)
+                                                🎭 Ambiance (lv.
+                                                {displayedBar.upgrades
+                                                    ?.ambiance || 1}
+                                                /{displayedBar.maxAmbiance})
                                             </span>
                                             <span className="flex">
                                                 <span
@@ -542,7 +802,7 @@ const EmployeeManagementModal = ({
                       grid grid-cols-[auto_1fr_auto] gap-2 items-center
                       ${
                           employee.assigned !== null &&
-                          employee.assigned !== selectedBar.id
+                          employee.assigned !== displayedBar.id
                               ? "bg-gray-100 border-gray-300"
                               : "bg-[color:var(--color-whiteCream)] border-[color:var(--color-principalBrown)]"
                       }
@@ -601,13 +861,13 @@ const EmployeeManagementModal = ({
                                                 <div
                                                     className={`text-xs font-medium ${
                                                         employee.assigned ===
-                                                        selectedBar.id
+                                                        displayedBar.id
                                                             ? "text-emerald-600"
                                                             : "text-amber-600"
                                                     }`}
                                                 >
                                                     {employee.assigned ===
-                                                    selectedBar.id
+                                                    displayedBar.id
                                                         ? "Currently assigned here"
                                                         : `At: ${
                                                               employee.assignedName ||
@@ -622,7 +882,7 @@ const EmployeeManagementModal = ({
                                         {/* Action button */}
                                         <div>
                                             {employee.assigned ===
-                                            selectedBar.id ? (
+                                            displayedBar.id ? (
                                                 <button
                                                     className="text-red-500 hover:text-red-700"
                                                     onClick={(e) =>
@@ -684,52 +944,6 @@ const EmployeeManagementModal = ({
                                         </div>
                                     </div>
                                 ))}
-                            </div>
-
-                            <div className="flex justify-between mt-6">
-                                <div>
-                                    <h3
-                                        className="font-semibold"
-                                        style={{
-                                            color: "var(--color-principalBrown)",
-                                        }}
-                                    >
-                                        Staff Cost
-                                    </h3>
-                                    <p className="text-red-500 font-bold">
-                                        {formatCurrency(
-                                            selectedBar.staffCost || 0
-                                        )}
-                                    </p>
-                                </div>
-                                <div>
-                                    <h3
-                                        className="font-semibold"
-                                        style={{
-                                            color: "var(--color-principalBrown)",
-                                        }}
-                                    >
-                                        Net Profit
-                                    </h3>
-                                    {(() => {
-                                        const netProfit =
-                                            (selectedBar.forecastedProfit ||
-                                                0) -
-                                            (selectedBar.staffCost || 0) -
-                                            (selectedBar.maintenance || 0);
-                                        const profitClass =
-                                            netProfit < 0
-                                                ? "text-orange-500"
-                                                : "text-emerald-600";
-                                        return (
-                                            <p
-                                                className={`${profitClass} font-bold`}
-                                            >
-                                                {formatCurrency(netProfit)}
-                                            </p>
-                                        );
-                                    })()}
-                                </div>
                             </div>
                         </div>
                     </div>

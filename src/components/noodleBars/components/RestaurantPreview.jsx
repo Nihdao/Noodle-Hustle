@@ -12,12 +12,60 @@ const RestaurantPreview = ({
 }) => {
     if (!restaurant) return null;
 
+    // Calcul du malus basé sur les critères non remplis
+    const calculateMalus = () => {
+        const criteresNonRemplis = [];
+
+        if (safeGetTotalStat("cuisine") < getCuisineTarget()) {
+            criteresNonRemplis.push("cuisine");
+        }
+
+        if (safeGetTotalStat("service") < getServiceTarget()) {
+            criteresNonRemplis.push("service");
+        }
+
+        if (safeGetTotalStat("ambiance") < getAmbianceTarget()) {
+            criteresNonRemplis.push("ambiance");
+        }
+
+        const count = criteresNonRemplis.length;
+
+        let malusPercentage = 0;
+        if (count === 1) malusPercentage = 5;
+        else if (count === 2) malusPercentage = 15;
+        else if (count === 3) malusPercentage = 25;
+
+        const forecastedProfit =
+            restaurant.forecastedProfit || restaurant.baseProfit || 0;
+        const malusAmount =
+            count > 0
+                ? Math.round(forecastedProfit * (malusPercentage / 100))
+                : 0;
+
+        return {
+            count,
+            criteresNonRemplis,
+            malusPercentage,
+            malusAmount,
+        };
+    };
+
     // Safely get profit value with fallbacks
     const getProfit = () => {
         const forecastedProfit = restaurant.forecastedProfit || 0;
         const staffCost = restaurant.staffCost || 0;
         const maintenance = restaurant.maintenance || 0;
-        return forecastedProfit - staffCost - maintenance;
+
+        // Intégration du calcul de malus similaire à EmployeeManagementModal
+        const { malusAmount, count } = calculateMalus();
+
+        // Appliquer le malus seulement si count > 0
+        return (
+            forecastedProfit -
+            staffCost -
+            maintenance -
+            (count > 0 ? malusAmount : 0)
+        );
     };
 
     // Safely calculate staff stats - handle cases where currentStaff might be undefined
@@ -29,9 +77,12 @@ const RestaurantPreview = ({
     };
 
     // Get the target values for each stat
-    const getCuisineTarget = () => restaurant.productCap || 40;
-    const getServiceTarget = () => restaurant.serviceCap || 20;
-    const getAmbianceTarget = () => restaurant.ambianceCap || 10;
+    const getCuisineTarget = () =>
+        restaurant.productCap || restaurant.maxProduct || 40;
+    const getServiceTarget = () =>
+        restaurant.serviceCap || restaurant.maxService || 20;
+    const getAmbianceTarget = () =>
+        restaurant.ambianceCap || restaurant.maxAmbiance || 10;
 
     // Determine if stat meets target
     const isStatSufficient = (stat, value) => {

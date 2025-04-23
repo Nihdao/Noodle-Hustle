@@ -477,6 +477,16 @@ export const useNoodleBarOperations = () => {
 
             // Utiliser la méthode updateGameState pour mettre à jour l'état correctement
             gameState.updateGameState((state) => {
+                // Récupérer le restaurant cible
+                const targetRestaurant = state.restaurants.bars.find(
+                    (bar) => bar.id === barId
+                );
+
+                if (!targetRestaurant) return state; // Si le restaurant n'existe pas, ne rien faire
+
+                // Trouver l'ancien restaurant de l'employé (s'il existait)
+                const oldRestaurantId = employee.assigned;
+
                 // Mettre à jour l'employé dans le roster
                 const updatedRoster = state.employees.roster.map((emp) =>
                     emp.id === employee.id
@@ -488,11 +498,59 @@ export const useNoodleBarOperations = () => {
                         : emp
                 );
 
+                // Mettre à jour les restaurants
+                const updatedBars = state.restaurants.bars.map((bar) => {
+                    // Cas 1: C'est le restaurant cible - ajouter l'employé
+                    if (bar.id === barId) {
+                        // Créer un tableau de staff s'il n'existe pas
+                        const currentStaff = bar.staff || [];
+
+                        // Vérifier si l'employé est déjà dans ce restaurant
+                        if (!currentStaff.includes(employee.id)) {
+                            // Calculer le nouveau coût total des salaires
+                            const newStaffCost =
+                                (bar.staffCost || 0) + (employee.salary || 0);
+
+                            return {
+                                ...bar,
+                                staff: [...currentStaff, employee.id],
+                                staffCost: newStaffCost,
+                            };
+                        }
+                        return bar; // Déjà dans ce restaurant, ne rien faire
+                    }
+
+                    // Cas 2: C'est l'ancien restaurant de l'employé - le retirer
+                    else if (bar.id === oldRestaurantId) {
+                        const currentStaff = bar.staff || [];
+                        const updatedStaff = currentStaff.filter(
+                            (id) => id !== employee.id
+                        );
+
+                        // Calculer le nouveau coût total des salaires
+                        const newStaffCost =
+                            (bar.staffCost || 0) - (employee.salary || 0);
+
+                        return {
+                            ...bar,
+                            staff: updatedStaff,
+                            staffCost: Math.max(0, newStaffCost), // Éviter les valeurs négatives
+                        };
+                    }
+
+                    // Cas 3: Autres restaurants - ne rien changer
+                    return bar;
+                });
+
                 return {
                     ...state,
                     employees: {
                         ...state.employees,
                         roster: updatedRoster,
+                    },
+                    restaurants: {
+                        ...state.restaurants,
+                        bars: updatedBars,
                     },
                 };
             });
@@ -508,6 +566,16 @@ export const useNoodleBarOperations = () => {
 
         // Utiliser la méthode updateGameState pour mettre à jour l'état correctement
         gameState.updateGameState((state) => {
+            // Trouver l'employé
+            const employee = state.employees.roster.find(
+                (emp) => emp.id === employeeId
+            );
+            if (!employee) return state; // Si l'employé n'existe pas, ne rien faire
+
+            // Trouver le restaurant associé
+            const restaurantId = employee.assigned;
+            if (!restaurantId) return state; // Si l'employé n'est pas assigné, ne rien faire
+
             // Mettre à jour l'employé dans le roster pour le désassigner
             const updatedRoster = state.employees.roster.map((emp) =>
                 emp.id === employeeId
@@ -519,11 +587,36 @@ export const useNoodleBarOperations = () => {
                     : emp
             );
 
+            // Mettre à jour le restaurant
+            const updatedBars = state.restaurants.bars.map((bar) => {
+                if (bar.id === restaurantId) {
+                    const currentStaff = bar.staff || [];
+                    const updatedStaff = currentStaff.filter(
+                        (id) => id !== employeeId
+                    );
+
+                    // Calculer le nouveau coût total des salaires
+                    const newStaffCost =
+                        (bar.staffCost || 0) - (employee.salary || 0);
+
+                    return {
+                        ...bar,
+                        staff: updatedStaff,
+                        staffCost: Math.max(0, newStaffCost), // Éviter les valeurs négatives
+                    };
+                }
+                return bar;
+            });
+
             return {
                 ...state,
                 employees: {
                     ...state.employees,
                     roster: updatedRoster,
+                },
+                restaurants: {
+                    ...state.restaurants,
+                    bars: updatedBars,
                 },
             };
         });

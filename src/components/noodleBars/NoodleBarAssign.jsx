@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import RestaurantSlot from "./components/RestaurantSlot";
-import RestaurantPreview from "./components/RestaurantPreview";
+// import RestaurantPreview from "./components/RestaurantPreview";
 import ConfirmationModal from "./components/ConfirmationModal";
 import EmployeeManagementModal from "./components/EmployeeManagementModal";
 import {
     formatCurrency,
-    getTotalStat,
     getAvailableSlots,
     getSlotStatus,
     getNextRankUnlock,
@@ -289,12 +288,12 @@ const NoodleBarAssign = ({ onBack, playerRank }) => {
             </div>
 
             {/* Hover preview */}
-            <RestaurantPreview
+            {/* <RestaurantPreview
                 restaurant={hoveredBar}
                 position={previewPosition}
                 formatCurrency={formatCurrency}
                 getTotalStat={getTotalStat}
-            />
+            /> */}
 
             {/* Employee management modal */}
             {showDetails && selectedBar && (

@@ -307,8 +307,7 @@ const NoodleBarUpgrade = ({ onBack }) => {
                                                 </span>
                                             </div>
                                             <div className="text-xs">
-                                                Staff: {bar.staffCount || 0}/
-                                                {bar.staffSlots || 3}
+                                                Staff: {bar.staff.length || 0}/3
                                             </div>
                                         </div>
                                     </div>
@@ -345,7 +344,7 @@ const NoodleBarUpgrade = ({ onBack }) => {
                                     </p>
                                     <div className="flex items-center mt-2">
                                         <span className="font-semibold text-[color:var(--color-principalBrown)] mr-2">
-                                            Profit:
+                                            Sales Volume:
                                         </span>
                                         <span className="text-emerald-600 font-bold">
                                             {formatCurrency(

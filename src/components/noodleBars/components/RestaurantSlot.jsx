@@ -10,6 +10,7 @@ const RestaurantSlot = ({
     onSelect,
     onMouseEnter,
     onMouseLeave,
+    hideArrow = false,
 }) => {
     console.log(bar);
     // Get staff count safely by checking currentStaff array
@@ -147,7 +148,7 @@ const RestaurantSlot = ({
                 )}
             </div>
 
-            {status === "purchased" && (
+            {status === "purchased" && !hideArrow && (
                 <div
                     className={`ml-auto flex items-center justify-center h-8 w-8 rounded-full ${
                         isHovered

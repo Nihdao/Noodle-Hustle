@@ -82,7 +82,7 @@ function MenuContainer({
             <div
                 style={innerStyle}
                 className={`${
-                    scrollable ? "overflow-hidden flex flex-col" : ""
+                    scrollable ? "overflow-scroll flex flex-col" : ""
                 }`}
             >
                 <div style={textureStyle} />
@@ -95,7 +95,7 @@ function MenuContainer({
 
                 <div
                     className={`
-                    ${scrollable ? "overflow-y-auto overflow-x-hidden p-4" : ""}
+                    ${scrollable ? "overflow-scroll overflow-x-hidden p-4" : ""}
                     ${scrollable && maxHeight ? `max-h-${maxHeight}` : ""}
                 `}
                 >

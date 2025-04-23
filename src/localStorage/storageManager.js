@@ -107,9 +107,8 @@ export const createNewGameSave = (playerName) => {
 
         // Employee management - enrichi avec tous les champs de employees.json et dynamique d'action par période
         employees: {
-            roster: starterEmployees.map((employee, idx) => ({
-                id: `e${idx + 1}`,
-                employeeId: employee.id,
+            roster: starterEmployees.map((employee) => ({
+                id: employee.id,
                 name: employee.name,
                 rarity: employee.rarity,
                 levelCap: employee.levelCap,

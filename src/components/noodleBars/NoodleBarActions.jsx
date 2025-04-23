@@ -23,7 +23,7 @@ const NoodleBarActions = ({ onActionSelect, onBack, forecastedProfit }) => {
                     <span
                         className={`ml-2 text-lg font-semibold ${
                             forecastedProfit < 0
-                                ? "text-orange-500"
+                                ? "text-red-500"
                                 : "text-emerald-600"
                         }`}
                     >

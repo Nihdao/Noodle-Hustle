@@ -426,11 +426,17 @@ const HubComponent = () => {
                         </div>
                         <div>
                             <h2 className="text-lg font-bold text-[color:var(--color-principalBrown)]">
-                                Noddle Bars
+                                Noodle Bars
                             </h2>
                             <p className="text-sm text-[color:var(--color-principalBrown)]">
                                 Profit:{" "}
-                                <span className="text-emerald-600 font-semibold">
+                                <span
+                                    className={`${
+                                        forecastProfit < 0
+                                            ? "text-red-500"
+                                            : "text-emerald-600"
+                                    } font-semibold`}
+                                >
                                     {formatCurrency(forecastProfit)}
                                 </span>
                             </p>
