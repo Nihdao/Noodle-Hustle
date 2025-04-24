@@ -43,8 +43,8 @@ export const createNewGameSave = (playerName) => {
         // Game progression
         gameProgress: {
             currentPeriod: 1,
-            completedIntro: true,
-            investorClashIn: 5, // Countdown to next investor meeting
+            completedIntro: false,
+            investorClashIn: 9999999, // Countdown to next investor meeting
             businessRank: initialRank, // Lower is better (1 is highest)
             businessCategory: initialCategory,
             rankHistory: [
@@ -58,10 +58,10 @@ export const createNewGameSave = (playerName) => {
 
         // Financial data
         finances: {
-            funds: 1000, // Current available money
+            funds: 500000, // Current available money
             totalBalance: 0, // Cumulative income over time
             debt: {
-                amount: 500,
+                amount: 15000,
             },
             expensesHistory: [],
             incomeHistory: [],

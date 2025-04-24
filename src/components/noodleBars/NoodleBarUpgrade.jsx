@@ -387,14 +387,7 @@ const NoodleBarUpgrade = ({ onBack }) => {
                                         </span>
                                     </div>
                                 </div>
-                                <div className="text-right">
-                                    <span className="font-semibold text-[color:var(--color-principalBrown)] block mb-1">
-                                        Available Funds:
-                                    </span>
-                                    <span className="text-emerald-600 font-bold text-lg">
-                                        {formatCurrency(localFunds)}
-                                    </span>
-                                </div>
+
                                 <button
                                     onClick={handleCloseUpgradeDetails}
                                     className="text-[color:var(--color-principalRed)] hover:text-[color:var(--color-principalRed-light)] transition-colors p-1"

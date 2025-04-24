@@ -180,7 +180,7 @@ const EmployeeManagementModal = ({
         staffCost -
         maintenance -
         (criteresNonRemplisCount > 0 ? malusAmount : 0);
-    const profitClass = netProfit < 0 ? "text-orange-500" : "text-emerald-600";
+    const profitClass = netProfit < 0 ? "text-red-500" : "text-emerald-600";
 
     return (
         <div

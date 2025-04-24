@@ -20,7 +20,7 @@ const EmployeeRecruitment = ({ onBack, funds }) => {
     const [currentPeriod, setCurrentPeriod] = useState(1);
     const [hoveredTooltip, setHoveredTooltip] = useState(false);
 
-    const RECRUITMENT_COST = 300;
+    const RECRUITMENT_COST = 30000;
 
     // Create a map of existing employee IDs for quick lookup
     const existingEmployeeIds = new Set(
@@ -222,12 +222,12 @@ const EmployeeRecruitment = ({ onBack, funds }) => {
 
         setIsLoading(true);
 
-        // Deduct the recruitment cost via event
-        EventBus.emit("deductFunds", {
-            amount: RECRUITMENT_COST,
-            source: "Employee Recruitment",
-            period: currentPeriod,
-        });
+        // Deduct the recruitment cost directly via gameState
+        gameState.updateFunds(
+            -RECRUITMENT_COST,
+            "Employee Recruitment",
+            "recruitment"
+        );
 
         // Trigger fairy animation through event bus
         EventBus.emit("startRecruitment");
@@ -253,6 +253,9 @@ const EmployeeRecruitment = ({ onBack, funds }) => {
             id: candidate.id,
             salary: candidate.salary,
         };
+
+        // Deduct hiring costs directly via gameState
+        gameState.updateFunds(-totalCost, `Hiring ${candidate.name}`, "hiring");
 
         // Hire the employee through the game state
         hireEmployee(employeeData);

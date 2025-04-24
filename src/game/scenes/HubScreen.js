@@ -9,7 +9,6 @@ export class HubScreen extends Phaser.Scene {
 
         // Fairy dialogue system
         this.fairyMessages = [
-            "Welcome to Noodle Balance! I'm Miso, your fairy helper!",
             "Remember to keep your burnout level low. Take breaks!",
             "Assign your employees wisely to maximize profits!",
             "Investors want to see growth. Prepare for the meetings!",
@@ -37,9 +36,8 @@ export class HubScreen extends Phaser.Scene {
             ],
             Debts: [
                 "Managing debts is crucial for long-term success.",
-                "Loans can help expand, but watch the interest!",
-                "Pay off high-interest debts first when possible.",
                 "Your credit rating affects future loan options.",
+                "You can check your credit rating at any time.",
             ],
             PersonalTime: [
                 "Don't forget to take care of yourself!",
@@ -64,6 +62,7 @@ export class HubScreen extends Phaser.Scene {
         this.speechText = null;
         this.isShowingMessage = false;
         this.isPerformingRecruitment = false;
+        this.lastMessage = null;
     }
 
     preload() {
@@ -80,24 +79,19 @@ export class HubScreen extends Phaser.Scene {
         const width = this.cameras.main.width;
         const height = this.cameras.main.height;
 
-        // // Add orange background (same as MainMenu for consistency)
-        // this.add.rectangle(0, 0, width, height, 0xe67e22).setOrigin(0);
-
-        // // Add repeating noodles pattern with diagonal scrolling (same as MainMenu)
-        // this.noodlesPattern = this.add
-        //     .tileSprite(0, 0, width, height, "noodles")
-        //     .setOrigin(0)
-        //     .setAlpha(0.3); // Add some transparency
-
         // Add background image
         this.background = this.add
             .image(width * 0.25, 0, "bgtest")
-            .setOrigin(0);
+            .setOrigin(0)
+            .setDepth(0);
         this.background.setDisplaySize(width * 0.8, height);
-        this.add
+
+        // Add dark background overlay
+        this.backgroundOverlay = this.add
             .rectangle(0, 0, width, height, 0x000000)
             .setOrigin(0)
-            .setAlpha(0.5);
+            .setAlpha(0.5)
+            .setDepth(1);
 
         // Initialize or get singleton GameState
         if (!gameState.initialized) {
@@ -114,12 +108,13 @@ export class HubScreen extends Phaser.Scene {
             currentGameState
         );
 
-        // Create the fairy sprite (just for Phaser side visuals in the game area)
+        // Create the fairy sprite with higher depth
         if (this.textures.exists("fairy")) {
             this.fairy = this.add
-                .sprite(width * 0.75, height * 0.5, "fairy")
+                .sprite(width * 0.77, height * 0.5, "fairy")
                 .setScale(0.2)
-                .setInteractive({ useHandCursor: true });
+                .setInteractive({ useHandCursor: true })
+                .setDepth(100);
 
             // Simple animation to make the fairy float
             this.tweens.add({
@@ -147,7 +142,21 @@ export class HubScreen extends Phaser.Scene {
             // Setup fairy click interaction
             this.fairy.on("pointerdown", () => {
                 if (!this.isPerformingRecruitment) {
-                    this.showRandomMessage();
+                    const messages = [...this.fairyMessages];
+                    let randomIndex;
+                    do {
+                        randomIndex = Phaser.Math.Between(
+                            0,
+                            messages.length - 1
+                        );
+                    } while (
+                        messages[randomIndex] === this.lastMessage &&
+                        messages.length > 1
+                    );
+
+                    const message = messages[randomIndex];
+                    this.lastMessage = message;
+                    this.showMessage(message);
                 }
             });
 
@@ -155,7 +164,10 @@ export class HubScreen extends Phaser.Scene {
             this.messageTimer = this.time.addEvent({
                 delay: 10000,
                 callback: () => {
-                    if (!this.isPerformingRecruitment) {
+                    if (
+                        !this.isPerformingRecruitment &&
+                        !this.isShowingMessage
+                    ) {
                         this.showRandomMessage();
                     }
                 },
@@ -165,7 +177,6 @@ export class HubScreen extends Phaser.Scene {
 
             // Show initial welcome message
             this.time.delayedCall(1000, () => {
-                // Customize welcome message based on player name from GameState
                 const playerName = currentGameState.playerName || "Player";
                 this.showMessage(
                     `Welcome back, ${playerName}! Ready for another day of noodle business?`
@@ -249,21 +260,27 @@ export class HubScreen extends Phaser.Scene {
                 },
             })
             .setOrigin(1, 0.5)
-            .setDepth(100)
+            .setDepth(150)
             .setAlpha(0);
 
         // Create decorative background for text with rounded corners
         this.speechBackground = this.add.graphics();
-        this.speechBackground.setDepth(99);
+        this.speechBackground.setDepth(149);
         this.speechBackground.setAlpha(0);
 
         // Add small triangle pointer towards fairy (now pointing right)
         this.speechPointer = this.add.graphics();
-        this.speechPointer.setDepth(99);
+        this.speechPointer.setDepth(149);
         this.speechPointer.setAlpha(0);
     }
 
     showMessage(message) {
+        // Cancel any existing hide timer
+        if (this.hideMessageTimer) {
+            this.hideMessageTimer.remove();
+            this.hideMessageTimer = null;
+        }
+
         // If already showing a message, hide it first
         if (this.isShowingMessage) {
             this.hideSpeechBubble(() => {
@@ -326,7 +343,7 @@ export class HubScreen extends Phaser.Scene {
             ease: "Sine.easeOut",
             onComplete: () => {
                 // Hide after 5 seconds
-                this.time.delayedCall(5000, () => {
+                this.hideMessageTimer = this.time.delayedCall(5000, () => {
                     this.hideSpeechBubble();
                 });
             },
@@ -395,49 +412,103 @@ export class HubScreen extends Phaser.Scene {
     }
 
     showRecruitmentAnimation(message) {
+        // Create a dark overlay
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+
+        // Nettoyer l'ancien overlay s'il existe
+        if (this.darkOverlay) {
+            this.darkOverlay.destroy();
+        }
+
+        this.darkOverlay = this.add
+            .rectangle(0, 0, width, height, 0x000000)
+            .setOrigin(0)
+            .setAlpha(0)
+            .setDepth(50);
+
         // Hide any existing message
         this.hideSpeechBubble(() => {
-            // Show the recruitment message
-            this.showMessage(message);
-
-            // Add fairy animation - a more dramatic bounce and spin
+            // Darken the background and zoom camera
             this.tweens.add({
-                targets: this.fairy,
-                y: this.fairy.y - 50,
-                angle: { from: -15, to: 15 },
-                duration: 800,
-                yoyo: true,
-                repeat: 1,
-                ease: "Sine.easeInOut",
-                onComplete: () => {
-                    // Create particle effects
-                    this.createRecruitmentParticles();
+                targets: this.darkOverlay,
+                alpha: 0.7,
+                duration: 500,
+                ease: "Sine.easeOut",
+            });
 
-                    // Add a sparkle effect (simple scale pulse)
+            this.tweens.add({
+                targets: this.cameras.main,
+                zoom: 1.1,
+                duration: 500,
+                ease: "Sine.easeOut",
+                onComplete: () => {
+                    // Show the recruitment message
+                    this.showMessage(message);
+
+                    // Add fairy animation - a more dramatic bounce and spin
                     this.tweens.add({
                         targets: this.fairy,
-                        scaleX: { from: 0.2, to: 0.26 },
-                        scaleY: { from: 0.2, to: 0.26 },
-                        duration: 300,
+                        y: this.fairy.y - 50,
+                        angle: { from: -15, to: 15 },
+                        duration: 800,
                         yoyo: true,
-                        repeat: 2,
+                        repeat: 1,
                         ease: "Sine.easeInOut",
                         onComplete: () => {
-                            // Reset fairy scale
-                            this.fairy.setScale(0.2);
+                            // Create particle effects
+                            this.createRecruitmentParticles();
 
-                            // Delay then complete the recruitment process
-                            this.time.delayedCall(1000, () => {
-                                // Reset the flag
-                                this.isPerformingRecruitment = false;
+                            // Add a sparkle effect (simple scale pulse)
+                            this.tweens.add({
+                                targets: this.fairy,
+                                scaleX: { from: 0.2, to: 0.26 },
+                                scaleY: { from: 0.2, to: 0.26 },
+                                duration: 300,
+                                yoyo: true,
+                                repeat: 2,
+                                ease: "Sine.easeInOut",
+                                onComplete: () => {
+                                    // Reset fairy scale
+                                    this.fairy.setScale(0.2);
 
-                                // Fire the completion event to show candidates
-                                EventBus.emit("recruitmentAnimationComplete");
+                                    // Return camera and background to normal
+                                    this.tweens.add({
+                                        targets: this.cameras.main,
+                                        zoom: 1,
+                                        duration: 500,
+                                        ease: "Sine.easeIn",
+                                    });
 
-                                // Show completion message
-                                this.showMessage(
-                                    "I found some potential employees! Take a look!"
-                                );
+                                    this.tweens.add({
+                                        targets: this.darkOverlay,
+                                        alpha: 0,
+                                        duration: 500,
+                                        ease: "Sine.easeIn",
+                                        onComplete: () => {
+                                            if (this.darkOverlay) {
+                                                this.darkOverlay.destroy();
+                                                this.darkOverlay = null;
+                                            }
+
+                                            // Delay then complete the recruitment process
+                                            this.time.delayedCall(500, () => {
+                                                // Reset the flag
+                                                this.isPerformingRecruitment = false;
+
+                                                // Fire the completion event to show candidates
+                                                EventBus.emit(
+                                                    "recruitmentAnimationComplete"
+                                                );
+
+                                                // Show completion message
+                                                this.showMessage(
+                                                    "I found some potential employees! Take a look!"
+                                                );
+                                            });
+                                        },
+                                    });
+                                },
                             });
                         },
                     });
@@ -458,15 +529,9 @@ export class HubScreen extends Phaser.Scene {
             this.glowParticles.destroy();
         }
 
-        // Create particles with the new Phaser 3.60+ syntax
-        // Each particle emitter is now its own Game Object
-
-        // Circle particles emitter
-        this.circleParticles = this.add.particles(
-            this.fairy.x,
-            this.fairy.y,
-            "particle",
-            {
+        // Create particles with high depth to be above the overlay
+        this.circleParticles = this.add
+            .particles(this.fairy.x, this.fairy.y, "particle", {
                 speed: { min: 50, max: 200 },
                 angle: { min: 0, max: 360 },
                 scale: { start: 0.6, end: 0 },
@@ -475,15 +540,11 @@ export class HubScreen extends Phaser.Scene {
                 gravityY: 0,
                 quantity: 1,
                 tint: [0xff9ff5, 0x96f7d2, 0xf9f871],
-            }
-        );
+            })
+            .setDepth(101);
 
-        // Stars particles emitter
-        this.starParticles = this.add.particles(
-            this.fairy.x,
-            this.fairy.y,
-            "star",
-            {
+        this.starParticles = this.add
+            .particles(this.fairy.x, this.fairy.y, "star", {
                 speed: { min: 100, max: 300 },
                 angle: { min: 0, max: 360 },
                 scale: { start: 0.4, end: 0 },
@@ -492,23 +553,19 @@ export class HubScreen extends Phaser.Scene {
                 gravityY: 200,
                 frequency: 200,
                 quantity: 3,
-            }
-        );
+            })
+            .setDepth(101);
 
-        // Magic circle particles
-        this.glowParticles = this.add.particles(
-            this.fairy.x,
-            this.fairy.y,
-            "particle",
-            {
+        this.glowParticles = this.add
+            .particles(this.fairy.x, this.fairy.y, "particle", {
                 speed: 0,
                 scale: { start: 0.4, end: 0 },
                 blendMode: "ADD",
                 lifespan: 1500,
                 emitting: false,
                 tint: [0xffbe0b, 0xfb5607, 0x3a86ff, 0x8338ec],
-            }
-        );
+            })
+            .setDepth(101);
 
         // Manually emit particles in a circle pattern
         for (let i = 0; i < 20; i++) {

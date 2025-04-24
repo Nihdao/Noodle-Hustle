@@ -17,7 +17,7 @@
             },
             "category": "Street Stand",
             "description": "More customers are taking notice of your quality noodles.",
-            "balanceThreshold": 1000
+            "balanceThreshold": 50000
         },
         {
             "rankRange": {
@@ -26,7 +26,7 @@
             },
             "category": "Local Noodle Spot",
             "description": "Your stand has evolved into a fixed location with regular customers.",
-            "balanceThreshold": 5000
+            "balanceThreshold": 250000
         },
         {
             "rankRange": {
@@ -35,7 +35,7 @@
             },
             "category": "Master Noodle Bar",
             "description": "Recognized for excellence and craftsmanship in noodle preparation.",
-            "balanceThreshold": 15000
+            "balanceThreshold": 750000
         },
         {
             "rankRange": {
@@ -44,7 +44,7 @@
             },
             "category": "Heavenly Noodle Chain",
             "description": "Multiple successful locations and a well-known brand name.",
-            "balanceThreshold": 50000
+            "balanceThreshold": 2500000
         },
         {
             "rankRange": {
@@ -53,7 +53,7 @@
             },
             "category": "Ramen Temple",
             "description": "The pinnacle of noodle artistry, renowned throughout the region.",
-            "balanceThreshold": 100000
+            "balanceThreshold": 5000000
         }
     ],
     "rankDetails": [
@@ -64,157 +64,157 @@
         },
         {
             "rank": 190,
-            "balanceRequired": 200,
+            "balanceRequired": 10000,
             "title": "Broth Beginner"
         },
         {
             "rank": 180,
-            "balanceRequired": 400,
+            "balanceRequired": 20000,
             "title": "Alley Cook"
         },
         {
             "rank": 170,
-            "balanceRequired": 600,
+            "balanceRequired": 30000,
             "title": "Back-Street Chef"
         },
         {
             "rank": 160,
-            "balanceRequired": 800,
+            "balanceRequired": 40000,
             "title": "Corner Noodle Vendor"
         },
         {
             "rank": 150,
-            "balanceRequired": 1000,
+            "balanceRequired": 50000,
             "title": "Recognized Street Vendor"
         },
         {
             "rank": 140,
-            "balanceRequired": 1500,
+            "balanceRequired": 75000,
             "title": "Popular Street Stand"
         },
         {
             "rank": 130,
-            "balanceRequired": 2000,
+            "balanceRequired": 100000,
             "title": "Busy Street Corner Favorite"
         },
         {
             "rank": 120,
-            "balanceRequired": 2500,
+            "balanceRequired": 125000,
             "title": "Well-Known Cart"
         },
         {
             "rank": 110,
-            "balanceRequired": 3500,
+            "balanceRequired": 175000,
             "title": "City's Secret Gem"
         },
         {
             "rank": 100,
-            "balanceRequired": 5000,
+            "balanceRequired": 250000,
             "title": "Neighborhood Noodle Joint"
         },
         {
             "rank": 90,
-            "balanceRequired": 6500,
+            "balanceRequired": 325000,
             "title": "Local Favorite Spot"
         },
         {
             "rank": 80,
-            "balanceRequired": 8000,
+            "balanceRequired": 400000,
             "title": "District Noodle Bar"
         },
         {
             "rank": 70,
-            "balanceRequired": 10000,
+            "balanceRequired": 500000,
             "title": "Respected Noodle House"
         },
         {
             "rank": 60,
-            "balanceRequired": 12500,
+            "balanceRequired": 625000,
             "title": "City's Notable Noodle Bar"
         },
         {
             "rank": 50,
-            "balanceRequired": 15000,
+            "balanceRequired": 750000,
             "title": "Master of Broths"
         },
         {
             "rank": 45,
-            "balanceRequired": 18000,
+            "balanceRequired": 900000,
             "title": "Noodle Artisan"
         },
         {
             "rank": 40,
-            "balanceRequired": 22000,
+            "balanceRequired": 1100000,
             "title": "Acclaimed Chef"
         },
         {
             "rank": 35,
-            "balanceRequired": 27000,
+            "balanceRequired": 1350000,
             "title": "Culinary Innovator"
         },
         {
             "rank": 30,
-            "balanceRequired": 33000,
+            "balanceRequired": 1650000,
             "title": "Noodle Maestro"
         },
         {
             "rank": 25,
-            "balanceRequired": 40000,
+            "balanceRequired": 2000000,
             "title": "Regional Star Chef"
         },
         {
             "rank": 20,
-            "balanceRequired": 50000,
+            "balanceRequired": 2500000,
             "title": "Noodle Empire Builder"
         },
         {
             "rank": 18,
-            "balanceRequired": 60000,
+            "balanceRequired": 3000000,
             "title": "Culinary Network"
         },
         {
             "rank": 16,
-            "balanceRequired": 70000,
+            "balanceRequired": 3500000,
             "title": "Renowned Chain Owner"
         },
         {
             "rank": 14,
-            "balanceRequired": 80000,
+            "balanceRequired": 4000000,
             "title": "Noodle Dynasty Creator"
         },
         {
             "rank": 12,
-            "balanceRequired": 90000,
+            "balanceRequired": 4500000,
             "title": "Heavenly Broth Master"
         },
         {
             "rank": 10,
-            "balanceRequired": 100000,
+            "balanceRequired": 5000000,
             "title": "Legendary Ramen Artist"
         },
         {
             "rank": 8,
-            "balanceRequired": 125000,
+            "balanceRequired": 6250000,
             "title": "Noodle Sage"
         },
         {
             "rank": 6,
-            "balanceRequired": 150000,
+            "balanceRequired": 7500000,
             "title": "Culinary Icon"
         },
         {
             "rank": 4,
-            "balanceRequired": 180000,
+            "balanceRequired": 9000000,
             "title": "Noodle World Luminary"
         },
         {
             "rank": 2,
-            "balanceRequired": 220000,
+            "balanceRequired": 11000000,
             "title": "Supreme Ramen Emperor"
         },
         {
             "rank": 1,
-            "balanceRequired": 250000,
+            "balanceRequired": 12500000,
             "title": "Immortal Noodle God"
         }
     ],

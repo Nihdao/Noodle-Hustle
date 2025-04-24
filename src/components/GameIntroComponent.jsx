@@ -36,7 +36,7 @@ const introSlides = [
         image: "intro4.png",
         lines: [
             "No money. No skills. Just a stubborn dream… and a strange man with ¥500,000.",
-            "He said I looked like someone who needed a fresh start.",
+            "He said I looked like someone who needed a fresh start and a new debt.",
         ],
     },
     {

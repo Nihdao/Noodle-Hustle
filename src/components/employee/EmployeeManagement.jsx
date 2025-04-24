@@ -35,22 +35,22 @@ const EmployeeManagement = ({ onBack }) => {
     // Calcul des coûts d'action basés sur l'employé
     const getGiftCost = (rarity) => {
         const costsMap = {
-            D: 500,
-            C: 1000,
-            B: 1500,
-            A: 2000,
-            S: 3000,
+            D: 50000,
+            C: 100000,
+            B: 150000,
+            A: 200000,
+            S: 300000,
         };
         return costsMap[rarity] || 1000;
     };
 
     const getTrainingCost = (rarity) => {
         const rarityMultiplier = {
-            D: 500,
-            C: 800,
-            B: 1200,
-            A: 1800,
-            S: 2500,
+            D: 50000,
+            C: 80000,
+            B: 120000,
+            A: 180000,
+            S: 250000,
         };
         return rarityMultiplier[rarity] || 1000;
     };
@@ -348,14 +348,6 @@ const EmployeeManagement = ({ onBack }) => {
                         </span>
                         <span className="ml-2 text-lg font-semibold text-red-500">
                             {formatCurrency(laborCost)}
-                        </span>
-                    </div>
-                    <div className="flex items-center">
-                        <span className="font-medium text-[color:var(--color-principalBrown)]">
-                            Available Funds:{" "}
-                        </span>
-                        <span className="ml-2 text-lg font-semibold text-emerald-600">
-                            {formatCurrency(funds)}
                         </span>
                     </div>
                 </div>

@@ -19,7 +19,7 @@ const EmployeeActions = ({ onActionSelect, onBack, laborCost }) => {
                     className="text-[color:var(--color-principalBrown)] flex items-center mt-1 font-medium animate-slide-in-left"
                     style={{ animationDelay: "30ms" }}
                 >
-                    <span>Labor Cost: </span>
+                    <span>Unused Employee Cost: </span>
                     <span className="ml-2 text-lg font-semibold text-red-500">
                         {formatCurrency(laborCost)}
                     </span>
