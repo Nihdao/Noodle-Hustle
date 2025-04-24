@@ -22,6 +22,7 @@ import NoodleBarAssign from "./noodleBars/NoodleBarAssign";
 import NoodleBarUpgrade from "./noodleBars/NoodleBarUpgrade";
 import OptionsModal from "./modals/OptionsModal";
 import BuffsModal from "./modals/BuffsModal";
+import HelpModal from "./modals/HelpModal";
 import BusinessRankDisplay from "./common/BusinessRankDisplay";
 
 const HubComponent = () => {
@@ -55,6 +56,7 @@ const HubComponent = () => {
     const [isOptionsModalOpen, setIsOptionsModalOpen] = useState(false);
     const [isBuffsModalOpen, setIsBuffsModalOpen] = useState(false);
     const [isRankDetailsOpen, setIsRankDetailsOpen] = useState(false);
+    const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
 
     // Sons
     const { playClickSound, playBackSound } = useSound();
@@ -103,6 +105,11 @@ const HubComponent = () => {
     const handleOptions = () => {
         playClickSound();
         setIsOptionsModalOpen(true);
+    };
+
+    const handleHelp = () => {
+        playClickSound();
+        setIsHelpModalOpen(true);
     };
 
     // Handle main menu clicks
@@ -919,6 +926,32 @@ const HubComponent = () => {
                     <div className="flex space-x-3">
                         <button
                             style={styles.actionButton(
+                                hoveredMenuItem === "Help"
+                            )}
+                            onMouseEnter={() => setHoveredMenuItem("Help")}
+                            onMouseLeave={() => setHoveredMenuItem(null)}
+                            onClick={handleHelp}
+                            className="hover:scale-105 hover:shadow-xl active:scale-95 transition-all"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-5 w-5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                />
+                            </svg>
+                            Help
+                        </button>
+
+                        <button
+                            style={styles.actionButton(
                                 hoveredMenuItem === "Buffs"
                             )}
                             onMouseEnter={() => setHoveredMenuItem("Buffs")}
@@ -982,6 +1015,12 @@ const HubComponent = () => {
             <BuffsModal
                 isOpen={isBuffsModalOpen}
                 onClose={() => setIsBuffsModalOpen(false)}
+            />
+
+            {/* Help Modal */}
+            <HelpModal
+                isOpen={isHelpModalOpen}
+                onClose={() => setIsHelpModalOpen(false)}
             />
 
             {/* Add fadeIn animation for the rank details panel */}
