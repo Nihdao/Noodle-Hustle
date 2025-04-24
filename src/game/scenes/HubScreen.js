@@ -196,6 +196,9 @@ export class HubScreen extends Phaser.Scene {
 
         // Listen for game state updates
         EventBus.on("gameStateUpdated", this.handleGameStateUpdate, this);
+
+        // Listen for return from delivery run to process results
+        EventBus.on("returnToHub", this.handleReturnFromDelivery, this);
     }
 
     handleGameStateUpdate(updatedState) {
@@ -664,6 +667,117 @@ export class HubScreen extends Phaser.Scene {
                 this.speechPointer.closePath();
                 this.speechPointer.fillPath();
             }
+        }
+    }
+
+    // Add the new method to handle return from delivery run
+    handleReturnFromDelivery(deliveryResults) {
+        console.log(
+            "HubScreen: Processing delivery run results",
+            deliveryResults
+        );
+
+        // If no results provided or no need to update state, just return
+        if (!deliveryResults || !deliveryResults.updateBalance) {
+            return;
+        }
+
+        // Extract the data we need
+        const {
+            finalFunds,
+            balanceChange,
+            burnoutChange,
+            employeeMoraleUpdates,
+        } = deliveryResults;
+
+        // Update the game state with all results
+        gameState.updateGameState((state) => {
+            // Create copy of the state to modify
+            const newState = { ...state };
+
+            // 1. Update funds
+            if (newState.finances) {
+                newState.finances.funds = finalFunds;
+            }
+
+            // 2. Update balance if needed
+            if (balanceChange !== undefined && newState.finances) {
+                // Only add positive changes to totalBalance (as specified in the game rules)
+                if (balanceChange > 0) {
+                    newState.finances.totalBalance =
+                        (newState.finances.totalBalance || 0) + balanceChange;
+                }
+            }
+
+            // 3. Update burnout
+            if (burnoutChange !== undefined && newState.playerStats) {
+                // Add burnout, ensuring it stays within 0-100 range
+                newState.playerStats.burnout = Math.min(
+                    100,
+                    Math.max(
+                        0,
+                        (newState.playerStats.burnout || 0) + burnoutChange
+                    )
+                );
+
+                // Add to burnout history
+                if (!newState.playerStats.burnoutHistory) {
+                    newState.playerStats.burnoutHistory = [];
+                }
+
+                newState.playerStats.burnoutHistory.push({
+                    period: newState.gameProgress?.currentPeriod || 1,
+                    burnout: newState.playerStats.burnout,
+                });
+            }
+
+            // 4. Update employee morale
+            if (
+                employeeMoraleUpdates &&
+                employeeMoraleUpdates.length > 0 &&
+                newState.employees
+            ) {
+                const updatedRoster = newState.employees.roster.map(
+                    (employee) => {
+                        // Find if this employee has a morale update
+                        const update = employeeMoraleUpdates.find(
+                            (update) => update.employeeId === employee.id
+                        );
+
+                        if (update) {
+                            // Apply morale change, keeping within 0-100 range
+                            const newMorale = Math.min(
+                                100,
+                                Math.max(
+                                    0,
+                                    (employee.morale || 100) +
+                                        update.moraleDelta
+                                )
+                            );
+
+                            return {
+                                ...employee,
+                                morale: newMorale,
+                            };
+                        }
+
+                        return employee;
+                    }
+                );
+
+                newState.employees.roster = updatedRoster;
+            }
+
+            return newState;
+        });
+
+        // Show a message about the results
+        if (balanceChange < 0) {
+            this.showMessage(
+                "Your finances have taken a hit. Employee morale has decreased!"
+            );
+        } else {
+            this.showMessage("Good job! Your business is doing well!");
         }
     }
 }

@@ -61,7 +61,12 @@ const DeliveryRunComponent = () => {
         // Listen for results ready event from Phaser scene
         const handleResultsReady = (data) => {
             console.log("Delivery results ready:", data);
-            setResultsData(data);
+
+            // Include current funds in the results data
+            setResultsData({
+                ...data,
+                initialFunds: appGameState?.finances?.funds || 0,
+            });
 
             // Show results after a short delay
             setTimeout(() => {
@@ -76,7 +81,7 @@ const DeliveryRunComponent = () => {
         return () => {
             EventBus.off("deliveryResultsReady", handleResultsReady);
         };
-    }, []);
+    }, [appGameState?.finances?.funds]);
 
     // Handle showing rank display
     const handleShowRank = () => {
@@ -90,8 +95,81 @@ const DeliveryRunComponent = () => {
         playClickSound();
         setAnimationPhase("complete");
 
-        // Emit event to tell Phaser scene to return to hub
-        EventBus.emit("returnToHub");
+        // Add burnout based on financial performance
+        if (resultsData) {
+            // Calculate if the player lost money overall
+            const totalProfit = resultsData.totalProfit || 0;
+            const netResult = totalProfit - unusedEmployeeCost - debtAmount;
+            const finalFunds = resultsData.initialFunds + netResult;
+            const isOverallLoss = netResult < 0;
+
+            // Apply burnout based on financial outcome
+            // +30 if lost money, +10 otherwise
+            const burnoutToAdd = isOverallLoss ? 30 : 10;
+
+            // Calculate employee morale impacts
+            const employeeMoraleUpdates = [];
+
+            // Process each restaurant and its employees
+            if (resultsData.restaurants && resultsData.restaurants.length > 0) {
+                resultsData.restaurants.forEach((restaurant) => {
+                    const isRestaurantProfitable = restaurant.actualProfit > 0;
+
+                    // If this restaurant has staff
+                    if (restaurant.staff && restaurant.staff.length > 0) {
+                        restaurant.staff.forEach((staffId) => {
+                            let moraleDelta = 0;
+
+                            // If restaurant is not profitable, -20 morale
+                            if (!isRestaurantProfitable) {
+                                moraleDelta -= 20;
+                            }
+
+                            // Add to updates array
+                            employeeMoraleUpdates.push({
+                                employeeId: staffId,
+                                moraleDelta,
+                            });
+                        });
+                    }
+                });
+            }
+
+            // If overall loss, -20 morale for ALL employees
+            if (isOverallLoss) {
+                employeeMoraleUpdates.forEach((update) => {
+                    update.moraleDelta -= 20;
+                });
+            }
+
+            // Update the resultsData for display and for passing to GameState
+            const updatedResults = {
+                ...resultsData,
+                burnoutChange: burnoutToAdd,
+                financialResult: netResult,
+                finalFunds,
+                balanceChange: netResult,
+                employeeMoraleUpdates,
+                // Add flag to indicate if we need to update balance
+                updateBalance: true,
+            };
+
+            setResultsData(updatedResults);
+
+            // Emit event to tell Phaser scene to return to hub with updated results
+            EventBus.emit("returnToHub", {
+                ...updatedResults,
+                burnoutChange: burnoutToAdd,
+                financialResult: netResult,
+                finalFunds,
+                balanceChange: netResult,
+                employeeMoraleUpdates,
+                updateBalance: true,
+            });
+        } else {
+            // Fallback if results aren't available
+            EventBus.emit("returnToHub");
+        }
     };
 
     // Get noodle-themed rank name based on rank number
@@ -398,10 +476,73 @@ const DeliveryRunComponent = () => {
                                 <td className="py-3 px-6 text-left" colSpan={6}>
                                     Management Funds
                                 </td>
-                                <td className="py-3 px-6 text-right text-emerald-600">
-                                    {formatCurrency(
-                                        appGameState?.finances?.funds || 0
-                                    )}
+                                <td
+                                    className={`py-3 px-6 text-right ${
+                                        resultsData.initialFunds +
+                                            resultsData.totalProfit -
+                                            unusedEmployeeCost -
+                                            debtAmount >=
+                                        resultsData.initialFunds
+                                            ? "text-emerald-600"
+                                            : "text-principalRed"
+                                    }`}
+                                >
+                                    <div className="flex flex-col">
+                                        <div>
+                                            {formatCurrency(
+                                                resultsData.initialFunds +
+                                                    resultsData.totalProfit -
+                                                    unusedEmployeeCost -
+                                                    debtAmount
+                                            )}
+                                        </div>
+                                        <div className="text-xs mt-1">
+                                            {resultsData.initialFunds +
+                                                resultsData.totalProfit -
+                                                unusedEmployeeCost -
+                                                debtAmount >
+                                            resultsData.initialFunds ? (
+                                                <span className="text-emerald-600">
+                                                    (+
+                                                    {formatCurrency(
+                                                        resultsData.initialFunds +
+                                                            resultsData.totalProfit -
+                                                            unusedEmployeeCost -
+                                                            debtAmount -
+                                                            resultsData.initialFunds
+                                                    )}
+                                                    )
+                                                </span>
+                                            ) : (
+                                                <span className="text-principalRed">
+                                                    (-
+                                                    {formatCurrency(
+                                                        resultsData.initialFunds -
+                                                            (resultsData.initialFunds +
+                                                                resultsData.totalProfit -
+                                                                unusedEmployeeCost -
+                                                                debtAmount)
+                                                    )}
+                                                    )
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <span className="ml-2">
+                                        {resultsData.initialFunds +
+                                            resultsData.totalProfit -
+                                            unusedEmployeeCost -
+                                            debtAmount >=
+                                        resultsData.initialFunds ? (
+                                            <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full text-xs">
+                                                ↑ PROFIT
+                                            </span>
+                                        ) : (
+                                            <span className="bg-red-100 text-red-800 px-2 py-0.5 rounded-full text-xs">
+                                                ↓ LOSS
+                                            </span>
+                                        )}
+                                    </span>
                                 </td>
                             </tr>
                         </tfoot>
@@ -419,38 +560,23 @@ const DeliveryRunComponent = () => {
                             </h4>
                             <div className="flex items-center">
                                 <div className="w-8 h-8 flex items-center justify-center mr-2">
-                                    {resultsData.burnoutChange > 0 ? (
-                                        <span className="text-xl text-principalRed">
-                                            😫
-                                        </span>
-                                    ) : (
-                                        <span className="text-xl text-emerald-600">
-                                            😌
-                                        </span>
-                                    )}
+                                    <span className="text-xl text-principalRed">
+                                        😫
+                                    </span>
                                 </div>
                                 <div className="flex flex-col">
                                     <div className="flex items-center">
                                         <span className="text-sm font-medium mr-2">
                                             Change:
                                         </span>
-                                        <span
-                                            className={`font-bold ${
-                                                resultsData.burnoutChange > 0
-                                                    ? "text-principalRed"
-                                                    : "text-emerald-600"
-                                            }`}
-                                        >
-                                            {resultsData.burnoutChange > 0
-                                                ? "+"
-                                                : ""}
+                                        <span className="font-bold text-principalRed">
                                             {resultsData.burnoutChange}
                                         </span>
                                     </div>
                                     <div className="text-xs text-gray-600 mt-1">
-                                        {resultsData.burnoutChange > 0
-                                            ? "Your stress levels are increasing. Consider taking some rest."
-                                            : "You're managing stress well, keep it up!"}
+                                        {resultsData.financialResult < 0
+                                            ? "You lost money this period, increasing stress significantly."
+                                            : "Managing businesses always increases stress."}
                                     </div>
                                 </div>
                             </div>
@@ -772,10 +898,10 @@ const DeliveryRunComponent = () => {
         return (
             <div className="fixed inset-0 pointer-events-none z-10">
                 {/* Top HUD Bar */}
-                <div className="bg-gradient-to-r from-principalBrown to-principalBrown/90 text-yellowWhite p-4 flex justify-between items-center shadow-lg border-b border-principalRed/50">
+                <div className="bg-yellowWhite text-principalBrown p-4 flex justify-between items-center shadow-lg border-b border-principalRed/50">
                     <div className="flex items-center gap-4">
                         <img
-                            src="/assets/noodles.png"
+                            src="/assets/deliveryrun/money_icon.png"
                             alt="Logo"
                             className="h-10 w-10"
                         />
