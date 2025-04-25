@@ -14,6 +14,7 @@ export class DeliveryRun extends Phaser.Scene {
         this.started = false;
         this.activeBuffs = [];
         this.deliveryFlowBuff = null;
+        this.particles = null;
     }
 
     init(data) {
@@ -104,6 +105,18 @@ export class DeliveryRun extends Phaser.Scene {
             "event_negative",
             "assets/deliveryrun/event_negative.png"
         );
+
+        // Load particle texture
+        this.load.image("particle", "assets/hub/particle.png");
+
+        // Add Google Roboto Condensed font
+        if (document.fonts) {
+            const fontLink = document.createElement("link");
+            fontLink.href =
+                "https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700&display=swap";
+            fontLink.rel = "stylesheet";
+            document.head.appendChild(fontLink);
+        }
     }
 
     create() {
@@ -124,6 +137,9 @@ export class DeliveryRun extends Phaser.Scene {
             .tileSprite(0, 0, width, height, "background_run")
             .setOrigin(0)
             .setAlpha(0.9); // More transparent than MainMenu for subtlety
+
+        // Create particle manager - using the correct API
+        this.particles = this.add.particles();
 
         // Set up layout for restaurant tracks
         this.setupLayout();
@@ -207,92 +223,189 @@ export class DeliveryRun extends Phaser.Scene {
             const restaurant = this.activeRestaurants[i];
             const y = this.tracksArea.y + i * trackHeight;
 
-            // Restaurant info panel (left side)
+            // Restaurant info panel (left side) - nicer background with gradient
             const infoPanelWidth = width * 0.2;
+
+            // Create a gradient info panel background using principalRed colors
+            const gradientTexture = this.textures.createCanvas(
+                "gradient" + i,
+                infoPanelWidth,
+                trackHeight
+            );
+            const context = gradientTexture.getContext();
+            const grd = context.createLinearGradient(0, 0, infoPanelWidth, 0);
+
+            grd.addColorStop(0, "#312218"); // principalBrown
+            grd.addColorStop(1, "#a02515"); // principalRed
+
+            context.fillStyle = grd;
+            context.fillRect(0, 0, infoPanelWidth, trackHeight);
+
+            gradientTexture.refresh();
+
             const infoPanel = this.add
-                .rectangle(0, y, infoPanelWidth, trackHeight, 0x222222)
-                .setOrigin(0);
+                .image(0, y, "gradient" + i)
+                .setOrigin(0, 0);
+
             this.trackGroups[i].add(infoPanel);
 
-            // Restaurant name
-            const restaurantName = this.add.text(10, y + 20, restaurant.name, {
-                fontFamily: "Arial",
-                fontSize: "18px",
+            // Add a subtle header/border at the top of the panel
+            const panelHeader = this.add
+                .rectangle(0, y, infoPanelWidth, 6, 0x312218)
+                .setOrigin(0);
+            this.trackGroups[i].add(panelHeader);
+
+            // Restaurant name - using Roboto Condensed
+            const restaurantName = this.add.text(16, y + 16, restaurant.name, {
+                fontFamily: "'Roboto Condensed', Arial, sans-serif",
+                fontSize: "20px",
+                fontWeight: "bold",
                 fill: "#ffffff",
+                stroke: "#000000",
+                strokeThickness: 2,
             });
             this.trackGroups[i].add(restaurantName);
 
-            // Staff icons
+            // Staff icons - aligned with the restaurant name
             if (restaurant.staff && restaurant.staff.length > 0) {
-                let staffIconX = 10;
-                const staffIconY = y + 50;
+                const staffIconX = 24; // Aligned better with title
+                const staffIconY = y + 52; // Positioned below the title with spacing
 
                 restaurant.staff.forEach((staffId, index) => {
-                    // Create staff icon (simple colored circle for now)
+                    // Create staff icon with better visuals
                     const staffIcon = this.add.circle(
-                        staffIconX + index * 25,
+                        staffIconX + index * 19,
                         staffIconY,
-                        10,
+                        6,
                         0x10b981
                     );
+
+                    // Add stroke to staff icon
+                    staffIcon.setStrokeStyle(1, 0xffffff);
+
                     this.trackGroups[i].add(staffIcon);
                 });
             }
 
-            // Restaurant profit/loss
+            // Forecasted profit label
+            const forecastedLabel = this.add.text(
+                16,
+                y + trackHeight - 48,
+                "Forecasted profit:",
+                {
+                    fontFamily: "'Roboto Condensed', Arial, sans-serif",
+                    fontSize: "12px",
+                    fill: "#cbd5e1",
+                }
+            );
+            this.trackGroups[i].add(forecastedLabel);
+
+            // Restaurant profit/loss with smaller font
             const profitText = this.add.text(
-                10,
+                16,
                 y + trackHeight - 30,
                 `¥${restaurant.forecastedProfit.toLocaleString()}`,
                 {
-                    fontFamily: "Arial",
-                    fontSize: "16px",
+                    fontFamily: "'Roboto Condensed', Arial, sans-serif",
+                    fontSize: "14px",
+                    fontWeight: "bold",
                     fill:
                         restaurant.forecastedProfit >= 0
                             ? "#4ade80"
                             : "#ef4444",
+                    stroke: "#000000",
+                    strokeThickness: 1,
                 }
             );
             this.trackGroups[i].add(profitText);
 
-            // Progress bar track
+            // Progress bar track - improved style with rounded corners
             const trackBarBg = this.add
                 .rectangle(
                     infoPanelWidth,
-                    y + trackHeight / 2,
+                    y + trackHeight - 20,
                     width - infoPanelWidth,
-                    trackHeight * 0.5,
+                    trackHeight * 0.35,
                     0x333333
                 )
+                .setAlpha(0.8)
                 .setOrigin(0, 0.5);
+
             this.trackGroups[i].add(trackBarBg);
 
-            // Progress bar (will be animated during the delivery run)
+            // Progress bar (will be animated) - improved appearance with rounded ends
             const progressBar = this.add
                 .rectangle(
-                    infoPanelWidth,
+                    infoPanelWidth + 10,
                     y + trackHeight / 2,
                     0, // Initial width is 0
-                    trackHeight * 0.5,
+                    trackHeight * 0.35,
                     0x10b981
                 )
                 .setOrigin(0, 0.5);
+
             progressBar.displayWidth = 0;
             this.trackGroups[i].add(progressBar);
 
-            // Player sprite
+            // Player sprite with particle effects
             const playerSprite = this.add.sprite(
-                infoPanelWidth + 20,
+                infoPanelWidth + 30,
                 y + trackHeight / 2,
                 "player_sprite"
             );
             playerSprite.setScale(1.5);
             this.trackGroups[i].add(playerSprite);
 
+            // Create smoke-like particle trail behind the scooter
+            const particleTrail = this.add
+                .particles(
+                    playerSprite.x,
+                    playerSprite.y + 10, // Start from lower position (exhaust position)
+                    "particle",
+                    {
+                        speed: { min: 30, max: 80 },
+                        scale: { start: 0.2, end: 0.05 },
+                        alpha: { start: 0.7, end: 0 },
+                        lifespan: 800,
+                        blendMode: "ADD",
+                        frequency: 30,
+                        tint: [0xcccccc, 0xaaaaaa, 0x999999], // Gray smoke colors
+                        angle: { min: 160, max: 200 }, // Emit mostly leftward
+                        quantity: 2,
+                    }
+                )
+                .setDepth(9); // Set below sprite
+
+            // Make particles follow the sprite
+            this.tweens.add({
+                targets: particleTrail,
+                x: function () {
+                    return playerSprite.x - 35;
+                },
+                y: function () {
+                    return playerSprite.y + 30;
+                }, // Keep at exhaust level
+                duration: 0,
+                ease: "Linear",
+                repeat: -1,
+            });
+
+            // Add subtle pulsing animation to player sprite (less bouncy)
+            this.tweens.add({
+                targets: playerSprite,
+                scaleX: 1.55, // Less extreme scale
+                scaleY: 1.55, // Less extreme scale
+                duration: 1200, // Slower pulsing
+                yoyo: true,
+                repeat: -1,
+                ease: "Sine.easeInOut",
+            });
+
             // Store references for animations
             this.playerSprites[restaurant.id] = {
                 sprite: playerSprite,
                 progressBar: progressBar,
+                particleTrail: particleTrail,
                 maxX: width - 50,
                 restaurant: restaurant,
                 events: [],
@@ -304,16 +417,18 @@ export class DeliveryRun extends Phaser.Scene {
         for (let i = this.activeRestaurants.length; i < 5; i++) {
             const y = this.tracksArea.y + i * trackHeight;
 
-            // Inactive restaurant placeholder
+            // Inactive restaurant placeholder with improved styling
             const inactiveText = this.add
                 .text(
                     width / 2,
                     y + trackHeight / 2,
                     "Restaurant slot not purchased",
                     {
-                        fontFamily: "Arial",
+                        fontFamily: "'Roboto Condensed', Arial, sans-serif",
                         fontSize: "16px",
-                        fill: "#888888",
+                        fill: "#94a3b8",
+                        stroke: "#0f172a",
+                        strokeThickness: 2,
                     }
                 )
                 .setOrigin(0.5);
@@ -326,36 +441,83 @@ export class DeliveryRun extends Phaser.Scene {
         const width = this.cameras.main.width;
         const height = this.cameras.main.height;
 
-        // Show "Business Open" text with animation
+        // Create arcade-style container to hold the text
+        const container = this.add.container(width * 1.5, height / 2); // Start further off-screen
+
+        // Add a shadow to the text
+        const shadow = this.add
+            .text(4, 4, "Business OPEN", {
+                fontFamily: "'Roboto Condensed', Arial, sans-serif",
+                fontSize: "64px",
+                fontWeight: "bold",
+                fill: "#000000",
+                alpha: 0.3,
+            })
+            .setOrigin(0.5);
+
+        // Add outer glow text (larger version with principalRed color)
+        const glowText = this.add
+            .text(0, 0, "Business OPEN", {
+                fontFamily: "'Roboto Condensed', Arial, sans-serif",
+                fontSize: "67px",
+                fontWeight: "bold",
+                fill: "#cf3e41", // principalRed-light
+                alpha: 0.6,
+                stroke: "#a02515", // principalRed
+                strokeThickness: 12,
+            })
+            .setOrigin(0.5);
+
+        // Show "Business Open" text with arcade-style animation
         const businessOpenText = this.add
-            .text(width / 2, height / 2, "Business OPEN", {
-                fontFamily: "Arial",
+            .text(0, 0, "Business OPEN", {
+                fontFamily: "'Roboto Condensed', Arial, sans-serif",
                 fontSize: "64px",
                 fontWeight: "bold",
                 fill: "#ffffff",
-                stroke: "#000000",
+                stroke: "#a02515", // principalRed
                 strokeThickness: 8,
             })
-            .setOrigin(0.5)
-            .setAlpha(0);
+            .setOrigin(0.5);
 
-        // Text animation
+        // Add all to the container
+        container.add(shadow);
+        container.add(glowText);
+        container.add(businessOpenText);
+
+        // Text animation - faster, more dynamic arcade style
         this.tweens.add({
-            targets: businessOpenText,
-            alpha: 1,
-            duration: 800,
-            ease: "Power2",
+            targets: container,
+            x: width / 2,
+            duration: 600, // Faster (was 1000)
+            ease: "Back.easeOut", // More "springy" effect
             onComplete: () => {
+                // More aggressive pulse effect
                 this.tweens.add({
-                    targets: businessOpenText,
-                    alpha: 0,
-                    delay: 1000,
-                    duration: 800,
-                    ease: "Power2",
-                    onComplete: () => {
-                        businessOpenText.destroy();
-                        this.startDeliveryRun();
-                    },
+                    targets: [businessOpenText, glowText],
+                    scaleX: 1.2, // Slightly larger pulse
+                    scaleY: 1.2,
+                    yoyo: true,
+                    repeat: 1,
+                    duration: 150, // Faster pulse (was 200)
+                    ease: "Sine.easeInOut",
+                });
+
+                // After a shorter delay, zoom out with rotation
+                this.time.delayedCall(1000, () => {
+                    // Shorter delay (was 1500)
+                    this.tweens.add({
+                        targets: container,
+                        x: -width / 2, // Exit further left
+                        scale: 0.8, // Add scale reduction
+                        angle: -5, // Add slight rotation for more dynamic exit
+                        duration: 500, // Faster exit (was 800)
+                        ease: "Power2",
+                        onComplete: () => {
+                            container.destroy();
+                            this.startDeliveryRun();
+                        },
+                    });
                 });
             },
         });
@@ -368,7 +530,7 @@ export class DeliveryRun extends Phaser.Scene {
         Object.keys(this.playerSprites).forEach((restaurantId) => {
             const restaurantData = this.playerSprites[restaurantId];
 
-            // Animate player sprite moving across the track
+            // Animate player sprite moving across the track with enhanced movement
             this.tweens.add({
                 targets: restaurantData.sprite,
                 x: restaurantData.maxX,
@@ -391,9 +553,25 @@ export class DeliveryRun extends Phaser.Scene {
                     // Mark this restaurant's run as complete
                     restaurantData.active = false;
 
+                    // Stop the particle trail
+                    if (restaurantData.particleTrail) {
+                        restaurantData.particleTrail.stop();
+                        restaurantData.particleTrail.destroy();
+                    }
+
                     // Check if all restaurants are done
                     this.checkRunCompletion();
                 },
+            });
+
+            // Add bouncy Y movement to make the sprite more alive (less bouncy)
+            this.tweens.add({
+                targets: restaurantData.sprite,
+                y: restaurantData.sprite.y - 2, // Smaller bounce (was -5)
+                duration: 500, // Slightly slower
+                yoyo: true,
+                repeat: -1,
+                ease: "Sine.easeInOut",
             });
         });
 
@@ -545,7 +723,7 @@ export class DeliveryRun extends Phaser.Scene {
         const textColor = eventData.positive ? "#10B981" : "#ef4444";
         const message = this.add
             .text(x, y, eventData.message, {
-                fontFamily: "Arial",
+                fontFamily: "'Roboto Condensed', Arial, sans-serif",
                 fontSize: "14px",
                 fill: textColor,
                 stroke: "#000000",
@@ -564,7 +742,7 @@ export class DeliveryRun extends Phaser.Scene {
                     eventData.impact * 100
                 )}%`,
                 {
-                    fontFamily: "Arial",
+                    fontFamily: "'Roboto Condensed', Arial, sans-serif",
                     fontSize: "16px",
                     fontWeight: "bold",
                     fill: eventData.positive ? "#10B981" : "#ef4444",
@@ -636,36 +814,83 @@ export class DeliveryRun extends Phaser.Scene {
         const width = this.cameras.main.width;
         const height = this.cameras.main.height;
 
-        // Show "Business Concluded" text with animation
+        // Create arcade-style container to hold the text
+        const container = this.add.container(width * 1.5, height / 2); // Start further off-screen
+
+        // Add a shadow to the text
+        const shadow = this.add
+            .text(4, 4, "Business Concluded", {
+                fontFamily: "'Roboto Condensed', Arial, sans-serif",
+                fontSize: "64px",
+                fontWeight: "bold",
+                fill: "#000000",
+                alpha: 0.3,
+            })
+            .setOrigin(0.5);
+
+        // Add outer glow text (larger version with principalRed color)
+        const glowText = this.add
+            .text(0, 0, "Business Concluded", {
+                fontFamily: "'Roboto Condensed', Arial, sans-serif",
+                fontSize: "67px",
+                fontWeight: "bold",
+                fill: "#cf3e41", // principalRed-light
+                alpha: 0.6,
+                stroke: "#a02515", // principalRed
+                strokeThickness: 12,
+            })
+            .setOrigin(0.5);
+
+        // Show "Business Concluded" text with arcade-style animation
         const businessConcludedText = this.add
-            .text(width / 2, height / 2, "Business Concluded", {
-                fontFamily: "Arial",
+            .text(0, 0, "Business Concluded", {
+                fontFamily: "'Roboto Condensed', Arial, sans-serif",
                 fontSize: "64px",
                 fontWeight: "bold",
                 fill: "#ffffff",
-                stroke: "#000000",
+                stroke: "#a02515", // principalRed
                 strokeThickness: 8,
             })
-            .setOrigin(0.5)
-            .setAlpha(0);
+            .setOrigin(0.5);
 
-        // Text animation
+        // Add all to the container
+        container.add(shadow);
+        container.add(glowText);
+        container.add(businessConcludedText);
+
+        // Text animation - faster, more dynamic arcade style
         this.tweens.add({
-            targets: businessConcludedText,
-            alpha: 1,
-            duration: 800,
-            ease: "Power2",
+            targets: container,
+            x: width / 2,
+            duration: 600, // Faster (was 1000)
+            ease: "Back.easeOut", // More "springy" effect
             onComplete: () => {
+                // More aggressive pulse effect
                 this.tweens.add({
-                    targets: businessConcludedText,
-                    alpha: 0,
-                    delay: 1500,
-                    duration: 800,
-                    ease: "Power2",
-                    onComplete: () => {
-                        businessConcludedText.destroy();
-                        this.processResults();
-                    },
+                    targets: [businessConcludedText, glowText],
+                    scaleX: 1.2, // Slightly larger pulse
+                    scaleY: 1.2,
+                    yoyo: true,
+                    repeat: 2,
+                    duration: 150, // Faster pulse (was 200)
+                    ease: "Sine.easeInOut",
+                });
+
+                // After a shorter delay, zoom out with rotation
+                this.time.delayedCall(1500, () => {
+                    // Shorter delay (was 2000)
+                    this.tweens.add({
+                        targets: container,
+                        x: -width / 2, // Exit further left
+                        scale: 0.8, // Add scale reduction
+                        angle: -5, // Add slight rotation for more dynamic exit
+                        duration: 500, // Faster exit (was 800)
+                        ease: "Power2",
+                        onComplete: () => {
+                            container.destroy();
+                            this.processResults();
+                        },
+                    });
                 });
             },
         });
