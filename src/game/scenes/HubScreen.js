@@ -780,75 +780,10 @@ export class HubScreen extends Phaser.Scene {
     }
 
     processDeliveryResults(results) {
-        // Process the period increment first to ensure it's properly updated
-        if (results.gameProgress) {
-            // Make sure the period is incremented
-            gameState.updateGameProgress(results.gameProgress);
+        console.log("HubScreen: Processing results with GameState:", results);
 
-            // Get the updated period
-            const currentState = gameState.getGameState();
-            const updatedPeriod = currentState.gameProgress.currentPeriod;
-
-            console.log(`HubScreen: Updated to period ${updatedPeriod}`);
-
-            // Trigger music change based on the new period
-            audioManager.playHubMusic(updatedPeriod);
-
-            // Emit event to notify other components of period change
-            EventBus.emit("periodChanged", updatedPeriod);
-        }
-
-        // Update funds and balance
-        if (results.finalFunds !== undefined) {
-            gameState.setFunds(results.finalFunds);
-        }
-
-        if (results.balanceChange && results.updateBalance) {
-            const newBalance =
-                gameState.getTotalBalance() + results.balanceChange;
-            gameState.setTotalBalance(newBalance);
-        }
-
-        // Update burnout
-        if (results.burnoutChange) {
-            const currentBurnout = gameState.getBurnout();
-            const newBurnout = Math.min(
-                100,
-                Math.max(0, currentBurnout + results.burnoutChange)
-            );
-            gameState.setBurnout(newBurnout);
-        }
-
-        // Update employee morale
-        if (
-            results.employeeMoraleUpdates &&
-            results.employeeMoraleUpdates.length > 0
-        ) {
-            results.employeeMoraleUpdates.forEach((update) => {
-                const employee = gameState.getEmployeeById(update.employeeId);
-                if (employee) {
-                    const newMorale = Math.min(
-                        100,
-                        Math.max(0, employee.morale + update.moraleDelta)
-                    );
-                    gameState.updateEmployeeMorale(
-                        update.employeeId,
-                        newMorale
-                    );
-                }
-            });
-        }
-
-        // Update restaurants
-        if (results.restaurants && results.restaurants.length > 0) {
-            results.restaurants.forEach((restaurant) => {
-                gameState.updateRestaurant(restaurant.id, {
-                    profit: restaurant.actualProfit,
-                    salesVolume: restaurant.salesVolume,
-                    rating: restaurant.rating,
-                });
-            });
-        }
+        // Use GameState's method to process all delivery results
+        gameState.processDeliveryResults(results);
 
         // Save game state to localStorage after all updates
         gameState.saveGameState(true); // true to create a backup copy
@@ -867,18 +802,20 @@ export class HubScreen extends Phaser.Scene {
             });
         } else {
             // Fallback message based on financial result
+            const balanceChange =
+                results.balanceChange || results.totalProfit || 0;
             const messageText =
-                results.balanceChange >= 0
-                    ? `Period complete! Profit: $${results.balanceChange}`
+                balanceChange >= 0
+                    ? `Period complete! Profit: $${balanceChange.toLocaleString()}`
                     : `Period complete. Loss: $${Math.abs(
-                          results.balanceChange
-                      )}`;
+                          balanceChange
+                      ).toLocaleString()}`;
 
             // Add a small delay to ensure everything is ready
             this.time.delayedCall(100, () => {
                 this.displayMessage(
                     messageText,
-                    results.balanceChange >= 0 ? "success" : "warning"
+                    balanceChange >= 0 ? "success" : "warning"
                 );
             });
         }

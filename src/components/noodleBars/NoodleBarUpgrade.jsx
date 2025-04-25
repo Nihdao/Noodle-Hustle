@@ -301,7 +301,7 @@ const NoodleBarUpgrade = ({ onBack }) => {
                                             selectedBar &&
                                             selectedBar.id === displayBar.id
                                                 ? "bg-[color:var(--color-principalRed)] text-white border-[color:var(--color-principalRed-light)]"
-                                                : "bg-[color:var(--color-whiteCream)] hover:bg-[color:var(--color-principalRed-light)] hover:text-white border-[color:var(--color-principalBrown)] border-opacity-20"
+                                                : "bg-[color:var(--color-whiteCream)] hover:bg-[color:var(--color-principalRed-light)] text-principalBrown hover:text-white border-[color:var(--color-principalBrown)] border-opacity-20"
                                         }
                                     `}
                                     onClick={() => handleSelectBar(displayBar)}
@@ -341,7 +341,10 @@ const NoodleBarUpgrade = ({ onBack }) => {
                                             </div>
                                             <div className="text-xs">
                                                 Staff:{" "}
-                                                {displayBar.staff.length || 0}/3
+                                                {(displayBar.staff &&
+                                                    displayBar.staff.length) ||
+                                                    0}
+                                                /3
                                             </div>
                                         </div>
                                     </div>

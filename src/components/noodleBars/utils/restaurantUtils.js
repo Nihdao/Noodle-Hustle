@@ -21,11 +21,13 @@ export function getAvailableSlots(rank) {
 }
 
 // Get slot status (locked, available, purchased)
-export function getSlotStatus(slotIndex, availableSlots) {
+export function getSlotStatus(slotIndex, availableSlots, slot) {
     if (slotIndex >= availableSlots) {
         return "locked"; // Locked due to rank
     }
-    return slotIndex === 0 ? "purchased" : "available";
+
+    // Vérifier si le slot est acheté en utilisant sa propriété purchased
+    return slot && slot.purchased ? "purchased" : "available";
 }
 
 // Get next rank to unlock more slots

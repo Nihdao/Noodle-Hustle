@@ -249,7 +249,11 @@ const NoodleBarAssign = ({ onBack, playerRank }) => {
 
                 <div className="flex flex-col gap-3">
                     {restaurantSlots.map((slot, index) => {
-                        const status = getSlotStatus(index, availableSlots);
+                        const status = getSlotStatus(
+                            index,
+                            availableSlots,
+                            slot
+                        );
                         const bar = slot.barId
                             ? noodleBars.find((b) => b.id === slot.barId)
                             : null;

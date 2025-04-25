@@ -8,12 +8,12 @@
         "maxProduct": 5,
         "maxService": 5,
         "maxAmbiance": 5,
-        "maintenance": 10000,
+        "maintenance": 100000,
         "basePrice": 0,
-        "salesVolume": 60000,
-        "serviceCap": 100,
-        "productCap": 100,
-        "ambianceCap": 100
+        "salesVolume": 1500000,
+        "serviceCap": 60,
+        "productCap": 60,
+        "ambianceCap": 60
     },
     {
         "id": 2,
@@ -24,12 +24,12 @@
         "maxProduct": 4,
         "maxService": 4,
         "maxAmbiance": 5,
-        "maintenance": 15000,
-        "basePrice": 400000,
-        "salesVolume": 175000,
-        "serviceCap": 120,
-        "productCap": 110,
-        "ambianceCap": 105
+        "maintenance": 150000,
+        "basePrice": 6000000,
+        "salesVolume": 2625000,
+        "serviceCap": 90,
+        "productCap": 82,
+        "ambianceCap": 78
     },
     {
         "id": 3,
@@ -40,12 +40,12 @@
         "maxProduct": 5,
         "maxService": 4,
         "maxAmbiance": 4,
-        "maintenance": 18000,
-        "basePrice": 600000,
-        "salesVolume": 250000,
-        "serviceCap": 130,
-        "productCap": 120,
-        "ambianceCap": 115
+        "maintenance": 180000,
+        "basePrice": 9000000,
+        "salesVolume": 3750000,
+        "serviceCap": 97,
+        "productCap": 90,
+        "ambianceCap": 86
     },
     {
         "id": 4,
@@ -56,12 +56,12 @@
         "maxProduct": 5,
         "maxService": 6,
         "maxAmbiance": 6,
-        "maintenance": 22000,
-        "basePrice": 800000,
-        "salesVolume": 350000,
-        "serviceCap": 135,
-        "productCap": 140,
-        "ambianceCap": 120
+        "maintenance": 220000,
+        "basePrice": 12000000,
+        "salesVolume": 5250000,
+        "serviceCap": 101,
+        "productCap": 105,
+        "ambianceCap": 90
     },
     {
         "id": 5,
@@ -72,12 +72,12 @@
         "maxProduct": 6,
         "maxService": 7,
         "maxAmbiance": 3,
-        "maintenance": 20000,
-        "basePrice": 900000,
-        "salesVolume": 400000,
-        "serviceCap": 120,
-        "productCap": 145,
-        "ambianceCap": 130
+        "maintenance": 200000,
+        "basePrice": 13500000,
+        "salesVolume": 6000000,
+        "serviceCap": 90,
+        "productCap": 108,
+        "ambianceCap": 97
     },
     {
         "id": 6,
@@ -88,12 +88,12 @@
         "maxProduct": 6,
         "maxService": 6,
         "maxAmbiance": 6,
-        "maintenance": 25000,
-        "basePrice": 1100000,
-        "salesVolume": 500000,
-        "serviceCap": 140,
-        "productCap": 135,
-        "ambianceCap": 155
+        "maintenance": 250000,
+        "basePrice": 16500000,
+        "salesVolume": 7500000,
+        "serviceCap": 105,
+        "productCap": 101,
+        "ambianceCap": 116
     },
     {
         "id": 7,
@@ -104,12 +104,12 @@
         "maxProduct": 7,
         "maxService": 4,
         "maxAmbiance": 5,
-        "maintenance": 30000,
-        "basePrice": 1400000,
-        "salesVolume": 600000,
-        "serviceCap": 160,
-        "productCap": 170,
-        "ambianceCap": 140
+        "maintenance": 300000,
+        "basePrice": 21000000,
+        "salesVolume": 9000000,
+        "serviceCap": 120,
+        "productCap": 127,
+        "ambianceCap": 105
     },
     {
         "id": 8,
@@ -120,12 +120,12 @@
         "maxProduct": 8,
         "maxService": 5,
         "maxAmbiance": 6,
-        "maintenance": 36000,
-        "basePrice": 1800000,
-        "salesVolume": 750000,
-        "serviceCap": 180,
-        "productCap": 160,
-        "ambianceCap": 150
+        "maintenance": 360000,
+        "basePrice": 27000000,
+        "salesVolume": 11250000,
+        "serviceCap": 135,
+        "productCap": 120,
+        "ambianceCap": 112
     },
     {
         "id": 9,
@@ -136,12 +136,12 @@
         "maxProduct": 6,
         "maxService": 6,
         "maxAmbiance": 8,
-        "maintenance": 42000,
-        "basePrice": 2200000,
-        "salesVolume": 900000,
-        "serviceCap": 170,
-        "productCap": 150,
-        "ambianceCap": 190
+        "maintenance": 420000,
+        "basePrice": 33000000,
+        "salesVolume": 13500000,
+        "serviceCap": 127,
+        "productCap": 112,
+        "ambianceCap": 142
     },
     {
         "id": 10,
@@ -152,12 +152,12 @@
         "maxProduct": 5,
         "maxService": 9,
         "maxAmbiance": 6,
-        "maintenance": 40000,
-        "basePrice": 2500000,
-        "salesVolume": 1000000,
-        "serviceCap": 150,
-        "productCap": 140,
-        "ambianceCap": 200
+        "maintenance": 400000,
+        "basePrice": 37500000,
+        "salesVolume": 15000000,
+        "serviceCap": 112,
+        "productCap": 105,
+        "ambianceCap": 150
     },
     {
         "id": 11,
@@ -168,12 +168,12 @@
         "maxProduct": 6,
         "maxService": 6,
         "maxAmbiance": 6,
-        "maintenance": 48000,
-        "basePrice": 3000000,
-        "salesVolume": 1200000,
-        "serviceCap": 210,
-        "productCap": 180,
-        "ambianceCap": 180
+        "maintenance": 480000,
+        "basePrice": 45000000,
+        "salesVolume": 18000000,
+        "serviceCap": 157,
+        "productCap": 135,
+        "ambianceCap": 135
     },
     {
         "id": 12,
@@ -184,12 +184,12 @@
         "maxProduct": 6,
         "maxService": 8,
         "maxAmbiance": 8,
-        "maintenance": 52000,
-        "basePrice": 3500000,
-        "salesVolume": 1400000,
-        "serviceCap": 200,
-        "productCap": 220,
-        "ambianceCap": 210
+        "maintenance": 520000,
+        "basePrice": 52500000,
+        "salesVolume": 21000000,
+        "serviceCap": 150,
+        "productCap": 165,
+        "ambianceCap": 157
     },
     {
         "id": 13,
@@ -200,12 +200,12 @@
         "maxProduct": 8,
         "maxService": 7,
         "maxAmbiance": 9,
-        "maintenance": 58000,
-        "basePrice": 4000000,
-        "salesVolume": 1600000,
-        "serviceCap": 230,
-        "productCap": 250,
-        "ambianceCap": 240
+        "maintenance": 580000,
+        "basePrice": 60000000,
+        "salesVolume": 24000000,
+        "serviceCap": 172,
+        "productCap": 187,
+        "ambianceCap": 180
     },
     {
         "id": 14,
@@ -216,12 +216,12 @@
         "maxProduct": 9,
         "maxService": 9,
         "maxAmbiance": 7,
-        "maintenance": 65000,
-        "basePrice": 4800000,
-        "salesVolume": 1900000,
-        "serviceCap": 250,
-        "productCap": 260,
-        "ambianceCap": 230
+        "maintenance": 650000,
+        "basePrice": 72000000,
+        "salesVolume": 28500000,
+        "serviceCap": 187,
+        "productCap": 195,
+        "ambianceCap": 172
     },
     {
         "id": 15,
@@ -232,12 +232,12 @@
         "maxProduct": 10,
         "maxService": 8,
         "maxAmbiance": 8,
-        "maintenance": 70000,
-        "basePrice": 5600000,
-        "salesVolume": 2200000,
-        "serviceCap": 260,
-        "productCap": 270,
-        "ambianceCap": 250
+        "maintenance": 700000,
+        "basePrice": 84000000,
+        "salesVolume": 33000000,
+        "serviceCap": 195,
+        "productCap": 202,
+        "ambianceCap": 187
     },
     {
         "id": 16,
@@ -248,12 +248,12 @@
         "maxProduct": 10,
         "maxService": 7,
         "maxAmbiance": 10,
-        "maintenance": 75000,
-        "basePrice": 6000000,
-        "salesVolume": 2400000,
-        "serviceCap": 240,
-        "productCap": 290,
-        "ambianceCap": 270
+        "maintenance": 750000,
+        "basePrice": 90000000,
+        "salesVolume": 36000000,
+        "serviceCap": 180,
+        "productCap": 217,
+        "ambianceCap": 202
     },
     {
         "id": 17,
@@ -264,12 +264,12 @@
         "maxProduct": 9,
         "maxService": 10,
         "maxAmbiance": 9,
-        "maintenance": 80000,
-        "basePrice": 7000000,
-        "salesVolume": 2800000,
-        "serviceCap": 280,
-        "productCap": 270,
-        "ambianceCap": 290
+        "maintenance": 800000,
+        "basePrice": 105000000,
+        "salesVolume": 42000000,
+        "serviceCap": 210,
+        "productCap": 202,
+        "ambianceCap": 217
     },
     {
         "id": 18,
@@ -280,12 +280,12 @@
         "maxProduct": 10,
         "maxService": 10,
         "maxAmbiance": 10,
-        "maintenance": 88000,
-        "basePrice": 8000000,
-        "salesVolume": 3200000,
-        "serviceCap": 300,
-        "productCap": 280,
-        "ambianceCap": 295
+        "maintenance": 880000,
+        "basePrice": 120000000,
+        "salesVolume": 48000000,
+        "serviceCap": 225,
+        "productCap": 210,
+        "ambianceCap": 221
     },
     {
         "id": 19,
@@ -296,12 +296,12 @@
         "maxProduct": 10,
         "maxService": 10,
         "maxAmbiance": 10,
-        "maintenance": 90000,
-        "basePrice": 9500000,
-        "salesVolume": 3800000,
-        "serviceCap": 295,
-        "productCap": 300,
-        "ambianceCap": 285
+        "maintenance": 900000,
+        "basePrice": 142500000,
+        "salesVolume": 57000000,
+        "serviceCap": 221,
+        "productCap": 225,
+        "ambianceCap": 213
     },
     {
         "id": 20,
@@ -312,11 +312,11 @@
         "maxProduct": 10,
         "maxService": 10,
         "maxAmbiance": 10,
-        "maintenance": 100000,
-        "basePrice": 12000000,
-        "salesVolume": 4800000,
-        "serviceCap": 300,
-        "productCap": 300,
-        "ambianceCap": 300
+        "maintenance": 1000000,
+        "basePrice": 180000000,
+        "salesVolume": 72000000,
+        "serviceCap": 225,
+        "productCap": 225,
+        "ambianceCap": 225
     }
 ]

@@ -40,7 +40,9 @@ const RestaurantSlot = ({
                 transition-all duration-300
             `}
             onClick={() => {
-                if (status === "purchased" && slot.barId) {
+                if (status === "available") {
+                    onSelect(slot);
+                } else if (status === "purchased" && slot.barId) {
                     onSelect(bar);
                 }
             }}
@@ -133,16 +135,7 @@ const RestaurantSlot = ({
                                         : "var(--color-principalBrown)",
                                     opacity: isHovered ? 0.9 : 0.7,
                                 }}
-                            >
-                                {(bar.forecastedProfit || bar.baseProfit || 0) >
-                                0
-                                    ? `Forecast: ${formatCurrency(
-                                          bar.forecastedProfit ||
-                                              bar.baseProfit ||
-                                              0
-                                      )}`
-                                    : ""}
-                            </p>
+                            ></p>
                         )}
                     </div>
                 )}
@@ -180,6 +173,7 @@ RestaurantSlot.propTypes = {
     onSelect: PropTypes.func.isRequired,
     onMouseEnter: PropTypes.func.isRequired,
     onMouseLeave: PropTypes.func.isRequired,
+    hideArrow: PropTypes.bool,
 };
 
 export default RestaurantSlot;

@@ -165,18 +165,77 @@ export const useRestaurants = () => {
     const getBarsWithDetails = useCallback(() => {
         return restaurants.bars.map((bar) => {
             // Si le restaurant est personnalisé (sans référence), retourner directement
-            if (!bar.restaurantId) return bar;
+            if (!bar.restaurantId) {
+                // S'assurer que certaines propriétés sont toujours présentes
+                return {
+                    ...bar,
+                    staff: bar.staff || [],
+                    maintenance: bar.maintenance || 0,
+                    upgrades: bar.upgrades || {
+                        cuisine: 1,
+                        service: 1,
+                        ambiance: 1,
+                        salesVolume: 1,
+                    },
+                    staffCost: bar.staffCost || 0,
+                    maxSales: bar.maxSales || 1000,
+                    maxProduct: bar.maxProduct || 100,
+                    maxService: bar.maxService || 100,
+                    maxAmbiance: bar.maxAmbiance || 100,
+                    serviceCap: bar.serviceCap || 100,
+                    productCap: bar.productCap || 100,
+                    ambianceCap: bar.ambianceCap || 100,
+                    salesVolume: bar.salesVolume || bar.baseProfit || 0,
+                };
+            }
 
             const baseData = gameState.getRestaurantData(bar.restaurantId);
-            if (!baseData) return bar;
+            if (!baseData) {
+                // Si les données de base ne sont pas trouvées, s'assurer au moins des propriétés essentielles
+                return {
+                    ...bar,
+                    staff: bar.staff || [],
+                    maintenance: bar.maintenance || 0,
+                    upgrades: bar.upgrades || {
+                        cuisine: 1,
+                        service: 1,
+                        ambiance: 1,
+                        salesVolume: 1,
+                    },
+                    staffCost: bar.staffCost || 0,
+                    maxSales: bar.maxSales || 1000,
+                    maxProduct: bar.maxProduct || 100,
+                    maxService: bar.maxService || 100,
+                    maxAmbiance: bar.maxAmbiance || 100,
+                    serviceCap: bar.serviceCap || 100,
+                    productCap: bar.productCap || 100,
+                    ambianceCap: bar.ambianceCap || 100,
+                    salesVolume: bar.salesVolume || bar.baseProfit || 0,
+                };
+            }
 
             return {
                 ...baseData,
                 ...bar,
                 id: bar.id,
-                maintenance: bar.maintenance,
-                upgrades: bar.upgrades,
-                staffCost: bar.staffCost,
+                staff: bar.staff || [],
+                maintenance: bar.maintenance || baseData.maintenance || 0,
+                upgrades: bar.upgrades ||
+                    baseData.upgrades || {
+                        cuisine: 1,
+                        service: 1,
+                        ambiance: 1,
+                        salesVolume: 1,
+                    },
+                staffCost: bar.staffCost || baseData.staffCost || 0,
+                serviceCap: bar.serviceCap || baseData.serviceCap || 100,
+                productCap: bar.productCap || baseData.productCap || 100,
+                ambianceCap: bar.ambianceCap || baseData.ambianceCap || 100,
+                salesVolume:
+                    bar.salesVolume ||
+                    baseData.salesVolume ||
+                    bar.baseProfit ||
+                    0,
             };
         });
     }, [restaurants.bars]);

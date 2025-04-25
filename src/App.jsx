@@ -10,6 +10,7 @@ import HubComponent from "./components/HubComponent";
 import DeliveryRunComponent from "./components/delivery/DeliveryRunComponent";
 import DebugSaveModal from "./utils/DebugSaveModal";
 import gameState from "./game/GameState"; // Import direct du singleton
+import ToastManager from "./components/common/ToastManager";
 
 const DEBUG_MODE = true; // Mettre à false pour désactiver le bouton debug
 
@@ -139,6 +140,9 @@ function App() {
 
     return (
         <div id="app">
+            {/* Toast Manager - Available globally */}
+            <ToastManager />
+
             <PhaserGame ref={phaserRef} currentActiveScene={currentScene} />
 
             {/* Conditionally render the MainMenuComponent */}

@@ -702,24 +702,12 @@ const HubComponent = () => {
 
     return (
         <div className="absolute inset-0 flex flex-col overflow-hidden">
-            {/* Add Warning Icons */}
+            {/* Warning Icons */}
             <WarningIcons funds={funds} burnout={burnout} />
 
-            {/* Add Game Over Modal */}
+            {/* Game Over Modal */}
             <GameOverModal
                 isOpen={gameOverData !== null}
-                stats={
-                    gameOverData?.stats || {
-                        periods: 0,
-                        totalRevenue: 0,
-                        peakRank: 0,
-                        restaurantsOwned: 0,
-                        totalEmployees: 0,
-                        highestSalary: 0,
-                        totalTraining: 0,
-                        peakMorale: 0,
-                    }
-                }
                 reason={gameOverData?.reason || "financial"}
             />
 

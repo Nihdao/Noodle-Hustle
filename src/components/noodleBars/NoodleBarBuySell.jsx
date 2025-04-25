@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import PropTypes from "prop-types";
 import RestaurantSlot from "./components/RestaurantSlot";
 import ConfirmationModal from "./components/ConfirmationModal";
@@ -42,6 +42,36 @@ const NoodleBarBuySell = ({ onBack, playerRank }) => {
     const [selectedSlot, setSelectedSlot] = useState(null);
     const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
     const [availableRestaurants, setAvailableRestaurants] = useState([]);
+
+    // Références pour suivre l'état des transactions
+    const previousBars = useRef(noodleBars);
+    const previousSlots = useRef(restaurantSlots);
+    const transactionPending = useRef(false);
+
+    // Surveiller les changements dans noodleBars et restaurantSlots après une transaction
+    useEffect(() => {
+        // Vérifier si une transaction a été effectuée
+        if (transactionPending.current) {
+            // Réinitialiser l'indicateur de transaction
+            transactionPending.current = false;
+
+            // Fermer les modales
+            setConfirmationModal({
+                show: false,
+                action: null,
+                slot: null,
+                bar: null,
+                cost: 0,
+                sellPrice: 0,
+            });
+
+            setShowRestaurantMenu(false);
+        }
+
+        // Mettre à jour les références
+        previousBars.current = noodleBars;
+        previousSlots.current = restaurantSlots;
+    }, [noodleBars, restaurantSlots]);
 
     // Get all available restaurants from data file
     useEffect(() => {
@@ -195,6 +225,9 @@ const NoodleBarBuySell = ({ onBack, playerRank }) => {
     const handleConfirmAction = () => {
         const { action, slot, bar } = confirmationModal;
 
+        // Marquer qu'une transaction est en cours
+        transactionPending.current = true;
+
         if (action === "buy") {
             // Use the gameState function to purchase restaurant
             const newRestaurant = {
@@ -207,6 +240,20 @@ const NoodleBarBuySell = ({ onBack, playerRank }) => {
                 staffSlots: bar.staffSlots || 3,
                 unlocked: true,
                 sellable: bar.sellable !== false,
+
+                // Ajouter les propriétés manquantes
+                maxSales: bar.maxSales || 1000,
+                maxProduct: bar.maxProduct || 100,
+                maxService: bar.maxService || 100,
+                maxAmbiance: bar.maxAmbiance || 100,
+                maintenance: bar.maintenance || 0,
+                basePrice: bar.basePrice,
+                salesVolume: bar.salesVolume || bar.baseProfit || 0,
+                serviceCap: bar.serviceCap || 100,
+                productCap: bar.productCap || 100,
+                ambianceCap: bar.ambianceCap || 100,
+                staff: [],
+
                 upgrades: {
                     cuisine: 1,
                     service: 1,
@@ -224,16 +271,6 @@ const NoodleBarBuySell = ({ onBack, playerRank }) => {
                 Math.floor(bar.purchasePrice * 0.7)
             );
         }
-
-        // Close confirmation modal
-        setConfirmationModal({
-            show: false,
-            action: null,
-            slot: null,
-            bar: null,
-            cost: 0,
-            sellPrice: 0,
-        });
     };
 
     // Prepare details object for the confirmation modal
@@ -297,7 +334,11 @@ const NoodleBarBuySell = ({ onBack, playerRank }) => {
 
                 <div className="flex flex-col gap-3">
                     {restaurantSlots.map((slot, index) => {
-                        const status = getSlotStatus(index, availableSlots);
+                        const status = getSlotStatus(
+                            index,
+                            availableSlots,
+                            slot
+                        );
                         const bar = slot.barId
                             ? noodleBars.find((b) => b.id === slot.barId)
                             : null;

@@ -58,10 +58,10 @@ export const createNewGameSave = (playerName) => {
 
         // Financial data
         finances: {
-            funds: 500000, // Current available money
+            funds: 5000000, // Current available money
             totalBalance: 0, // Cumulative income over time
             debt: {
-                amount: 15000,
+                amount: 150000,
             },
             expensesHistory: [],
             incomeHistory: [],

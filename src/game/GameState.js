@@ -157,6 +157,12 @@ class GameState {
                     currentPeriod: newPeriod,
                     investorClashIn,
                 },
+                // Reset employee recruitment state for new period
+                employeeRecruitment: {
+                    ...state.employeeRecruitment,
+                    searchActionDoneInPeriod: 0, // Reset to allow recruitment in new period
+                    candidates: [], // Clear previous candidates
+                },
                 // Update other state properties as needed
             };
         });
@@ -215,6 +221,11 @@ class GameState {
             // Check if we've reached a milestone
             const milestone = rankData.milestones.find((m) => m.at === newRank);
             if (milestone && newRank < currentRank) {
+                console.log(
+                    `GameState: Milestone reached at rank ${newRank}:`,
+                    milestone
+                );
+
                 // Emit milestone event
                 this.events.emit("rankMilestoneReached", {
                     rank: newRank,
@@ -1358,6 +1369,91 @@ class GameState {
             cost,
             newCap,
             salesVolumeBonus,
+        });
+
+        return true;
+    }
+
+    /**
+     * Purchase a restaurant for a slot
+     * @param {number|string} slotId - ID of the slot to purchase for
+     * @param {Object} restaurant - Restaurant to add
+     */
+    purchaseRestaurant(slotId, restaurant) {
+        if (!this.initialized) {
+            this.initialize();
+        }
+
+        // Validate funds - if they are insufficient, don't purchase
+        if (this.state.finances.funds < restaurant.purchasePrice) {
+            console.error("Insufficient funds for purchase");
+            return false;
+        }
+
+        // S'assurer que le restaurant a toutes les propriétés nécessaires
+        const completeRestaurant = {
+            ...restaurant,
+            staff: restaurant.staff || [],
+            maintenance: restaurant.maintenance || 0,
+            upgrades: restaurant.upgrades || {
+                cuisine: 1,
+                service: 1,
+                ambiance: 1,
+                salesVolume: 1,
+            },
+            staffCost: restaurant.staffCost || 0,
+            maxSales: restaurant.maxSales || 1000,
+            maxProduct: restaurant.maxProduct || 100,
+            maxService: restaurant.maxService || 100,
+            maxAmbiance: restaurant.maxAmbiance || 100,
+            serviceCap: restaurant.serviceCap || 100,
+            productCap: restaurant.productCap || 100,
+            ambianceCap: restaurant.ambianceCap || 100,
+            salesVolume: restaurant.salesVolume || restaurant.baseProfit || 0,
+        };
+
+        // Update game state
+        this.updateGameState((state) => {
+            // Update slots
+            const updatedSlots = state.restaurants.slots.map((slot) => {
+                if (slot.id === slotId) {
+                    return {
+                        ...slot,
+                        purchased: true,
+                        barId: completeRestaurant.id,
+                    };
+                }
+                return slot;
+            });
+
+            // Add restaurant to bars array
+            const updatedBars = [...state.restaurants.bars, completeRestaurant];
+
+            return {
+                ...state,
+                restaurants: {
+                    ...state.restaurants,
+                    slots: updatedSlots,
+                    bars: updatedBars,
+                },
+            };
+        });
+
+        // Deduct funds
+        this.updateFunds(
+            -restaurant.purchasePrice,
+            `Purchase: ${restaurant.name}`,
+            "purchase"
+        );
+
+        console.log(`Purchased ${restaurant.name} for slot ${slotId}`);
+        console.log(`Remaining funds: ${this.state.finances.funds}`);
+
+        // Notify listeners
+        this.events.emit("restaurantPurchased", {
+            slotId,
+            restaurantId: completeRestaurant.id,
+            cost: restaurant.purchasePrice,
         });
 
         return true;
