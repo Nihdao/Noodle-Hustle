@@ -208,48 +208,36 @@ class GameState {
                 }
             }
 
-            // Check if we've reached a milestone
-            const milestone = rankData.milestones.find((m) => m.at === newRank);
-            if (milestone && newRank < currentRank) {
-                console.log(
-                    `GameState: Milestone reached at rank ${newRank}:`,
-                    milestone
-                );
-
-                // Emit milestone event
-                this.events.emit("rankMilestoneReached", {
-                    rank: newRank,
-                    description: milestone.description,
-                    reward: milestone.reward,
-                });
-            }
-
-            // Update burnout based on rank change and profit
-            let burnoutChange = 0;
-            if (rankChange > 0 || totalProfit < 0) {
-                burnoutChange = 30; // Increase burnout if rank worsens or losing money
-            } else {
-                burnoutChange = 5; // Small burnout increase for maintaining rank
-            }
-
-            // Apply burnout modifiers from buffs
-            const mentalClarityBuff = this.getBuffLevel("mentalClarity");
-            if (mentalClarityBuff > 0) {
-                const reductionPercent =
-                    mentalClarityBuff === 5 ? 25 : mentalClarityBuff * 5;
-                burnoutChange = Math.floor(
-                    burnoutChange * (1 - reductionPercent / 100)
-                );
-            }
-
-            // Ensure burnout stays within 0-100 range
-            const updatedBurnout = Math.max(
-                0,
-                Math.min(100, state.playerStats.burnout + burnoutChange)
-            );
-
-            // Get current business category based on rank
+            // Get current business category
             const currentCategory = this.getBusinessCategoryFromRank(newRank);
+
+            // Calculate new debt amount based on rank's balanceThreshold
+            let newDebtAmount = 150000; // Initial debt amount
+            if (state.gameProgress.currentPeriod > 1) {
+                // Only update debt after first period
+                // Find the current rank range
+                const currentRankRange = rankData.ranks.find(
+                    (r) =>
+                        r.rankRange.min <= newRank && r.rankRange.max >= newRank
+                );
+
+                if (currentRankRange) {
+                    // Calculate new debt as balanceThreshold / 10
+                    newDebtAmount = Math.floor(
+                        currentRankRange.balanceThreshold / 10
+                    );
+                    // Ensure minimum debt amount
+                    newDebtAmount = Math.max(150000, newDebtAmount);
+                }
+            }
+
+            // Update burnout based on results
+            const currentBurnout = state.playerStats?.burnout || 0;
+            const burnoutChange = results.burnoutChange || 0;
+            const updatedBurnout = Math.min(
+                100,
+                Math.max(0, currentBurnout + burnoutChange)
+            );
 
             return {
                 ...state,
@@ -257,7 +245,10 @@ class GameState {
                     ...state.finances,
                     funds: updatedFunds,
                     totalBalance: updatedTotalBalance,
-                    // Add to income history if positive, expense history if negative
+                    debt: {
+                        ...state.finances.debt,
+                        amount: newDebtAmount,
+                    },
                     incomeHistory:
                         totalProfit > 0
                             ? [
@@ -285,7 +276,6 @@ class GameState {
                     ...state.gameProgress,
                     businessRank: newRank,
                     businessCategory: currentCategory,
-                    // Store rank history
                     rankHistory: [
                         ...(state.gameProgress.rankHistory || []),
                         {

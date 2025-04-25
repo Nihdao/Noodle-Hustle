@@ -67,7 +67,7 @@ const DebtsManagement = ({ onBack, debts }) => {
                 </div>
                 <p className="text-sm text-[color:var(--color-principalBrown)] opacity-80">
                     This amount is automatically deducted at the end of each
-                    period
+                    period based on your current rank.
                 </p>
             </div>
 

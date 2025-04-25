@@ -60,16 +60,25 @@ const BuffsModal = ({ isOpen, onClose }) => {
         setSelectedBuff(buff);
     };
 
-    // Fermer les détails du buff
-    const closeBuffDetails = () => {
-        setSelectedBuff(null);
-    };
-
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
-            <div className="bg-[color:var(--color-whiteCream)] rounded-xl shadow-2xl w-[800px] max-h-[90vh] overflow-hidden">
+        <div
+            className={`fixed inset-0 flex items-center justify-center z-50 transition-all duration-300 ${
+                isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+            }`}
+        >
+            <div
+                className="absolute inset-0 backdrop-blur-sm bg-black/30"
+                onClick={onClose}
+            />
+            <div
+                className={`bg-[color:var(--color-whiteCream)] rounded-xl shadow-2xl w-[800px] max-h-[90vh] overflow-hidden relative transition-all duration-300 ${
+                    isOpen
+                        ? "translate-y-0 opacity-100"
+                        : "translate-y-4 opacity-0"
+                }`}
+            >
                 {/* Header */}
                 <div className="p-4 bg-[color:var(--color-principalBrown)] text-[color:var(--color-whiteCream)] flex justify-between items-center">
                     <h2 className="text-2xl font-bold">Active Buffs</h2>

@@ -78,10 +78,15 @@ function MainMenuComponent({
 
     return (
         <div className="main-menu-overlay">
-            <MenuContainer animationState={animationState}>
+            <MenuContainer
+                animationState={animationState}
+                className=" min-w-[450px]"
+            >
                 <h1 className="menu-title">
-                    Noodle Balance
-                    <span className="menu-subtitle">麺類のバランス</span>
+                    Noodle Hustle
+                    <span className="menu-subtitle">
+                        The Balance of Noodles
+                    </span>
                 </h1>
 
                 <div className="menu-buttons">

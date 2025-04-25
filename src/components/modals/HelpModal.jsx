@@ -418,8 +418,22 @@ const HelpModal = ({ isOpen, onClose }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-whiteCream rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+        <div
+            className={`fixed inset-0 flex items-center justify-center z-50 transition-all duration-300 ${
+                isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+            }`}
+        >
+            <div
+                className="absolute inset-0 backdrop-blur-sm bg-black/30"
+                onClick={onClose}
+            />
+            <div
+                className={`bg-whiteCream rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col relative transition-all duration-300 ${
+                    isOpen
+                        ? "translate-y-0 opacity-100"
+                        : "translate-y-4 opacity-0"
+                }`}
+            >
                 {/* Header */}
                 <div className="bg-principalRed text-whiteCream p-4 rounded-t-xl flex justify-between items-center">
                     <h2 className="text-2xl font-bold">

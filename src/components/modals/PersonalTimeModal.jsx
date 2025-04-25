@@ -471,15 +471,21 @@ const PersonalTimeModal = ({ isOpen, onClose, personalTimeResult }) => {
     // Modal backdrop with content
     return (
         <div
-            className={`fixed inset-0 flex items-center justify-center z-50 transition-opacity duration-300 ${
+            className={`fixed inset-0 flex items-center justify-center z-50 transition-all duration-300 ${
                 isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
             }`}
         >
             <div
-                className="absolute inset-0 bg-black/60"
+                className="absolute inset-0 backdrop-blur-sm bg-black/30"
                 onClick={onClose}
-            ></div>
-            <div className="bg-[color:var(--color-yellowWhite)] rounded-xl shadow-2xl p-6 max-w-md w-full z-10 relative">
+            />
+            <div
+                className={`bg-[color:var(--color-whiteCream)] rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-hidden relative transition-all duration-300 ${
+                    isOpen
+                        ? "translate-y-0 opacity-100"
+                        : "translate-y-4 opacity-0"
+                }`}
+            >
                 <div className="absolute top-3 right-3">
                     <button
                         onClick={onClose}
