@@ -1,10 +1,10 @@
 // Rank threshold constants for restaurant unlocks
 export const RANK_THRESHOLDS = [
     { rank: 200, slots: 1 }, // Default - 1 slot
-    { rank: 175, slots: 2 }, // First unlock
-    { rank: 125, slots: 3 }, // Second unlock
-    { rank: 75, slots: 4 }, // Third unlock
-    { rank: 25, slots: 5 }, // Final unlock
+    { rank: 170, slots: 2 }, // First unlock
+    { rank: 120, slots: 3 }, // Second unlock
+    { rank: 70, slots: 4 }, // Third unlock
+    { rank: 30, slots: 5 }, // Final unlock
 ];
 
 // Upgrade categories and options for Noodle Bars
@@ -43,11 +43,11 @@ export const UPGRADE_CATEGORIES = [
 
 // Cost scaling for upgrades based on level range
 export const UPGRADE_COST_BY_LEVEL = (level) => {
-    if (level >= 1 && level <= 5) return 500;
-    if (level >= 6 && level <= 10) return 1000;
-    if (level >= 11 && level <= 15) return 1500;
-    if (level >= 16 && level <= 20) return 2000;
-    return 2500; // fallback for levels > 20
+    if (level >= 1 && level <= 5) return 50000;
+    if (level >= 6 && level <= 10) return 100000;
+    if (level >= 11 && level <= 15) return 150000;
+    if (level >= 16 && level <= 20) return 200000;
+    return 250000; // fallback for levels > 20
 };
 
 // Cap increase per upgrade level

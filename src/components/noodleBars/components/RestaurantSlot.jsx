@@ -75,12 +75,12 @@ const RestaurantSlot = ({
                         <p className="text-sm text-gray-500">
                             Unlocks at rank{" "}
                             {index === 1
-                                ? 175
+                                ? 170
                                 : index === 2
-                                ? 125
+                                ? 120
                                 : index === 3
-                                ? 75
-                                : 25}
+                                ? 70
+                                : 30}
                         </p>
                     </div>
                 ) : status === "available" ? (
@@ -94,7 +94,7 @@ const RestaurantSlot = ({
                             Available Restaurant Slot
                         </p>
                         <p className="text-sm text-[color:var(--color-principalRed)]">
-                            Buy a restaurant to fill this slot
+                            Go to Buy/Sell menu to fill this slot
                         </p>
                     </div>
                 ) : (

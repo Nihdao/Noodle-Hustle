@@ -305,12 +305,6 @@ const NoodleBarBuySell = ({ onBack, playerRank }) => {
                 </p>
                 <div className="mt-2 flex items-center justify-between">
                     <div className="font-medium text-principalBrown">
-                        Available Funds:{" "}
-                        <span className="text-emerald-600 font-bold">
-                            {formatCurrency(funds)}
-                        </span>
-                    </div>
-                    <div className="font-medium text-principalBrown">
                         Slots Used:{" "}
                         <span className="font-bold">
                             {
