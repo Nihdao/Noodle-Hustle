@@ -33,16 +33,56 @@ export class DeliveryRun extends Phaser.Scene {
                 return total + (employee?.salary || 0);
             }, 0);
 
-            // Calculate forecasted profit using actual values
-            const salesVolume = restaurant.salesVolume || 600;
-            const maintenance = restaurant.maintenance || 100;
+            // Calculate average employee morale for this restaurant
+            let totalMorale = 0;
+            let staffCount = 0;
+            let averageMorale = 0;
 
-            const forecastedProfit = Math.round(
-                salesVolume - maintenance - staffCost
+            if (restaurant.staff && restaurant.staff.length > 0) {
+                restaurant.staff.forEach((staffId) => {
+                    const employee = data.employees.find(
+                        (emp) => emp.id === staffId
+                    );
+                    if (employee && typeof employee.morale === "number") {
+                        totalMorale += employee.morale;
+                        staffCount++;
+                    }
+                });
+
+                if (staffCount > 0) {
+                    averageMorale = Math.round(totalMorale / staffCount);
+                }
+            }
+
+            // Calculate sales volume adjustment based on morale
+            let moraleAdjustment = 0;
+            if (averageMorale >= 80) {
+                moraleAdjustment = 0.05; // +5% for high morale
+            } else if (averageMorale <= 30) {
+                moraleAdjustment = -0.05; // -5% for low morale
+            }
+
+            // Apply morale adjustment to sales volume
+            const baseVolume = restaurant.salesVolume || 600;
+            const adjustedSalesVolume = Math.round(
+                baseVolume * (1 + moraleAdjustment)
             );
 
-            console.log(`DeliveryRun: Restaurant ${restaurant.name} (ID: ${restaurant.id}):
-                - Sales Volume: ${salesVolume}
+            // Calculate forecasted profit using actual values with morale adjustment
+            const maintenance = restaurant.maintenance || 100;
+            const forecastedProfit = Math.round(
+                adjustedSalesVolume - maintenance - staffCost
+            );
+
+            console.log(`DeliveryRun: Restaurant ${restaurant.name} (ID: ${
+                restaurant.id
+            }):
+                - Base Sales Volume: ${baseVolume}
+                - Average Morale: ${averageMorale}%
+                - Morale Adjustment: ${moraleAdjustment >= 0 ? "+" : ""}${(
+                moraleAdjustment * 100
+            ).toFixed(0)}%
+                - Adjusted Sales Volume: ${adjustedSalesVolume}
                 - Maintenance: ${maintenance}
                 - Staff Cost: ${staffCost}
                 - Forecasted Profit: ${forecastedProfit}`);
@@ -53,6 +93,10 @@ export class DeliveryRun extends Phaser.Scene {
                 staffCost,
                 maintenance,
                 staff: restaurant.staff || [],
+                averageMorale,
+                baseVolume,
+                adjustedSalesVolume,
+                moraleAdjustment,
             };
         });
 
@@ -285,6 +329,57 @@ export class DeliveryRun extends Phaser.Scene {
 
                     this.trackGroups[i].add(staffIcon);
                 });
+
+                // Add morale indicator next to staff icons
+                let moraleColor = 0x10b981; // Default green
+                if (restaurant.averageMorale <= 30) {
+                    moraleColor = 0xef4444; // Red for low morale
+                } else if (restaurant.averageMorale < 70) {
+                    moraleColor = 0xf59e0b; // Amber for medium morale
+                }
+
+                // Create morale display background
+                const moraleX = staffIconX + restaurant.staff.length * 19 + 15;
+                const moraleY = staffIconY;
+
+                const moraleBg = this.add
+                    .rectangle(moraleX, moraleY, 40, 16, 0x000000)
+                    .setAlpha(0.3);
+
+                moraleBg.setStrokeStyle(1, moraleColor, 0.8);
+                this.trackGroups[i].add(moraleBg);
+
+                // Add morale text
+                const moraleText = this.add
+                    .text(moraleX, moraleY, `${restaurant.averageMorale}%`, {
+                        fontFamily: "'Roboto Condensed', Arial, sans-serif",
+                        fontSize: "13px",
+                        fontWeight: "bold",
+                        fill: "#ffffff",
+                    })
+                    .setOrigin(0.5);
+
+                this.trackGroups[i].add(moraleText);
+
+                // Add small icon to indicate morale effect
+                if (restaurant.moraleAdjustment !== 0) {
+                    const effectIcon = this.add
+                        .text(
+                            moraleX + 25,
+                            moraleY,
+                            restaurant.moraleAdjustment > 0 ? "↑" : "↓",
+                            {
+                                fontSize: "12px",
+                                fontWeight: "bold",
+                                fill:
+                                    restaurant.moraleAdjustment > 0
+                                        ? "#10b981"
+                                        : "#ef4444",
+                            }
+                        )
+                        .setOrigin(0.5);
+                    this.trackGroups[i].add(effectIcon);
+                }
             }
 
             // Forecasted profit label

@@ -431,9 +431,6 @@ const DeliveryRunComponent = () => {
                                 <th className="py-3 px-6 text-right">
                                     Labor Costs
                                 </th>
-                                <th className="py-3 px-6 text-right">
-                                    Events Impact
-                                </th>
                                 <th className="py-3 px-6 text-right">Profit</th>
                             </tr>
                         </thead>
@@ -449,11 +446,23 @@ const DeliveryRunComponent = () => {
                                     const eventsSummary =
                                         getEventsSummary(restaurant);
 
+                                    // Calculate sales including morale adjustment
+                                    const moraleAdjustment =
+                                        restaurant.moraleAdjustment || 0;
+
                                     // Calculate total sales including adjustments
                                     const sales =
                                         restaurant.actualProfit +
                                         maintenance +
                                         laborCost;
+
+                                    // Calculate base sales without morale adjustment
+                                    const baseVolume =
+                                        restaurant.baseVolume ||
+                                        sales / (1 + moraleAdjustment);
+                                    const moraleImpactAmount =
+                                        sales - baseVolume;
+
                                     const profit = restaurant.actualProfit;
 
                                     return (
@@ -495,13 +504,113 @@ const DeliveryRunComponent = () => {
                                                                     </span>
                                                                 )
                                                             )}
+
+                                                            {/* Display morale if available */}
+                                                            {restaurant.averageMorale !==
+                                                                undefined && (
+                                                                <span
+                                                                    className={`ml-2 text-xs ${
+                                                                        restaurant.averageMorale >=
+                                                                        80
+                                                                            ? "text-emerald-600"
+                                                                            : restaurant.averageMorale <=
+                                                                              30
+                                                                            ? "text-red-600"
+                                                                            : "text-amber-500"
+                                                                    }`}
+                                                                >
+                                                                    Morale:{" "}
+                                                                    {
+                                                                        restaurant.averageMorale
+                                                                    }
+                                                                    %
+                                                                    {restaurant.moraleAdjustment >
+                                                                        0 && (
+                                                                        <span className="text-emerald-600 ml-1">
+                                                                            ↑
+                                                                        </span>
+                                                                    )}
+                                                                    {restaurant.moraleAdjustment <
+                                                                        0 && (
+                                                                        <span className="text-red-600 ml-1">
+                                                                            ↓
+                                                                        </span>
+                                                                    )}
+                                                                </span>
+                                                            )}
                                                         </div>
                                                     )}
                                             </td>
                                             <td className="py-3 px-6 text-right">
-                                                {formatResponsiveCurrency(
-                                                    sales
-                                                )}
+                                                {/* Show total sales and breakdown */}
+                                                <div className="flex flex-col items-end">
+                                                    <div className="font-semibold">
+                                                        {formatResponsiveCurrency(
+                                                            sales
+                                                        )}
+                                                    </div>
+
+                                                    {/* Breakdown items */}
+                                                    <div className="text-xs mt-1 text-gray-500 flex flex-col items-end">
+                                                        {moraleAdjustment !==
+                                                            0 && (
+                                                            <div>
+                                                                <span>
+                                                                    Morale
+                                                                    Impact:{" "}
+                                                                </span>
+                                                                <span
+                                                                    className={`${
+                                                                        moraleAdjustment >
+                                                                        0
+                                                                            ? "text-emerald-600"
+                                                                            : "text-red-500"
+                                                                    } font-medium text-xs`}
+                                                                >
+                                                                    {moraleAdjustment >
+                                                                    0
+                                                                        ? "+"
+                                                                        : "-"}
+                                                                    {formatResponsiveCurrency(
+                                                                        Math.abs(
+                                                                            moraleImpactAmount
+                                                                        )
+                                                                    )}{" "}
+                                                                </span>
+                                                            </div>
+                                                        )}
+
+                                                        {eventsSummary.count >
+                                                            0 &&
+                                                            eventsSummary.total !==
+                                                                0 && (
+                                                                <div>
+                                                                    <span>
+                                                                        Run
+                                                                        Events:{" "}
+                                                                    </span>
+                                                                    <span
+                                                                        className={`font-medium text-xs ${
+                                                                            eventsSummary.total >=
+                                                                            0
+                                                                                ? "text-emerald-600"
+                                                                                : "text-red-500"
+                                                                        }`}
+                                                                    >
+                                                                        {eventsSummary.total >=
+                                                                        0
+                                                                            ? "+ "
+                                                                            : "- "}
+                                                                        {formatResponsiveCurrency(
+                                                                            Math.abs(
+                                                                                eventsSummary.total
+                                                                            )
+                                                                        )}{" "}
+                                                                    </span>
+                                                                </div>
+                                                            )}
+                                                    </div>
+                                                </div>
                                             </td>
                                             <td className="py-3 px-6 text-right text-principalRed">
                                                 {formatResponsiveCurrency(
@@ -513,45 +622,6 @@ const DeliveryRunComponent = () => {
                                                     laborCost
                                                 )}
                                             </td>
-                                            <td className="py-3 px-6 text-right">
-                                                {eventsSummary.count > 0 ? (
-                                                    <div className="flex flex-col items-end">
-                                                        {eventsSummary.positive >
-                                                            0 && (
-                                                            <span className="text-emerald-600 text-xs">
-                                                                +
-                                                                {formatResponsiveCurrency(
-                                                                    eventsSummary.positive
-                                                                )}
-                                                            </span>
-                                                        )}
-                                                        {eventsSummary.negative <
-                                                            0 && (
-                                                            <span className="text-principalRed text-xs">
-                                                                {formatResponsiveCurrency(
-                                                                    eventsSummary.negative
-                                                                )}
-                                                            </span>
-                                                        )}
-                                                        <span
-                                                            className={`font-bold ${
-                                                                eventsSummary.total >=
-                                                                0
-                                                                    ? "text-emerald-600"
-                                                                    : "text-principalRed"
-                                                            }`}
-                                                        >
-                                                            {formatResponsiveCurrency(
-                                                                eventsSummary.total
-                                                            )}
-                                                        </span>
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-gray-500">
-                                                        No events
-                                                    </span>
-                                                )}
-                                            </td>
                                             <td
                                                 className="py-3 px-6 text-right font-bold"
                                                 style={{
@@ -561,22 +631,30 @@ const DeliveryRunComponent = () => {
                                                             : "#a02515",
                                                 }}
                                             >
-                                                {formatResponsiveCurrency(
-                                                    profit
-                                                )}
+                                                <div className="flex flex-col items-end">
+                                                    {/* Show total profit */}
+                                                    <div>
+                                                        {formatResponsiveCurrency(
+                                                            profit
+                                                        )}
+                                                    </div>
+                                                </div>
                                             </td>
                                         </tr>
                                     );
                                 }
                             )}
                         </tbody>
-                        <tfoot>
-                            <tr className="bg-yellowWhite bg-opacity-10 text-principalBrown font-bold">
-                                <td className="py-3 px-6 text-left" colSpan={6}>
-                                    Overall Profit
+
+                        <tfoot className="font-medium text-principalBrown">
+                            <tr className="bg-yellowWhite bg-opacity-10 border-t-2 border-amber-400/30">
+                                <td className="py-3 px-6 text-left" colSpan={5}>
+                                    <span className="font-bold">
+                                        Overall Profit
+                                    </span>
                                 </td>
                                 <td
-                                    className="py-3 px-6 text-right"
+                                    className="py-3 px-6 text-right font-bold"
                                     style={{
                                         color:
                                             resultsData.totalProfit >= 0
@@ -589,8 +667,8 @@ const DeliveryRunComponent = () => {
                                     )}
                                 </td>
                             </tr>
-                            <tr className="bg-yellowWhite bg-opacity-10 text-principalBrown">
-                                <td className="py-3 px-6 text-left" colSpan={6}>
+                            <tr className="bg-yellowWhite bg-opacity-10">
+                                <td className="py-3 px-6 text-left" colSpan={5}>
                                     Unused Employee Cost
                                 </td>
                                 <td className="py-3 px-6 text-right text-principalRed">
@@ -599,17 +677,19 @@ const DeliveryRunComponent = () => {
                                     )}
                                 </td>
                             </tr>
-                            <tr className="bg-yellowWhite bg-opacity-10 text-principalBrown">
-                                <td className="py-3 px-6 text-left" colSpan={6}>
+                            <tr className="bg-yellowWhite bg-opacity-10">
+                                <td className="py-3 px-6 text-left" colSpan={5}>
                                     Current Debt
                                 </td>
                                 <td className="py-3 px-6 text-right text-principalRed">
                                     {formatResponsiveCurrency(debtAmount)}
                                 </td>
                             </tr>
-                            <tr className="bg-yellowWhite bg-opacity-10 text-principalBrown font-bold">
-                                <td className="py-3 px-6 text-left" colSpan={6}>
-                                    Management Funds
+                            <tr className="bg-yellowWhite bg-opacity-10 border-t-2 border-amber-400/30">
+                                <td className="py-3 px-6 text-left" colSpan={5}>
+                                    <span className="font-bold">
+                                        Management Funds
+                                    </span>
                                 </td>
                                 <td
                                     className={`py-3 px-6 text-right ${
@@ -623,7 +703,7 @@ const DeliveryRunComponent = () => {
                                     }`}
                                 >
                                     <div className="flex flex-col">
-                                        <div>
+                                        <div className="font-bold">
                                             {formatResponsiveCurrency(
                                                 resultsData.initialFunds +
                                                     resultsData.totalProfit -
@@ -889,7 +969,7 @@ const DeliveryRunComponent = () => {
                         {/* Rank categories pyramid - horizontal arrangement */}
                         <div className="flex h-20 mb-8">
                             <div className="relative flex-1 flex items-end">
-                                <div className="h-full w-full bg-violet-500 rounded-l-lg shadow-inner opacity-75 border-r border-white"></div>
+                                <div className="h-[25%] w-full bg-violet-500 rounded-l-lg shadow-inner opacity-75 border-r border-white"></div>
                                 <div className="absolute inset-0 flex items-center justify-center flex-col">
                                     <div className="text-xs font-bold text-principalBrown text-center">
                                         Back-Alley
@@ -900,7 +980,7 @@ const DeliveryRunComponent = () => {
                                 </div>
                             </div>
                             <div className="relative flex-1 flex items-end">
-                                <div className="h-[85%] w-full bg-blue-500 shadow-inner opacity-75 border-r border-white"></div>
+                                <div className="h-[40%] w-full bg-blue-500 shadow-inner opacity-75 border-r border-white"></div>
                                 <div className="absolute inset-0 flex items-center justify-center flex-col">
                                     <div className="text-xs font-bold text-principalBrown text-center">
                                         Street Stand
@@ -911,7 +991,7 @@ const DeliveryRunComponent = () => {
                                 </div>
                             </div>
                             <div className="relative flex-1 flex items-end">
-                                <div className="h-[70%] w-full bg-green-500 shadow-inner opacity-75 border-r border-white"></div>
+                                <div className="h-[55%] w-full bg-green-500 shadow-inner opacity-75 border-r border-white"></div>
                                 <div className="absolute inset-0 flex items-center justify-center flex-col">
                                     <div className="text-xs font-bold text-principalBrown text-center">
                                         Local Spot
@@ -922,7 +1002,7 @@ const DeliveryRunComponent = () => {
                                 </div>
                             </div>
                             <div className="relative flex-1 flex items-end">
-                                <div className="h-[55%] w-full bg-amber-500 shadow-inner opacity-75 border-r border-white"></div>
+                                <div className="h-[70%] w-full bg-amber-500 shadow-inner opacity-75 border-r border-white"></div>
                                 <div className="absolute inset-0 flex items-center justify-center flex-col">
                                     <div className="text-xs font-bold text-principalBrown text-center">
                                         Master Bar
@@ -933,7 +1013,7 @@ const DeliveryRunComponent = () => {
                                 </div>
                             </div>
                             <div className="relative flex-1 flex items-end">
-                                <div className="h-[40%] w-full bg-orange-500 shadow-inner opacity-75 border-r border-white"></div>
+                                <div className="h-[85%] w-full bg-orange-500 shadow-inner opacity-75 border-r border-white"></div>
                                 <div className="absolute inset-0 flex items-center justify-center flex-col">
                                     <div className="text-xs font-bold text-principalBrown text-center">
                                         Heavenly
@@ -944,7 +1024,7 @@ const DeliveryRunComponent = () => {
                                 </div>
                             </div>
                             <div className="relative flex-1 flex items-end">
-                                <div className="h-[25%] w-full bg-red-500 rounded-r-lg shadow-inner opacity-75"></div>
+                                <div className="h-full w-full bg-red-500 rounded-r-lg shadow-inner opacity-75"></div>
                                 <div className="absolute inset-0 flex items-center justify-center flex-col">
                                     <div className="text-xs font-bold text-principalBrown text-center">
                                         Ramen Temple
@@ -1023,25 +1103,6 @@ const DeliveryRunComponent = () => {
                                         }
                                     </div>
                                 </div>
-                            </div>
-                            <div className="text-sm text-gray-600 max-w-[200px] text-right">
-                                {nextRankInfo ? (
-                                    <span>
-                                        {formatResponsiveCurrency(
-                                            impacts?.newTotalBalance ||
-                                                totalBalance
-                                        )}
-                                        /
-                                        {formatResponsiveCurrency(
-                                            nextRankInfo.balanceRequired
-                                        )}{" "}
-                                        to next rank
-                                    </span>
-                                ) : (
-                                    <span>
-                                        You&apos;ve reached the highest rank!
-                                    </span>
-                                )}
                             </div>
                         </div>
                     </div>
