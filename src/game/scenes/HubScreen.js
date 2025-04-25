@@ -81,16 +81,16 @@ export class HubScreen extends Phaser.Scene {
 
         // Add background image
         this.background = this.add
-            .image(width * 0.25, 0, "bgtest")
+            .image(width * 0.1, 0, "bgtest")
             .setOrigin(0)
             .setDepth(0);
-        this.background.setDisplaySize(width * 0.8, height);
+        this.background.setDisplaySize(width * 0.9, height);
 
         // Add dark background overlay
         this.backgroundOverlay = this.add
             .rectangle(0, 0, width, height, 0x000000)
             .setOrigin(0)
-            .setAlpha(0.5)
+            .setAlpha(0.3)
             .setDepth(1);
 
         // Initialize or get singleton GameState

@@ -137,31 +137,21 @@ class GameState {
             // Increment period
             const newPeriod = state.gameProgress.currentPeriod + 1;
 
-            // Decrease investor clash countdown
-            let investorClashIn = state.gameProgress.investorClashIn - 1;
-
-            // Handle investor meeting when countdown reaches zero
-            if (investorClashIn <= 0) {
-                // Reset countdown
-                investorClashIn = 10;
-
-                // Trigger investor meeting (to be implemented)
-                // For now, just setting a flag
-                this.events.emit("investorMeeting", newPeriod);
-            }
-
             return {
                 ...state,
                 gameProgress: {
                     ...state.gameProgress,
                     currentPeriod: newPeriod,
-                    investorClashIn,
                 },
                 // Reset employee recruitment state for new period
                 employeeRecruitment: {
                     ...state.employeeRecruitment,
-                    searchActionDoneInPeriod: 0, // Reset to allow recruitment in new period
+                    searchActionDoneInPeriod: false, // Reset to allow recruitment in new period
                     candidates: [], // Clear previous candidates
+                },
+                social: {
+                    ...state.social,
+                    socialActionDoneInPeriod: false,
                 },
                 // Update other state properties as needed
             };
@@ -236,10 +226,7 @@ class GameState {
 
             // Update burnout based on rank change and profit
             let burnoutChange = 0;
-            if (newRank < currentRank) {
-                // Rank improved (lower number is better)
-                burnoutChange = -10; // Reduce burnout when rank improves
-            } else if (rankChange > 0 || totalProfit < 0) {
+            if (rankChange > 0 || totalProfit < 0) {
                 burnoutChange = 30; // Increase burnout if rank worsens or losing money
             } else {
                 burnoutChange = 5; // Small burnout increase for maintaining rank
@@ -465,12 +452,6 @@ class GameState {
                 },
             ];
 
-            // If Home was chosen, reduce burnout by 10%
-            let burnoutUpdate = state.playerStats.burnout;
-            if (personalTime.planned === "Home") {
-                burnoutUpdate = Math.max(0, burnoutUpdate - 10);
-            }
-
             return {
                 ...state,
                 social: {
@@ -484,7 +465,6 @@ class GameState {
                 },
                 playerStats: {
                     ...state.playerStats,
-                    burnout: burnoutUpdate,
                 },
             };
         });
