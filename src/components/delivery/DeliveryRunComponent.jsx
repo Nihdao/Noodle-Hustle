@@ -381,6 +381,30 @@ const DeliveryRunComponent = () => {
         );
     };
 
+    // Add responsive currency formatting
+    const formatResponsiveCurrency = (amount) => {
+        // Format with currency symbol
+        const formatted = formatCurrency(amount);
+
+        // Add responsive class based on length
+        const length = formatted.length;
+        if (length > 12) {
+            return (
+                <span className="text-xs md:text-sm whitespace-nowrap">
+                    {formatted}
+                </span>
+            );
+        } else if (length > 8) {
+            return (
+                <span className="text-sm md:text-base whitespace-nowrap">
+                    {formatted}
+                </span>
+            );
+        } else {
+            return <span className="whitespace-nowrap">{formatted}</span>;
+        }
+    };
+
     // Render business performance results table
     const renderResultsTable = () => {
         if (!resultsData || !resultsData.restaurants) return null;
@@ -475,30 +499,36 @@ const DeliveryRunComponent = () => {
                                                     )}
                                             </td>
                                             <td className="py-3 px-6 text-right">
-                                                {formatCurrency(sales)}
+                                                {formatResponsiveCurrency(
+                                                    sales
+                                                )}
                                             </td>
                                             <td className="py-3 px-6 text-right text-principalRed">
-                                                {formatCurrency(maintenance)}
+                                                {formatResponsiveCurrency(
+                                                    maintenance
+                                                )}
                                             </td>
                                             <td className="py-3 px-6 text-right text-principalRed">
-                                                {formatCurrency(laborCost)}
+                                                {formatResponsiveCurrency(
+                                                    laborCost
+                                                )}
                                             </td>
                                             <td className="py-3 px-6 text-right">
                                                 {eventsSummary.count > 0 ? (
                                                     <div className="flex flex-col items-end">
                                                         {eventsSummary.positive >
                                                             0 && (
-                                                            <span className="text-emerald-600">
+                                                            <span className="text-emerald-600 text-xs">
                                                                 +
-                                                                {formatCurrency(
+                                                                {formatResponsiveCurrency(
                                                                     eventsSummary.positive
                                                                 )}
                                                             </span>
                                                         )}
                                                         {eventsSummary.negative <
                                                             0 && (
-                                                            <span className="text-principalRed">
-                                                                {formatCurrency(
+                                                            <span className="text-principalRed text-xs">
+                                                                {formatResponsiveCurrency(
                                                                     eventsSummary.negative
                                                                 )}
                                                             </span>
@@ -511,7 +541,7 @@ const DeliveryRunComponent = () => {
                                                                     : "text-principalRed"
                                                             }`}
                                                         >
-                                                            {formatCurrency(
+                                                            {formatResponsiveCurrency(
                                                                 eventsSummary.total
                                                             )}
                                                         </span>
@@ -531,7 +561,9 @@ const DeliveryRunComponent = () => {
                                                             : "#a02515",
                                                 }}
                                             >
-                                                {formatCurrency(profit)}
+                                                {formatResponsiveCurrency(
+                                                    profit
+                                                )}
                                             </td>
                                         </tr>
                                     );
@@ -552,7 +584,9 @@ const DeliveryRunComponent = () => {
                                                 : "#a02515",
                                     }}
                                 >
-                                    {formatCurrency(resultsData.totalProfit)}
+                                    {formatResponsiveCurrency(
+                                        resultsData.totalProfit
+                                    )}
                                 </td>
                             </tr>
                             <tr className="bg-yellowWhite bg-opacity-10 text-principalBrown">
@@ -560,7 +594,9 @@ const DeliveryRunComponent = () => {
                                     Unused Employee Cost
                                 </td>
                                 <td className="py-3 px-6 text-right text-principalRed">
-                                    {formatCurrency(unusedEmployeeCost)}
+                                    {formatResponsiveCurrency(
+                                        unusedEmployeeCost
+                                    )}
                                 </td>
                             </tr>
                             <tr className="bg-yellowWhite bg-opacity-10 text-principalBrown">
@@ -568,7 +604,7 @@ const DeliveryRunComponent = () => {
                                     Current Debt
                                 </td>
                                 <td className="py-3 px-6 text-right text-principalRed">
-                                    {formatCurrency(debtAmount)}
+                                    {formatResponsiveCurrency(debtAmount)}
                                 </td>
                             </tr>
                             <tr className="bg-yellowWhite bg-opacity-10 text-principalBrown font-bold">
@@ -588,7 +624,7 @@ const DeliveryRunComponent = () => {
                                 >
                                     <div className="flex flex-col">
                                         <div>
-                                            {formatCurrency(
+                                            {formatResponsiveCurrency(
                                                 resultsData.initialFunds +
                                                     resultsData.totalProfit -
                                                     unusedEmployeeCost -
@@ -603,7 +639,7 @@ const DeliveryRunComponent = () => {
                                             resultsData.initialFunds ? (
                                                 <span className="text-emerald-600">
                                                     (+
-                                                    {formatCurrency(
+                                                    {formatResponsiveCurrency(
                                                         resultsData.initialFunds +
                                                             resultsData.totalProfit -
                                                             unusedEmployeeCost -
@@ -615,7 +651,7 @@ const DeliveryRunComponent = () => {
                                             ) : (
                                                 <span className="text-principalRed">
                                                     (-
-                                                    {formatCurrency(
+                                                    {formatResponsiveCurrency(
                                                         resultsData.initialFunds -
                                                             (resultsData.initialFunds +
                                                                 resultsData.totalProfit -
@@ -658,24 +694,30 @@ const DeliveryRunComponent = () => {
                                 Burnout Impact
                             </h4>
                             <div className="flex items-center">
-                                <div className="w-8 h-8 flex items-center justify-center mr-2">
-                                    <span className="text-xl text-principalRed">
-                                        😫
+                                <div className="w-8 h-8 flex items-center justify-center mr-2 bg-principalRed/10 rounded-full">
+                                    <span className="text-sm font-bold text-principalRed">
+                                        +{impacts?.burnoutImpact || 10}
                                     </span>
                                 </div>
                                 <div className="flex flex-col">
-                                    <div className="flex items-center">
-                                        <span className="text-sm font-medium mr-2">
-                                            Change:
-                                        </span>
-                                        <span className="font-bold text-principalRed">
-                                            +{impacts?.burnoutImpact || 10}
-                                        </span>
-                                    </div>
-                                    <div className="text-xs text-gray-600 mt-1">
+                                    <div className="text-xs text-gray-600">
                                         {impacts?.isOverallLoss
-                                            ? "You lost money this period, increasing stress significantly."
-                                            : "Managing businesses always increases stress."}
+                                            ? "Financial losses increased stress significantly."
+                                            : "Managing businesses always increases stress levels."}
+                                    </div>
+                                    <div className="mt-1 h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full bg-principalRed rounded-full"
+                                            style={{
+                                                width: `${Math.min(
+                                                    100,
+                                                    (appGameState?.playerStats
+                                                        ?.burnout || 0) +
+                                                        (impacts?.burnoutImpact ||
+                                                            10)
+                                                )}%`,
+                                            }}
+                                        ></div>
                                     </div>
                                 </div>
                             </div>
@@ -683,57 +725,88 @@ const DeliveryRunComponent = () => {
 
                         <div className="bg-white bg-opacity-60 p-3 rounded-lg">
                             <h4 className="text-principalBrown font-bold text-sm mb-2">
-                                Rank Progress
+                                Employee Morale Impact
                             </h4>
-                            <div className="flex items-center">
-                                <div className="w-8 h-8 flex items-center justify-center mr-2">
-                                    {impacts?.rankChange < 0 ? (
-                                        <span className="text-xl text-emerald-600">
-                                            🏆
-                                        </span>
-                                    ) : impacts?.rankChange > 0 ? (
-                                        <span className="text-xl text-principalRed">
-                                            📉
+                            <div className="flex flex-col text-principalBrown">
+                                {resultsData?.restaurants?.some(
+                                    (restaurant) =>
+                                        restaurant.staff &&
+                                        restaurant.staff.length > 0
+                                ) ? (
+                                    <div className="grid grid-cols-2 gap-2 text-xs">
+                                        {resultsData.restaurants.map(
+                                            (restaurant) => {
+                                                if (
+                                                    !restaurant.staff ||
+                                                    restaurant.staff.length ===
+                                                        0
+                                                )
+                                                    return null;
+                                                const isProfitable =
+                                                    restaurant.actualProfit > 0;
+
+                                                // Employee morale impact based on actual logic
+                                                const moraleChange =
+                                                    isProfitable ? 5 : -20;
+                                                const overallLossImpact =
+                                                    impacts?.isOverallLoss
+                                                        ? -20
+                                                        : 0;
+                                                const totalMoraleChange =
+                                                    moraleChange +
+                                                    overallLossImpact;
+
+                                                return (
+                                                    <div
+                                                        key={restaurant.id}
+                                                        className="flex items-center"
+                                                    >
+                                                        <div
+                                                            className={`w-3 h-3 rounded-full ${
+                                                                isProfitable
+                                                                    ? "bg-emerald-500"
+                                                                    : "bg-principalRed"
+                                                            } mr-1`}
+                                                        ></div>
+                                                        <span className="truncate">
+                                                            {restaurant.name}:
+                                                        </span>
+                                                        <span
+                                                            className={`ml-1 font-semibold ${
+                                                                totalMoraleChange >=
+                                                                0
+                                                                    ? "text-emerald-600"
+                                                                    : "text-principalRed"
+                                                            }`}
+                                                        >
+                                                            {totalMoraleChange >=
+                                                            0
+                                                                ? "+"
+                                                                : ""}
+                                                            {totalMoraleChange}
+                                                        </span>
+                                                    </div>
+                                                );
+                                            }
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="text-xs text-gray-600 italic">
+                                        No employees assigned to restaurants
+                                    </div>
+                                )}
+                                <div className="text-xs mt-2 text-gray-600">
+                                    {impacts?.isOverallLoss ? (
+                                        <span className="text-principalRed font-medium">
+                                            Overall business loss affects all
+                                            employees (-20)
                                         </span>
                                     ) : (
-                                        <span className="text-xl text-gray-500">
-                                            ⚖️
+                                        <span className="text-emerald-600 font-medium">
+                                            Profitable period maintains employee
+                                            morale
                                         </span>
                                     )}
-                                </div>
-                                <div className="flex flex-col">
-                                    <div className="flex items-center">
-                                        <span className="text-sm font-medium mr-2">
-                                            Change:
-                                        </span>
-                                        <span
-                                            className={`font-bold ${
-                                                impacts?.rankChange < 0
-                                                    ? "text-emerald-600"
-                                                    : impacts?.rankChange > 0
-                                                    ? "text-principalRed"
-                                                    : "text-gray-600"
-                                            }`}
-                                        >
-                                            {impacts?.rankChange < 0
-                                                ? "+"
-                                                : impacts?.rankChange > 0
-                                                ? "-"
-                                                : ""}
-                                            {impacts?.rankChange !== 0
-                                                ? Math.abs(impacts?.rankChange)
-                                                : "No change"}
-                                        </span>
-                                    </div>
-                                    <div className="text-xs text-gray-600 mt-1">
-                                        Total Balance:{" "}
-                                        <span className="font-medium">
-                                            {formatCurrency(
-                                                impacts?.newTotalBalance ||
-                                                    totalBalance
-                                            )}
-                                        </span>
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -770,31 +843,16 @@ const DeliveryRunComponent = () => {
 
     // Render business rank display with horizontal rank ladder
     const renderRankDisplay = () => {
-        // Utiliser la fonction calculateImpacts pour obtenir les données précises
-        const impactData = calculateImpacts();
-
-        // Utiliser les valeurs calculées ou les valeurs par défaut
-        const newRank = impactData?.newRank || businessRank;
-        const rankChange = impactData?.rankChange || 0;
-        const calculatedTotalBalance =
-            impactData?.newTotalBalance || totalBalance;
-
-        // Improved rank is represented by a lower number (negative rankChange)
-        const isImproved = rankChange < 0;
-
-        // Get rank details for the new rank
-        const newRankDetails = getNoodleRankName(newRank);
-
         // Get next rank threshold information
         const nextRankInfo = getNextRankThreshold();
 
         return (
-            <div className="bg-yellowWhite shadow-2xl rounded-xl p-6 w-full max-w-5xl mx-auto mt-4 transition-discrete duration-500 animate-fade-in">
+            <div className="mt-8 bg-whiteCream shadow-2xl rounded-xl p-6 w-full max-w-5xl mx-auto mt-4 transition-discrete duration-500 animate-fade-in">
                 <h2 className="text-3xl font-bold text-principalRed text-center mb-6">
                     Noodle Empire Ranking
                 </h2>
 
-                {/* Horizontal Rank Progression Bar */}
+                {/* Replace the rank gauge with a pyramid visualization */}
                 <div className="bg-whiteCream rounded-lg p-6 shadow-inner relative overflow-hidden">
                     {/* Noodle pattern background */}
                     <div className="absolute inset-0 bg-[url('/assets/deliveryrun/noodle_pattern.png')] bg-repeat opacity-5"></div>
@@ -805,7 +863,9 @@ const DeliveryRunComponent = () => {
                             Your rank is based on your total accumulated balance
                             of{" "}
                             <span className="font-bold">
-                                {formatCurrency(calculatedTotalBalance)}
+                                {formatResponsiveCurrency(
+                                    impacts?.newTotalBalance || totalBalance
+                                )}
                             </span>
                         </p>
                         {nextRankInfo && (
@@ -816,7 +876,7 @@ const DeliveryRunComponent = () => {
                                 </span>
                                 ) requires:{" "}
                                 <span className="font-bold">
-                                    {formatCurrency(
+                                    {formatResponsiveCurrency(
                                         nextRankInfo.balanceRequired
                                     )}
                                 </span>
@@ -824,133 +884,170 @@ const DeliveryRunComponent = () => {
                         )}
                     </div>
 
-                    {/* Main progress bar container */}
-                    <div className="relative mt-8 mb-16">
-                        {/* Progress bar background */}
-                        <div className="h-6 bg-principalBrown/10 rounded-full shadow-inner overflow-hidden">
-                            {/* Filled progress portion */}
-                            <div
-                                className="h-full bg-gradient-to-r from-principalRed to-principalRed-light rounded-full transition-all duration-700 ease-out-circ"
-                                style={{
-                                    width: `${((200 - newRank) / 199) * 100}%`,
-                                }}
-                            ></div>
-                        </div>
-
-                        {/* Rank ticks on bar */}
-                        <div className="absolute top-0 left-0 right-0 h-6 flex justify-between px-1 pointer-events-none">
-                            <div className="h-full w-0.5 bg-white/30"></div>
-                            <div className="h-full w-0.5 bg-white/30"></div>
-                            <div className="h-full w-0.5 bg-white/30"></div>
-                            <div className="h-full w-0.5 bg-white/30"></div>
-                            <div className="h-full w-0.5 bg-white/30"></div>
-                            <div className="h-full w-0.5 bg-white/30"></div>
-                        </div>
-
-                        {/* Player marker overlay */}
-                        <div
-                            className="absolute top-0 -translate-y-5 transition-all duration-700 ease-out-circ"
-                            style={{
-                                left: `calc(${
-                                    ((200 - newRank) / 199) * 100
-                                }% - 12px)`,
-                            }}
-                        >
-                            <div className="flex flex-col items-center">
-                                <div className="w-6 h-6 rounded-full bg-white border-2 border-principalRed shadow-lg flex items-center justify-center">
-                                    <span className="text-[10px] font-bold text-principalRed">
-                                        #{newRank}
-                                    </span>
-                                </div>
-                                <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-principalRed"></div>
-                            </div>
-                        </div>
-
-                        {/* Previous rank marker (if changed) */}
-                        {isImproved && (
-                            <div
-                                className="absolute top-0 -translate-y-3 transition-all duration-500"
-                                style={{
-                                    left: `calc(${
-                                        ((200 - businessRank) / 199) * 100
-                                    }% - 8px)`,
-                                }}
-                            >
-                                <div className="w-4 h-4 rounded-full border-2 border-gray-400 bg-gray-200 opacity-70 flex items-center justify-center">
-                                    <span className="text-[7px] text-gray-600 font-bold">
-                                        old
-                                    </span>
+                    {/* Pyramid-style rank visualization */}
+                    <div className="relative py-6">
+                        {/* Rank categories pyramid - horizontal arrangement */}
+                        <div className="flex h-20 mb-8">
+                            <div className="relative flex-1 flex items-end">
+                                <div className="h-full w-full bg-violet-500 rounded-l-lg shadow-inner opacity-75 border-r border-white"></div>
+                                <div className="absolute inset-0 flex items-center justify-center flex-col">
+                                    <div className="text-xs font-bold text-principalBrown text-center">
+                                        Back-Alley
+                                    </div>
+                                    <div className="text-xs text-principalBrown opacity-80">
+                                        #151-200
+                                    </div>
                                 </div>
                             </div>
-                        )}
+                            <div className="relative flex-1 flex items-end">
+                                <div className="h-[85%] w-full bg-blue-500 shadow-inner opacity-75 border-r border-white"></div>
+                                <div className="absolute inset-0 flex items-center justify-center flex-col">
+                                    <div className="text-xs font-bold text-principalBrown text-center">
+                                        Street Stand
+                                    </div>
+                                    <div className="text-xs text-principalBrown opacity-80">
+                                        #101-150
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="relative flex-1 flex items-end">
+                                <div className="h-[70%] w-full bg-green-500 shadow-inner opacity-75 border-r border-white"></div>
+                                <div className="absolute inset-0 flex items-center justify-center flex-col">
+                                    <div className="text-xs font-bold text-principalBrown text-center">
+                                        Local Spot
+                                    </div>
+                                    <div className="text-xs text-principalBrown opacity-80">
+                                        #51-100
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="relative flex-1 flex items-end">
+                                <div className="h-[55%] w-full bg-amber-500 shadow-inner opacity-75 border-r border-white"></div>
+                                <div className="absolute inset-0 flex items-center justify-center flex-col">
+                                    <div className="text-xs font-bold text-principalBrown text-center">
+                                        Master Bar
+                                    </div>
+                                    <div className="text-xs text-principalBrown opacity-80">
+                                        #21-50
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="relative flex-1 flex items-end">
+                                <div className="h-[40%] w-full bg-orange-500 shadow-inner opacity-75 border-r border-white"></div>
+                                <div className="absolute inset-0 flex items-center justify-center flex-col">
+                                    <div className="text-xs font-bold text-principalBrown text-center">
+                                        Heavenly
+                                    </div>
+                                    <div className="text-xs text-principalBrown opacity-80">
+                                        #11-20
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="relative flex-1 flex items-end">
+                                <div className="h-[25%] w-full bg-red-500 rounded-r-lg shadow-inner opacity-75"></div>
+                                <div className="absolute inset-0 flex items-center justify-center flex-col">
+                                    <div className="text-xs font-bold text-principalBrown text-center">
+                                        Ramen Temple
+                                    </div>
+                                    <div className="text-xs text-principalBrown opacity-80">
+                                        #1-10
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Player position marker */}
+                        {(() => {
+                            const currentRank =
+                                impacts?.newRank || businessRank;
+                            let position;
+
+                            // Determine which category the player is in
+                            if (currentRank >= 151) {
+                                position = "4%";
+                            } else if (currentRank >= 101) {
+                                position = "21%";
+                            } else if (currentRank >= 51) {
+                                position = "38%";
+                            } else if (currentRank >= 21) {
+                                position = "55%";
+                            } else if (currentRank >= 11) {
+                                position = "72%";
+                            } else {
+                                position = "88%";
+                            }
+
+                            return (
+                                <div
+                                    className="absolute top-[-10px] transition-all duration-500"
+                                    style={{ left: position }}
+                                >
+                                    <div className="flex flex-col items-center">
+                                        <div className="px-3 py-1 bg-principalRed text-white rounded-full text-xs shadow-md">
+                                            Your Rank: #{currentRank}
+                                        </div>
+                                        <div className="w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[8px] border-t-principalRed"></div>
+                                    </div>
+                                </div>
+                            );
+                        })()}
                     </div>
 
-                    {/* Rank labels/categories */}
-                    <div className="flex justify-between px-1 text-xs font-bold">
-                        <div className="text-violet-600">#200</div>
-                        <div className="text-blue-500">#150</div>
-                        <div className="text-green-500">#100</div>
-                        <div className="text-amber-500">#50</div>
-                        <div className="text-orange-600">#20</div>
-                        <div className="text-red-600">#1</div>
-                    </div>
-
-                    <div className="flex justify-between px-1 mt-1">
-                        <div className="px-2 py-1 bg-violet-500 rounded-full text-white text-xs">
-                            Back-Alley
-                        </div>
-                        <div className="px-2 py-1 bg-blue-500 rounded-full text-white text-xs">
-                            Street Stand
-                        </div>
-                        <div className="px-2 py-1 bg-green-500 rounded-full text-white text-xs">
-                            Local Spot
-                        </div>
-                        <div className="px-2 py-1 bg-amber-500 rounded-full text-white text-xs">
-                            Master Bar
-                        </div>
-                        <div className="px-2 py-1 bg-orange-500 rounded-full text-white text-xs">
-                            Heavenly
-                        </div>
-                        <div className="px-2 py-1 bg-red-500 rounded-full text-white text-xs">
-                            Ramen Temple
-                        </div>
-                    </div>
-                </div>
-
-                {/* Current rank summary */}
-                <div className="mt-8 bg-principalRed bg-opacity-70 rounded-lg p-6 text-center shadow-lg">
-                    <div className="flex justify-between items-center px-12">
-                        <div className="flex flex-col items-center">
-                            <div className="text-sm text-white font-medium">
-                                Your Current Rank
+                    {/* Current rank detail panel */}
+                    <div className="bg-principalRed/10 rounded-lg p-4 mt-4">
+                        <div className="flex justify-between items-center">
+                            <div className="flex items-center">
+                                <div
+                                    className="w-12 h-12 rounded-full flex items-center justify-center"
+                                    style={{
+                                        backgroundColor: getNoodleRankName(
+                                            impacts?.newRank || businessRank
+                                        ).color,
+                                        boxShadow:
+                                            "0 0 0 3px rgba(255,255,255,0.5)",
+                                    }}
+                                >
+                                    <span className="text-white font-bold">
+                                        #{impacts?.newRank || businessRank}
+                                    </span>
+                                </div>
+                                <div className="ml-4">
+                                    <div className="text-principalBrown text-sm">
+                                        Your Current Category
+                                    </div>
+                                    <div className="text-principalRed font-bold">
+                                        {
+                                            getNoodleRankName(
+                                                impacts?.newRank || businessRank
+                                            ).name
+                                        }
+                                    </div>
+                                </div>
                             </div>
-                            <div className="text-2xl text-white font-bold">
-                                #{newRank}
-                            </div>
-                            <div className="text-sm font-medium text-white">
-                                {newRankDetails.name}
-                            </div>
-                        </div>
-                        <div className="flex flex-col items-center">
-                            <div className="text-sm text-white font-medium">
-                                Improvement
-                            </div>
-                            <div className="text-2xl text-white font-bold">
-                                {isImproved ? (
-                                    <span className="text-green-400">
-                                        +{Math.abs(rankChange)}
+                            <div className="text-sm text-gray-600 max-w-[200px] text-right">
+                                {nextRankInfo ? (
+                                    <span>
+                                        {formatResponsiveCurrency(
+                                            impacts?.newTotalBalance ||
+                                                totalBalance
+                                        )}
+                                        /
+                                        {formatResponsiveCurrency(
+                                            nextRankInfo.balanceRequired
+                                        )}{" "}
+                                        to next rank
                                     </span>
                                 ) : (
-                                    <span className="text-red-400">0</span>
+                                    <span>
+                                        You&apos;ve reached the highest rank!
+                                    </span>
                                 )}
-                            </div>
-                            <div className="text-sm text-white font-medium">
-                                Ranks
                             </div>
                         </div>
                     </div>
                 </div>
 
+                {/* Remove the old current rank summary as it's now integrated above */}
                 {animationPhase === "rank" && (
                     <div className="mt-8 flex justify-center">
                         <button
@@ -1087,21 +1184,7 @@ const DeliveryRunComponent = () => {
                     break;
                 }
             }
-        } else {
-            // Fallback si les données de rang ne sont pas disponibles
-            console.warn(
-                "Rank threshold data not available, using approximation"
-            );
-            if (newTotalBalance >= 5000000) newRank = 10;
-            else if (newTotalBalance >= 2500000) newRank = 20;
-            else if (newTotalBalance >= 750000) newRank = 50;
-            else if (newTotalBalance >= 250000) newRank = 100;
-            else if (newTotalBalance >= 50000) newRank = 150;
-            else newRank = 200;
         }
-
-        // Calculer le changement de rang (négatif = amélioration)
-        const rankChange = newRank - businessRank;
 
         console.log("calculateImpacts results:", {
             netResult,
@@ -1109,7 +1192,6 @@ const DeliveryRunComponent = () => {
             newTotalBalance,
             businessRank,
             newRank,
-            rankChange,
             balanceToAdd: netResult,
         });
 
@@ -1120,7 +1202,6 @@ const DeliveryRunComponent = () => {
             isOverallLoss,
             newTotalBalance,
             newRank,
-            rankChange,
         };
     };
 
