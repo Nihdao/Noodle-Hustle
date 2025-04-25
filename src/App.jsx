@@ -120,7 +120,7 @@ function App() {
         // Récupérer l'état actuel du singleton
         const currentGameState = gameState.initialized
             ? gameState.getGameState()
-            : "GameState non initialisé. L'état n'est pas disponible.";
+            : null;
 
         setDebugContent(content);
         setGameStateData(currentGameState);
