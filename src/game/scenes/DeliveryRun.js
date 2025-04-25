@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { EventBus } from "../EventBus";
 import { audioManager } from "../AudioManager";
 import gameState from "../GameState";
+import rankData from "../../data/rank.json";
 
 export class DeliveryRun extends Phaser.Scene {
     constructor() {
@@ -15,36 +16,26 @@ export class DeliveryRun extends Phaser.Scene {
         this.deliveryFlowBuff = null;
     }
 
-    init() {
-        // Get data directly from the GameState instead of passed data
-        const gameStateData = gameState.getGameState();
+    init(data) {
+        console.log("DeliveryRun: Initializing with data:", data);
 
-        // Get restaurants from GameState
-        const restaurants = gameStateData.restaurants.bars || [];
-
-        console.log(
-            "DeliveryRun: Init - Starting restaurant profit calculations"
-        );
+        // Store the initial data for later use
+        this.initialData = data;
 
         // Process restaurant data to get complete info
-        this.activeRestaurants = restaurants.map((restaurant) => {
-            // Get the base restaurant data if it's a reference
-            const baseData = restaurant.restaurantId
-                ? gameState.getRestaurantData(restaurant.restaurantId)
-                : null;
+        this.activeRestaurants = data.restaurants.map((restaurant) => {
+            // Calculate staff cost from actual employee data
+            const staffCost = restaurant.staff.reduce((total, staffId) => {
+                const employee = data.employees.find(
+                    (emp) => emp.id === staffId
+                );
+                return total + (employee?.salary || 0);
+            }, 0);
 
-            // Calculate forecasted profit (simple calculation, can be enhanced)
-            const staffCost = restaurant.staffCost || 0;
-            const maintenance =
-                restaurant.maintenance ||
-                (baseData ? baseData.maintenance : 100);
+            // Calculate forecasted profit using actual values
+            const salesVolume = restaurant.salesVolume || 600;
+            const maintenance = restaurant.maintenance || 100;
 
-            // Use base data properties if available, otherwise use instance properties
-            const salesVolume = baseData
-                ? baseData.salesVolume
-                : restaurant.salesVolume || 600;
-
-            // Simple profit calculation
             const forecastedProfit = Math.round(
                 salesVolume - maintenance - staffCost
             );
@@ -56,7 +47,6 @@ export class DeliveryRun extends Phaser.Scene {
                 - Forecasted Profit: ${forecastedProfit}`);
 
             return {
-                ...baseData,
                 ...restaurant,
                 forecastedProfit,
                 staffCost,
@@ -65,12 +55,12 @@ export class DeliveryRun extends Phaser.Scene {
             };
         });
 
-        // Get player stats from GameState
-        this.playerStats = gameStateData.playerStats || {};
-
-        // Get funds and period from GameState
-        this.funds = gameStateData.finances?.funds || 0;
-        this.currentPeriod = gameStateData.gameProgress?.currentPeriod || 1;
+        // Store player stats
+        this.playerStats = data.playerStats;
+        this.funds = data.finances.funds;
+        this.currentPeriod = data.currentPeriod;
+        this.totalBalance = data.finances.totalBalance;
+        this.currentRank = data.playerStats.currentRank;
 
         // Initialize game progress data object
         this.gameProgressData = {};
@@ -83,12 +73,13 @@ export class DeliveryRun extends Phaser.Scene {
             (buff) => buff.type === "deliveryFlow"
         );
 
-        console.log(
-            "DeliveryRun: Initialized with",
-            this.activeRestaurants.length,
-            "restaurants"
-        );
-        console.log("DeliveryFlow buff:", this.deliveryFlowBuff);
+        console.log("DeliveryRun: Initialized with", {
+            restaurants: this.activeRestaurants.length,
+            playerStats: this.playerStats,
+            funds: this.funds,
+            currentPeriod: this.currentPeriod,
+            buffs: this.activeBuffs.length,
+        });
     }
 
     preload() {
@@ -719,14 +710,6 @@ export class DeliveryRun extends Phaser.Scene {
             restaurant.actualProfit = adjustedProfit;
             restaurant.events = restaurantData.events;
             totalProfit += adjustedProfit;
-
-            // Add to burnout based on restaurant performance
-            if (adjustedProfit < 0) {
-                burnoutChange += 5; // Increase burnout for negative profit
-                console.log(
-                    `DeliveryRun: ${restaurant.name} had negative profit, adding 5 to burnout`
-                );
-            }
         });
 
         // Base burnout change based on overall performance
@@ -754,32 +737,50 @@ export class DeliveryRun extends Phaser.Scene {
             );
         }
 
-        // Determine rank change based on profit
-        // Simple algorithm: if profit is substantial, improve rank
-        let rankChange = 0;
-        if (totalProfit > 5000) {
-            rankChange = -1; // Rank improved (lower number is better)
-            console.log(`DeliveryRun: Profit exceeds 5000, rank improved by 1`);
-        } else if (totalProfit < -2000) {
-            rankChange = 1; // Rank worsened
-            console.log(`DeliveryRun: Loss exceeds 2000, rank worsened by 1`);
+        // Calculate new total balance
+        const newTotalBalance =
+            this.totalBalance + (totalProfit > 0 ? totalProfit : 0);
+
+        // Calculate new rank based on total balance
+        const rankDetails = rankData.rankDetails;
+        let newRank = 200; // Default rank (lowest)
+        for (const detail of rankDetails) {
+            if (newTotalBalance >= detail.balanceRequired) {
+                newRank = detail.rank;
+                break;
+            }
         }
 
-        // Store results for React component to display
+        // Calculate rank change
+        const rankChange = Math.max(
+            -199,
+            Math.min(199, newRank - this.currentRank)
+        );
+        const finalRank = Math.max(
+            1,
+            Math.min(200, this.currentRank + rankChange)
+        );
+
+        console.log(`DeliveryRun: Final calculations:
+            - Current Rank: ${this.currentRank}
+            - Total Balance: ${this.totalBalance}
+            - New Total Balance: ${newTotalBalance}
+            - New Rank: ${newRank}
+            - Rank Change: ${rankChange}
+            - Final Rank: ${finalRank}
+            - Burnout Change: ${burnoutChange}`);
+
+        // Store complete results for React component
         this.gameProgressData = {
             restaurants: this.activeRestaurants,
-            totalProfit: totalProfit,
-            burnoutChange: burnoutChange,
-            rankChange: rankChange,
-            activeBuffs: this.activeBuffs,
-        };
-
-        console.log("DeliveryRun: Final results calculated:", {
             totalProfit,
             burnoutChange,
-            rankChange,
-            activeBuffsCount: this.activeBuffs.length,
-        });
+            rankChange: finalRank - this.currentRank,
+            activeBuffs: this.activeBuffs,
+            newTotalBalance,
+            finalRank,
+            initialFunds: this.funds,
+        };
 
         // Emit event to signal results are ready
         EventBus.emit("deliveryResultsReady", this.gameProgressData);
@@ -790,40 +791,44 @@ export class DeliveryRun extends Phaser.Scene {
 
     setupReturnToHubListener() {
         // Listen for return to hub event from React
-        EventBus.once("returnToHub", () => {
+        EventBus.once("returnToHub", (results) => {
             console.log("DeliveryRun: Returning to hub");
+
+            // Store the final results in a variable for logging only
+            const finalResults = {
+                totalProfit:
+                    results.totalProfit || this.gameProgressData.totalProfit,
+                rankChange:
+                    results.rankChange || this.gameProgressData.rankChange || 0,
+                burnoutChange:
+                    results.burnoutChange ||
+                    this.gameProgressData.burnoutChange,
+                restaurants: results.restaurants || this.activeRestaurants,
+            };
+
+            console.log(
+                "DeliveryRun: Preparing to transition to HubScreen with results:",
+                finalResults
+            );
+
+            // Stop music
+            audioManager.stopMusic();
+
+            // Reset important variables
+            this.activeRestaurants = [];
+            this.playerSprites = {};
+            this.events = {};
+            this.finished = false;
+            this.started = false;
+
+            // Fade out and transition to HubScreen
             this.cameras.main.fadeOut(1000, 0, 0, 0);
-
             this.time.delayedCall(1000, () => {
-                // Send the results to GameState for processing
-                const results = {
-                    totalProfit: this.gameProgressData.totalProfit,
-                    rankChange: this.gameProgressData.rankChange || 0,
-                    burnoutChange: this.gameProgressData.burnoutChange,
-                    restaurants: this.activeRestaurants,
-                };
-
-                console.log(
-                    "DeliveryRun: Sending final results to GameState:",
-                    results
-                );
-
-                // Process results in GameState
-                gameState.processDeliveryResults(results);
-
-                // Stop music and scene
-                audioManager.stopMusic();
-
-                // Reset important variables
-                this.activeRestaurants = [];
-                this.playerSprites = {};
-                this.events = {};
-                this.finished = false;
-                this.started = false;
-
-                // Stop this scene completely before starting HubScreen
-                this.scene.stop();
-                this.scene.start("HubScreen");
+                // Make sure we're still in this scene before transitioning
+                if (this.scene.isActive()) {
+                    this.scene.stop();
+                    this.scene.start("HubScreen");
+                }
             });
         });
     }

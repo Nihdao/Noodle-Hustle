@@ -12,6 +12,7 @@ const DeliveryRunComponent = () => {
     const { formatCurrency } = useFinances();
     const { playClickSound } = useSound();
     const { activeBuffs } = useGameBuffs();
+    const [isBuffsPanelOpen, setIsBuffsPanelOpen] = useState(false);
 
     // State for delivery results data and UI control
     const [resultsData, setResultsData] = useState(null);
@@ -93,7 +94,7 @@ const DeliveryRunComponent = () => {
     // Handle returning to hub
     const handleReturnToHub = () => {
         playClickSound();
-        setAnimationPhase("complete");
+        setAnimationPhase("transitioning");
 
         // Add burnout based on financial performance
         if (resultsData) {
@@ -104,7 +105,6 @@ const DeliveryRunComponent = () => {
             const isOverallLoss = netResult < 0;
 
             // Apply burnout based on financial outcome
-            // +30 if lost money, +10 otherwise
             const burnoutToAdd = isOverallLoss ? 30 : 10;
 
             // Calculate employee morale impacts
@@ -142,7 +142,36 @@ const DeliveryRunComponent = () => {
                 });
             }
 
-            // Update the resultsData for display and for passing to GameState
+            // Get current period from game state
+            const currentPeriod =
+                appGameState?.gameProgress?.currentPeriod || 1;
+            const currentBurnout = appGameState?.playerStats?.burnout || 0;
+
+            // Calculate new total balance
+            const currentTotalBalance =
+                appGameState?.finances?.totalBalance || 0;
+            const balanceToAdd = netResult > 0 ? netResult : 0;
+            const newTotalBalance = currentTotalBalance + balanceToAdd;
+
+            // Get rank details from game state
+            const rankThresholds =
+                appGameState?.gameProgressData?.rankDetails || [];
+            let finalRank = businessRank;
+
+            // Calculate new rank based on thresholds
+            if (rankThresholds.length > 0) {
+                for (let i = rankThresholds.length - 1; i >= 0; i--) {
+                    if (newTotalBalance >= rankThresholds[i].balanceRequired) {
+                        finalRank = rankThresholds[i].rank;
+                        break;
+                    }
+                }
+            }
+
+            // Calculate rank change
+            const rankChange = finalRank - businessRank;
+
+            // Ensure all required data is present and has default values
             const updatedResults = {
                 ...resultsData,
                 burnoutChange: burnoutToAdd,
@@ -150,25 +179,72 @@ const DeliveryRunComponent = () => {
                 finalFunds,
                 balanceChange: netResult,
                 employeeMoraleUpdates,
-                // Add flag to indicate if we need to update balance
                 updateBalance: true,
+                // Add message data
+                message: {
+                    text: isOverallLoss
+                        ? "Financial losses have increased stress levels significantly."
+                        : "Another day of managing the noodle empire complete.",
+                    type: isOverallLoss ? "warning" : "info",
+                },
+                // Ensure all required properties have default values
+                restaurants: resultsData.restaurants || [],
+                totalProfit: totalProfit || 0,
+                rankChange: rankChange,
+                // Add new properties for complete state update
+                newTotalBalance: newTotalBalance,
+                finalRank: finalRank,
+                currentPeriod: currentPeriod,
+                gameProgress: {
+                    currentPeriod: currentPeriod + 1,
+                    businessRank: finalRank,
+                    totalBalance: newTotalBalance,
+                },
+                // Add all required properties for gameState updates
+                playerStats: {
+                    burnout: Math.min(
+                        100,
+                        Math.max(0, currentBurnout + burnoutToAdd)
+                    ),
+                    currentRank: finalRank,
+                },
+                finances: {
+                    funds: finalFunds,
+                    totalBalance: newTotalBalance,
+                },
             };
 
-            setResultsData(updatedResults);
+            console.log(
+                "DeliveryRunComponent: Sending final results to HubScreen:",
+                updatedResults
+            );
 
-            // Emit event to tell Phaser scene to return to hub with updated results
-            EventBus.emit("returnToHub", {
-                ...updatedResults,
-                burnoutChange: burnoutToAdd,
-                financialResult: netResult,
-                finalFunds,
-                balanceChange: netResult,
-                employeeMoraleUpdates,
-                updateBalance: true,
-            });
+            // Add a slight delay to ensure Phaser scene is ready
+            setTimeout(() => {
+                // Emit returnToHub event with complete data for GameState
+                EventBus.emit("returnToHub", updatedResults);
+            }, 50);
         } else {
-            // Fallback if results aren't available
-            EventBus.emit("returnToHub");
+            // Fallback if no results data available
+            console.warn(
+                "DeliveryRunComponent: No results data available, sending empty results"
+            );
+
+            // Send minimal data to avoid errors
+            EventBus.emit("returnToHub", {
+                burnoutChange: 0,
+                finalFunds: appGameState?.finances?.funds || 0,
+                balanceChange: 0,
+                employeeMoraleUpdates: [],
+                updateBalance: false,
+                restaurants: [],
+                totalProfit: 0,
+                rankChange: 0,
+                message: {
+                    text: "Period complete.",
+                    type: "info",
+                },
+            });
         }
     };
 
@@ -246,39 +322,61 @@ const DeliveryRunComponent = () => {
         };
     };
 
-    // Render active buffs panel
+    // Function to render active buffs panel
     const renderActiveBuffs = () => {
         if (!activeBuffs || activeBuffs.length === 0) return null;
 
         return (
-            <div className="absolute top-20 right-4 bg-whiteCream bg-opacity-90 rounded-lg shadow-lg p-3 max-w-xs">
-                <h3 className="text-principalBrown text-sm font-bold mb-2">
-                    Active Buffs
-                </h3>
-                <div className="space-y-2">
-                    {activeBuffs.map((buff) => (
-                        <div
-                            key={buff.id}
-                            className="flex items-center text-xs gap-2 p-1.5 bg-white bg-opacity-50 rounded-md"
-                        >
-                            <span className="text-lg">
-                                {getBuffIcon(buff.type)}
+            <div className="fixed bottom-4 right-4 z-50 pointer-events-auto">
+                {/* Bouton pour afficher/masquer les buffs */}
+                <button
+                    onClick={() => setIsBuffsPanelOpen(!isBuffsPanelOpen)}
+                    className="bg-principalRed text-whiteCream rounded-full p-2 shadow-lg hover:bg-principalRed-light transition-colors flex items-center gap-2"
+                >
+                    <span className="text-xl">✨</span>
+                    <span className="bg-white text-principalRed text-xs rounded-full px-2 py-0.5 font-bold">
+                        {activeBuffs.length}
+                    </span>
+                </button>
+
+                {/* Panel des buffs - s'ouvre vers le haut */}
+                {isBuffsPanelOpen && (
+                    <div
+                        className="absolute bottom-full right-0 mb-2 bg-whiteCream bg-opacity-90 rounded-lg shadow-lg p-3 min-w-[250px] transform transition-all duration-200 ease-out animate-slideUpFade"
+                        onClick={(e) => e.stopPropagation()} // Empêche la fermeture lors du clic sur le panel
+                    >
+                        <h3 className="text-principalBrown text-sm font-bold mb-2 flex items-center gap-2">
+                            <span>Active Buffs</span>
+                            <span className="text-xs bg-principalRed text-whiteCream px-2 py-0.5 rounded-full">
+                                {activeBuffs.length}
                             </span>
-                            <div className="flex-1">
+                        </h3>
+                        <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                            {activeBuffs.map((buff) => (
                                 <div
-                                    className={`font-bold ${getBuffColor(
-                                        buff.type
-                                    )}`}
+                                    key={buff.id}
+                                    className="flex items-center text-xs gap-2 p-1.5 bg-white bg-opacity-50 rounded-md hover:bg-opacity-70 transition-colors"
                                 >
-                                    {buff.name}
+                                    <span className="text-lg">
+                                        {getBuffIcon(buff.type)}
+                                    </span>
+                                    <div className="flex-1">
+                                        <div
+                                            className={`font-bold ${getBuffColor(
+                                                buff.type
+                                            )}`}
+                                        >
+                                            {buff.name}
+                                        </div>
+                                        <div className="text-gray-600 text-xs">
+                                            {buff.description}
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="text-gray-600 text-xs">
-                                    {buff.description}
-                                </div>
-                            </div>
+                            ))}
                         </div>
-                    ))}
-                </div>
+                    </div>
+                )}
             </div>
         );
     };
@@ -286,6 +384,7 @@ const DeliveryRunComponent = () => {
     // Render business performance results table
     const renderResultsTable = () => {
         if (!resultsData || !resultsData.restaurants) return null;
+        console.log(impacts);
 
         return (
             <div className="bg-whiteCream shadow-2xl rounded-xl p-6 w-full max-w-5xl mx-auto transition-discrete duration-500 animate-fade-in">
@@ -570,11 +669,11 @@ const DeliveryRunComponent = () => {
                                             Change:
                                         </span>
                                         <span className="font-bold text-principalRed">
-                                            {resultsData.burnoutChange}
+                                            +{impacts?.burnoutImpact || 10}
                                         </span>
                                     </div>
                                     <div className="text-xs text-gray-600 mt-1">
-                                        {resultsData.financialResult < 0
+                                        {impacts?.isOverallLoss
                                             ? "You lost money this period, increasing stress significantly."
                                             : "Managing businesses always increases stress."}
                                     </div>
@@ -588,11 +687,11 @@ const DeliveryRunComponent = () => {
                             </h4>
                             <div className="flex items-center">
                                 <div className="w-8 h-8 flex items-center justify-center mr-2">
-                                    {resultsData.rankChange < 0 ? (
+                                    {impacts?.rankChange < 0 ? (
                                         <span className="text-xl text-emerald-600">
                                             🏆
                                         </span>
-                                    ) : resultsData.rankChange > 0 ? (
+                                    ) : impacts?.rankChange > 0 ? (
                                         <span className="text-xl text-principalRed">
                                             📉
                                         </span>
@@ -609,26 +708,30 @@ const DeliveryRunComponent = () => {
                                         </span>
                                         <span
                                             className={`font-bold ${
-                                                resultsData.rankChange < 0
+                                                impacts?.rankChange < 0
                                                     ? "text-emerald-600"
-                                                    : resultsData.rankChange > 0
+                                                    : impacts?.rankChange > 0
                                                     ? "text-principalRed"
                                                     : "text-gray-600"
                                             }`}
                                         >
-                                            {resultsData.rankChange < 0
+                                            {impacts?.rankChange < 0
                                                 ? "+"
-                                                : resultsData.rankChange > 0
+                                                : impacts?.rankChange > 0
                                                 ? "-"
                                                 : ""}
-                                            {Math.abs(resultsData.rankChange) ||
-                                                "No change"}
+                                            {impacts?.rankChange !== 0
+                                                ? Math.abs(impacts?.rankChange)
+                                                : "No change"}
                                         </span>
                                     </div>
                                     <div className="text-xs text-gray-600 mt-1">
                                         Total Balance:{" "}
                                         <span className="font-medium">
-                                            {formatCurrency(totalBalance)}
+                                            {formatCurrency(
+                                                impacts?.newTotalBalance ||
+                                                    totalBalance
+                                            )}
                                         </span>
                                     </div>
                                 </div>
@@ -667,12 +770,17 @@ const DeliveryRunComponent = () => {
 
     // Render business rank display with horizontal rank ladder
     const renderRankDisplay = () => {
-        const newRank = resultsData?.rankChange
-            ? businessRank + resultsData.rankChange
-            : businessRank;
+        // Utiliser la fonction calculateImpacts pour obtenir les données précises
+        const impactData = calculateImpacts();
 
-        // Improved rank is represented by a lower number
-        const isImproved = newRank < businessRank;
+        // Utiliser les valeurs calculées ou les valeurs par défaut
+        const newRank = impactData?.newRank || businessRank;
+        const rankChange = impactData?.rankChange || 0;
+        const calculatedTotalBalance =
+            impactData?.newTotalBalance || totalBalance;
+
+        // Improved rank is represented by a lower number (negative rankChange)
+        const isImproved = rankChange < 0;
 
         // Get rank details for the new rank
         const newRankDetails = getNoodleRankName(newRank);
@@ -697,7 +805,7 @@ const DeliveryRunComponent = () => {
                             Your rank is based on your total accumulated balance
                             of{" "}
                             <span className="font-bold">
-                                {formatCurrency(totalBalance)}
+                                {formatCurrency(calculatedTotalBalance)}
                             </span>
                         </p>
                         {nextRankInfo && (
@@ -777,60 +885,41 @@ const DeliveryRunComponent = () => {
                         )}
                     </div>
 
-                    {/* Rank labels */}
-                    <div className="flex justify-between mt-2 px-1 mb-8">
-                        <div className="flex flex-col items-center">
-                            <div className="text-xs font-bold mb-1 text-center text-purple-600">
-                                #200
-                            </div>
-                            <div className="py-1 px-2 bg-purple-600 text-white text-xs rounded-md font-bold shadow-sm whitespace-nowrap">
-                                Back-Alley
-                            </div>
-                        </div>
-                        <div className="flex flex-col items-center">
-                            <div className="text-xs font-bold mb-1 text-center text-blue-500">
-                                #150
-                            </div>
-                            <div className="py-1 px-2 bg-blue-500 text-white text-xs rounded-md font-bold shadow-sm whitespace-nowrap">
-                                Street Stand
-                            </div>
-                        </div>
-                        <div className="flex flex-col items-center">
-                            <div className="text-xs font-bold mb-1 text-center text-green-500">
-                                #100
-                            </div>
-                            <div className="py-1 px-2 bg-green-500 text-white text-xs rounded-md font-bold shadow-sm whitespace-nowrap">
-                                Local Spot
-                            </div>
-                        </div>
-                        <div className="flex flex-col items-center">
-                            <div className="text-xs font-bold mb-1 text-center text-amber-500">
-                                #50
-                            </div>
-                            <div className="py-1 px-2 bg-amber-500 text-black text-xs rounded-md font-bold shadow-sm whitespace-nowrap">
-                                Master Bar
-                            </div>
-                        </div>
-                        <div className="flex flex-col items-center">
-                            <div className="text-xs font-bold mb-1 text-center text-orange-500">
-                                #20
-                            </div>
-                            <div className="py-1 px-2 bg-orange-500 text-white text-xs rounded-md font-bold shadow-sm whitespace-nowrap">
-                                Heavenly
-                            </div>
-                        </div>
-                        <div className="flex flex-col items-center">
-                            <div className="text-xs font-bold mb-1 text-center text-red-500">
-                                #1
-                            </div>
-                            <div className="py-1 px-2 bg-red-500 text-white text-xs rounded-md font-bold shadow-sm whitespace-nowrap">
-                                Ramen Temple
-                            </div>
-                        </div>
+                    {/* Rank labels/categories */}
+                    <div className="flex justify-between px-1 text-xs font-bold">
+                        <div className="text-violet-600">#200</div>
+                        <div className="text-blue-500">#150</div>
+                        <div className="text-green-500">#100</div>
+                        <div className="text-amber-500">#50</div>
+                        <div className="text-orange-600">#20</div>
+                        <div className="text-red-600">#1</div>
                     </div>
 
-                    {/* Progress bar legend */}
-                    <div className="mt-6 grid grid-cols-2 gap-4 max-w-3xl mx-auto text-center bg-principalRed-light/60 p-4 rounded-lg">
+                    <div className="flex justify-between px-1 mt-1">
+                        <div className="px-2 py-1 bg-violet-500 rounded-full text-white text-xs">
+                            Back-Alley
+                        </div>
+                        <div className="px-2 py-1 bg-blue-500 rounded-full text-white text-xs">
+                            Street Stand
+                        </div>
+                        <div className="px-2 py-1 bg-green-500 rounded-full text-white text-xs">
+                            Local Spot
+                        </div>
+                        <div className="px-2 py-1 bg-amber-500 rounded-full text-white text-xs">
+                            Master Bar
+                        </div>
+                        <div className="px-2 py-1 bg-orange-500 rounded-full text-white text-xs">
+                            Heavenly
+                        </div>
+                        <div className="px-2 py-1 bg-red-500 rounded-full text-white text-xs">
+                            Ramen Temple
+                        </div>
+                    </div>
+                </div>
+
+                {/* Current rank summary */}
+                <div className="mt-8 bg-principalRed bg-opacity-70 rounded-lg p-6 text-center shadow-lg">
+                    <div className="flex justify-between items-center px-12">
                         <div className="flex flex-col items-center">
                             <div className="text-sm text-white font-medium">
                                 Your Current Rank
@@ -849,7 +938,7 @@ const DeliveryRunComponent = () => {
                             <div className="text-2xl text-white font-bold">
                                 {isImproved ? (
                                     <span className="text-green-400">
-                                        +{businessRank - newRank}
+                                        +{Math.abs(rankChange)}
                                     </span>
                                 ) : (
                                     <span className="text-red-400">0</span>
@@ -896,9 +985,9 @@ const DeliveryRunComponent = () => {
     // Render HUD elements
     const renderHUD = () => {
         return (
-            <div className="fixed inset-0 pointer-events-none z-10">
+            <div className="fixed inset-0 z-10 pointer-events-none">
                 {/* Top HUD Bar */}
-                <div className="bg-yellowWhite text-principalBrown p-4 flex justify-between items-center shadow-lg border-b border-principalRed/50">
+                <div className="bg-yellowWhite text-principalBrown p-4 flex justify-between items-center shadow-lg border-b border-principalRed/50 pointer-events-auto">
                     <div className="flex items-center gap-4">
                         <img
                             src="/assets/deliveryrun/money_icon.png"
@@ -934,24 +1023,149 @@ const DeliveryRunComponent = () => {
         );
     };
 
+    // Render loading state during transition
+    const renderTransitionState = () => {
+        if (animationPhase === "transitioning") {
+            return (
+                <div className="fixed inset-0 flex items-center justify-center bg-principalBrown bg-opacity-80 z-50">
+                    <div className="text-center">
+                        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-principalRed mx-auto"></div>
+                        <p className="text-whiteCream mt-4 text-xl font-bold">
+                            Returning to Hub...
+                        </p>
+                    </div>
+                </div>
+            );
+        }
+        return null;
+    };
+
+    // Ajouter les calculs à la volée pour les résultats
+    const calculateImpacts = () => {
+        if (!resultsData) return null;
+
+        // Calculer le résultat financier net (ce calcul est déjà fait dans handleReturnToHub)
+        const totalProfit = resultsData.totalProfit || 0;
+        const netResult = totalProfit - unusedEmployeeCost - debtAmount;
+        const isOverallLoss = netResult < 0;
+
+        // Calculer l'impact sur le burnout selon la même logique que handleReturnToHub
+        const burnoutImpact = isOverallLoss ? 30 : 10;
+
+        // Calculer le nouveau solde (final funds)
+        const finalFunds = resultsData.initialFunds + netResult;
+
+        // Récupérer la balance totale actuelle depuis le bon endroit dans le state
+        const currentTotalBalance =
+            appGameState?.finances?.totalBalance ||
+            appGameState?.gameProgress?.totalBalance ||
+            0;
+        console.log("Current total balance from state:", {
+            financesTotalBalance: appGameState?.finances?.totalBalance,
+            gameProgressTotalBalance: appGameState?.gameProgress?.totalBalance,
+            currentTotalBalance,
+        });
+
+        // Calculer la nouvelle balance totale
+        // On ajoute le résultat net à la balance totale, qu'il soit positif ou négatif
+        // car c'est le total cumulé de tous les résultats
+        const newTotalBalance = currentTotalBalance + netResult;
+
+        // Obtenir les détails de rang à partir des données de rank.json
+        const rankThresholds =
+            appGameState?.gameProgressData?.rankDetails || [];
+
+        // Trouver le nouveau rang basé sur la nouvelle balance totale
+        let newRank = businessRank; // Commencer avec le rang actuel
+
+        // Parcourir les seuils de rang pour trouver le nouveau rang
+        if (rankThresholds.length > 0) {
+            // Trouver le rang qui correspond à la nouvelle balance totale
+            for (let i = rankThresholds.length - 1; i >= 0; i--) {
+                if (newTotalBalance >= rankThresholds[i].balanceRequired) {
+                    newRank = rankThresholds[i].rank;
+                    break;
+                }
+            }
+        } else {
+            // Fallback si les données de rang ne sont pas disponibles
+            console.warn(
+                "Rank threshold data not available, using approximation"
+            );
+            if (newTotalBalance >= 5000000) newRank = 10;
+            else if (newTotalBalance >= 2500000) newRank = 20;
+            else if (newTotalBalance >= 750000) newRank = 50;
+            else if (newTotalBalance >= 250000) newRank = 100;
+            else if (newTotalBalance >= 50000) newRank = 150;
+            else newRank = 200;
+        }
+
+        // Calculer le changement de rang (négatif = amélioration)
+        const rankChange = newRank - businessRank;
+
+        console.log("calculateImpacts results:", {
+            netResult,
+            currentTotalBalance,
+            newTotalBalance,
+            businessRank,
+            newRank,
+            rankChange,
+            balanceToAdd: netResult,
+        });
+
+        return {
+            burnoutImpact,
+            netResult,
+            finalFunds,
+            isOverallLoss,
+            newTotalBalance,
+            newRank,
+            rankChange,
+        };
+    };
+
+    // Calculer les impacts une seule fois
+    const impacts = calculateImpacts();
+
     return (
-        <div
-            className={`absolute inset-0 overflow-auto transition-colors duration-500 ${
-                showResults || showRankDisplay ? "bg-principalBrown/80" : ""
-            }`}
-        >
-            {/* HUD overlay */}
-            {renderHUD()}
+        <>
+            <style>
+                {`
+                    @keyframes slideUpFade {
+                        from {
+                            opacity: 0;
+                            transform: translateY(10px);
+                        }
+                        to {
+                            opacity: 1;
+                            transform: translateY(0);
+                        }
+                    }
 
-            {/* Content area with results */}
-            <div className="container mx-auto mt-20 mb-8 flex flex-col items-center justify-start p-4 md:p-8 max-w-6xl">
-                {/* Results Table */}
-                {showResults && renderResultsTable()}
+                    .animate-slideUpFade {
+                        animation: slideUpFade 0.2s ease-out forwards;
+                    }
+                `}
+            </style>
+            <div
+                className={`absolute inset-0 overflow-auto transition-colors duration-500 ${
+                    showResults || showRankDisplay ? "bg-principalBrown/80" : ""
+                }`}
+            >
+                {/* HUD overlay */}
+                {renderHUD()}
 
-                {/* Rank Display */}
-                {showRankDisplay && renderRankDisplay()}
+                {/* Content area with results */}
+                <div className="container mx-auto mt-20 mb-8 flex flex-col items-center justify-start p-4 md:p-8 max-w-6xl pointer-events-auto">
+                    {/* Results Table */}
+                    {showResults && renderResultsTable()}
+
+                    {/* Rank Display */}
+                    {showRankDisplay && renderRankDisplay()}
+                </div>
             </div>
-        </div>
+            {renderTransitionState()}
+        </>
     );
 };
 

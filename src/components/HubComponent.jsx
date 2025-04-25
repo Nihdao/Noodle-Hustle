@@ -80,16 +80,39 @@ const HubComponent = () => {
             return;
         }
 
-        // Start the DeliveryRun scene with game data from hooks
+        // Start the DeliveryRun scene with complete game data from hooks
         if (window.gameRef) {
             // Arrêter la scène HubScreen avant de démarrer DeliveryRun
             window.gameRef.scene.stop("HubScreen");
-            window.gameRef.scene.start("DeliveryRun", {
-                restaurants: noodleBars,
-                playerStats: { burnout, burnoutSeverity },
-                funds,
+
+            // Préparer les données complètes pour DeliveryRun
+            const deliveryRunData = {
+                restaurants: noodleBars.map((bar) => ({
+                    ...bar,
+                    // Ensure all required properties are included
+                    salesVolume: bar.salesVolume,
+                    maintenance: bar.maintenance,
+                    staff: bar.staff || [],
+                    staffCost: bar.staffCost || 0,
+                    // Add any other required properties
+                })),
+                playerStats: {
+                    burnout,
+                    burnoutSeverity,
+                    currentRank: businessRank,
+                    totalBalance: state.finances?.totalBalance || 0,
+                },
+                finances: {
+                    funds,
+                    debt: debt.amount || 0,
+                    totalBalance: state.finances?.totalBalance || 0,
+                },
                 currentPeriod,
-            });
+                employees: rosterWithDetails,
+            };
+
+            console.log("Starting DeliveryRun with data:", deliveryRunData);
+            window.gameRef.scene.start("DeliveryRun", deliveryRunData);
         } else {
             console.error("Game reference not found");
             // Fallback to normal period start

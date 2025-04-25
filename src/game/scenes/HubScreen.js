@@ -727,115 +727,136 @@ export class HubScreen extends Phaser.Scene {
         }
     }
 
-    // Add the new method to handle return from delivery run
-    handleReturnFromDelivery(deliveryResults) {
-        console.log(
-            "HubScreen: Processing delivery run results",
-            deliveryResults
-        );
+    // Display message with type (success, warning, info)
+    displayMessage(text, type = "info") {
+        console.log(`HubScreen: Displaying message: ${text} (${type})`);
 
-        // If no results provided or no need to update state, just return
-        if (!deliveryResults || !deliveryResults.updateBalance) {
+        // Use the fairy speech bubble for messages
+        this.showMessage(text);
+
+        // Can also emit an event for React to display in UI
+        EventBus.emit("displayMessage", { text, type });
+    }
+
+    // Check conditions for game over
+    checkGameOverConditions() {
+        const state = gameState.getGameState();
+
+        // Check for bankruptcy (negative funds beyond a threshold)
+        if (state.finances?.funds < -10000) {
+            console.log("HubScreen: GAME OVER - Bankruptcy detected");
+            EventBus.emit("gameOver", { reason: "bankruptcy" });
+        }
+
+        // Check for burnout level too high
+        if (state.playerStats?.burnout >= 100) {
+            console.log("HubScreen: GAME OVER - Burnout level critical");
+            EventBus.emit("gameOver", { reason: "burnout" });
+        }
+    }
+
+    // Add the new method to handle return from delivery run
+    handleReturnFromDelivery(results) {
+        console.log("HubScreen: Processing delivery results:", results);
+
+        if (!results) {
+            console.warn("No results provided to handleReturnFromDelivery");
             return;
         }
 
-        // Extract the data we need
-        const {
-            finalFunds,
-            balanceChange,
-            burnoutChange,
-            employeeMoraleUpdates,
-        } = deliveryResults;
+        // Process the period increment first to ensure it's properly updated
+        // This is critical for audio switching and properly tracking game progress
+        if (results.gameProgress) {
+            // Make sure the period is incremented
+            gameState.updateGameProgress(results.gameProgress);
 
-        // Update the game state with all results
-        gameState.updateGameState((state) => {
-            // Create copy of the state to modify
-            const newState = { ...state };
+            // Get the updated period
+            const currentState = gameState.getGameState();
+            const updatedPeriod = currentState.gameProgress.currentPeriod;
 
-            // 1. Update funds
-            if (newState.finances) {
-                newState.finances.funds = finalFunds;
-            }
+            console.log(`HubScreen: Updated to period ${updatedPeriod}`);
 
-            // 2. Update balance if needed
-            if (balanceChange !== undefined && newState.finances) {
-                // Only add positive changes to totalBalance (as specified in the game rules)
-                if (balanceChange > 0) {
-                    newState.finances.totalBalance =
-                        (newState.finances.totalBalance || 0) + balanceChange;
-                }
-            }
+            // Trigger music change based on the new period
+            audioManager.playHubMusic(updatedPeriod);
 
-            // 3. Update burnout
-            if (burnoutChange !== undefined && newState.playerStats) {
-                // Add burnout, ensuring it stays within 0-100 range
-                newState.playerStats.burnout = Math.min(
-                    100,
-                    Math.max(
-                        0,
-                        (newState.playerStats.burnout || 0) + burnoutChange
-                    )
-                );
-
-                // Add to burnout history
-                if (!newState.playerStats.burnoutHistory) {
-                    newState.playerStats.burnoutHistory = [];
-                }
-
-                newState.playerStats.burnoutHistory.push({
-                    period: newState.gameProgress?.currentPeriod || 1,
-                    burnout: newState.playerStats.burnout,
-                });
-            }
-
-            // 4. Update employee morale
-            if (
-                employeeMoraleUpdates &&
-                employeeMoraleUpdates.length > 0 &&
-                newState.employees
-            ) {
-                const updatedRoster = newState.employees.roster.map(
-                    (employee) => {
-                        // Find if this employee has a morale update
-                        const update = employeeMoraleUpdates.find(
-                            (update) => update.employeeId === employee.id
-                        );
-
-                        if (update) {
-                            // Apply morale change, keeping within 0-100 range
-                            const newMorale = Math.min(
-                                100,
-                                Math.max(
-                                    0,
-                                    (employee.morale || 100) +
-                                        update.moraleDelta
-                                )
-                            );
-
-                            return {
-                                ...employee,
-                                morale: newMorale,
-                            };
-                        }
-
-                        return employee;
-                    }
-                );
-
-                newState.employees.roster = updatedRoster;
-            }
-
-            return newState;
-        });
-
-        // Show a message about the results
-        if (balanceChange < 0) {
-            this.showMessage(
-                "Your finances have taken a hit. Employee morale has decreased!"
-            );
-        } else {
-            this.showMessage("Good job! Your business is doing well!");
+            // Emit event to notify other components of period change
+            EventBus.emit("periodChanged", updatedPeriod);
         }
+
+        // Update funds and balance
+        if (results.finalFunds !== undefined) {
+            gameState.setFunds(results.finalFunds);
+        }
+
+        if (results.balanceChange && results.updateBalance) {
+            const newBalance =
+                gameState.getTotalBalance() + results.balanceChange;
+            gameState.setTotalBalance(newBalance);
+        }
+
+        // Update burnout
+        if (results.burnoutChange) {
+            const currentBurnout = gameState.getBurnout();
+            const newBurnout = Math.min(
+                100,
+                Math.max(0, currentBurnout + results.burnoutChange)
+            );
+            gameState.setBurnout(newBurnout);
+        }
+
+        // Update employee morale
+        if (
+            results.employeeMoraleUpdates &&
+            results.employeeMoraleUpdates.length > 0
+        ) {
+            results.employeeMoraleUpdates.forEach((update) => {
+                const employee = gameState.getEmployeeById(update.employeeId);
+                if (employee) {
+                    const newMorale = Math.min(
+                        100,
+                        Math.max(0, employee.morale + update.moraleDelta)
+                    );
+                    gameState.updateEmployeeMorale(
+                        update.employeeId,
+                        newMorale
+                    );
+                }
+            });
+        }
+
+        // Update restaurants
+        if (results.restaurants && results.restaurants.length > 0) {
+            results.restaurants.forEach((restaurant) => {
+                gameState.updateRestaurant(restaurant.id, {
+                    profit: restaurant.actualProfit,
+                    salesVolume: restaurant.salesVolume,
+                    rating: restaurant.rating,
+                });
+            });
+        }
+
+        // Save game state to localStorage after all updates
+        gameState.saveGameState(true); // true to create a backup copy
+
+        // Display result message
+        if (results.message) {
+            this.displayMessage(results.message.text, results.message.type);
+        } else {
+            // Fallback message based on financial result
+            const messageText =
+                results.balanceChange >= 0
+                    ? `Period complete! Profit: $${results.balanceChange}`
+                    : `Period complete. Loss: $${Math.abs(
+                          results.balanceChange
+                      )}`;
+            this.displayMessage(
+                messageText,
+                results.balanceChange >= 0 ? "success" : "warning"
+            );
+        }
+
+        // Check for game over conditions
+        this.checkGameOverConditions();
     }
 }
 

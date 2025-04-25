@@ -14,7 +14,6 @@ import {
 import confidantsData from "../data/confidants.json";
 import buffsData from "../data/buffs.json";
 import employeesData from "../data/employees.json";
-import restaurantsData from "../data/restaurants.json";
 import rankData from "../data/rank.json";
 
 class GameState {
@@ -177,10 +176,9 @@ class GameState {
             // Update finances
             const updatedFunds = state.finances.funds + totalProfit;
 
-            // Update totalBalance if profit is positive
+            // Update totalBalance with ALL profit/loss changes
             const totalBalance = state.finances.totalBalance || 0;
-            const updatedTotalBalance =
-                totalProfit > 0 ? totalBalance + totalProfit : totalBalance;
+            const updatedTotalBalance = totalBalance + totalProfit;
 
             // Check for rank change based on totalBalance
             const currentRank = state.gameProgress.businessRank || 200;
@@ -742,22 +740,224 @@ class GameState {
      * @returns {Object} Complete buff data
      */
     getBuffData(buffId) {
-        // Recherche dans plusieurs catégories de buffs
-        const categories = Object.keys(buffsData);
-        for (const category of categories) {
-            const buff = buffsData[category].find((b) => b.id === buffId);
-            if (buff) return buff;
+        if (!this.initialized) {
+            this.initialize();
+        }
+
+        // Retrieve buff data from buffs.json or from state
+        if (buffId) {
+            return this.state.buffs.active.find((buff) => buff.id === buffId);
         }
         return null;
     }
 
     /**
      * Get restaurant data by ID
-     * @param {number} restaurantId - ID of the restaurant
-     * @returns {Object} Complete restaurant data
+     * @param {string} restaurantId - Restaurant ID
+     * @returns {Object} Restaurant data object
      */
     getRestaurantData(restaurantId) {
-        return restaurantsData.find((rest) => rest.id === restaurantId);
+        if (!this.initialized) {
+            this.initialize();
+        }
+
+        return this.state.restaurants.bars.find(
+            (bar) => bar.id === restaurantId
+        );
+    }
+
+    /**
+     * Updates the game progress object
+     * @param {Object} gameProgress - New game progress data
+     */
+    updateGameProgress(gameProgress) {
+        if (!this.initialized) {
+            this.initialize();
+        }
+
+        this.updateGameState((state) => {
+            return {
+                ...state,
+                gameProgress: {
+                    ...state.gameProgress,
+                    ...gameProgress,
+                },
+            };
+        });
+    }
+
+    /**
+     * Set funds to a specific value
+     * @param {number} amount - The amount to set funds to
+     */
+    setFunds(amount) {
+        if (!this.initialized) {
+            this.initialize();
+        }
+
+        this.updateGameState((state) => {
+            return {
+                ...state,
+                finances: {
+                    ...state.finances,
+                    funds: amount,
+                },
+            };
+        });
+    }
+
+    /**
+     * Set total balance to a specific value
+     * @param {number} amount - The amount to set total balance to
+     */
+    setTotalBalance(amount) {
+        if (!this.initialized) {
+            this.initialize();
+        }
+
+        this.updateGameState((state) => {
+            return {
+                ...state,
+                finances: {
+                    ...state.finances,
+                    totalBalance: amount,
+                },
+            };
+        });
+    }
+
+    /**
+     * Get the current total balance
+     * @returns {number} The current total balance
+     */
+    getTotalBalance() {
+        if (!this.initialized) {
+            this.initialize();
+        }
+
+        return this.state.finances.totalBalance || 0;
+    }
+
+    /**
+     * Set burnout to a specific value
+     * @param {number} amount - The amount to set burnout to (0-100)
+     */
+    setBurnout(amount) {
+        if (!this.initialized) {
+            this.initialize();
+        }
+
+        const boundedAmount = Math.min(100, Math.max(0, amount));
+
+        this.updateGameState((state) => {
+            return {
+                ...state,
+                playerStats: {
+                    ...state.playerStats,
+                    burnout: boundedAmount,
+                    burnoutHistory: [
+                        ...(state.playerStats.burnoutHistory || []),
+                        {
+                            period: state.gameProgress.currentPeriod,
+                            burnout: boundedAmount,
+                        },
+                    ],
+                },
+            };
+        });
+    }
+
+    /**
+     * Get the current burnout level
+     * @returns {number} The current burnout level (0-100)
+     */
+    getBurnout() {
+        if (!this.initialized) {
+            this.initialize();
+        }
+
+        return this.state.playerStats.burnout || 0;
+    }
+
+    /**
+     * Get employee by ID
+     * @param {string} employeeId - The employee ID
+     * @returns {Object} The employee object
+     */
+    getEmployeeById(employeeId) {
+        if (!this.initialized) {
+            this.initialize();
+        }
+
+        return this.state.employees.roster.find((emp) => emp.id === employeeId);
+    }
+
+    /**
+     * Update employee morale
+     * @param {string} employeeId - The employee ID
+     * @param {number} newMorale - The new morale value (0-100)
+     */
+    updateEmployeeMorale(employeeId, newMorale) {
+        if (!this.initialized) {
+            this.initialize();
+        }
+
+        const boundedMorale = Math.min(100, Math.max(0, newMorale));
+
+        this.updateGameState((state) => {
+            return {
+                ...state,
+                employees: {
+                    ...state.employees,
+                    roster: state.employees.roster.map((emp) => {
+                        if (emp.id === employeeId) {
+                            return {
+                                ...emp,
+                                morale: boundedMorale,
+                            };
+                        }
+                        return emp;
+                    }),
+                },
+            };
+        });
+    }
+
+    /**
+     * Update restaurant data
+     * @param {string} restaurantId - The restaurant ID
+     * @param {Object} updates - Object containing properties to update
+     */
+    updateRestaurant(restaurantId, updates) {
+        if (!this.initialized) {
+            this.initialize();
+        }
+
+        this.updateGameState((state) => {
+            return {
+                ...state,
+                restaurants: {
+                    ...state.restaurants,
+                    bars: state.restaurants.bars.map((restaurant) => {
+                        if (restaurant.id === restaurantId) {
+                            return {
+                                ...restaurant,
+                                ...updates,
+                                history: [
+                                    ...(restaurant.history || []),
+                                    {
+                                        period: state.gameProgress
+                                            .currentPeriod,
+                                        ...updates,
+                                    },
+                                ],
+                            };
+                        }
+                        return restaurant;
+                    }),
+                },
+            };
+        });
     }
 
     /**
