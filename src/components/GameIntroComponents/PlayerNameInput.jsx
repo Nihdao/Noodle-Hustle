@@ -57,7 +57,7 @@ function PlayerNameInput({ onNameConfirmed, visible }) {
         >
             <div className="name-input-box">
                 <div className="name-input-inner">
-                    <h2 className="input-title">Welcome to Tokyoodle</h2>
+                    <h2 className="input-title">Welcome to Japanoodle</h2>
                     <p className="input-subtitle">
                         How should the main character be named?
                     </p>
@@ -68,7 +68,7 @@ function PlayerNameInput({ onNameConfirmed, visible }) {
                             className="name-input"
                             value={playerName}
                             onChange={handleNameChange}
-                            placeholder="Enter the name"
+                            placeholder="Eldoon"
                             maxLength={8}
                         />
                         <button

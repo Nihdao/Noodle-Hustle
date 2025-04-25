@@ -22,6 +22,8 @@ class GameState {
         this.state = null;
         this.settings = null;
         this.initialized = false;
+        this.consecutiveNegativePeriods = 0;
+        this.gameOverStats = null;
 
         // Listen for return to hub event to increment period
         this.events.on("returnToHub", () => {
@@ -102,6 +104,9 @@ class GameState {
 
         // Notify listeners that state has changed
         this.events.emit("gameStateUpdated", this.state);
+
+        // Check for game over conditions after state update
+        this.checkGameOver();
     }
 
     /**
@@ -110,6 +115,11 @@ class GameState {
     startPeriod() {
         if (!this.initialized) {
             this.initialize();
+        }
+
+        // Check for game over conditions before starting new period
+        if (this.checkGameOver()) {
+            return false;
         }
 
         // Create a backup before period starts
@@ -1351,6 +1361,86 @@ class GameState {
         });
 
         return true;
+    }
+
+    // Add this method to check for game over conditions
+    checkGameOver() {
+        const currentState = this.getGameState();
+        let isGameOver = false;
+        let reason = null;
+
+        // Check burnout
+        if (currentState.playerStats?.burnout >= 100) {
+            isGameOver = true;
+            reason = "burnout";
+        }
+
+        // Check funds
+        if (currentState.finances?.funds <= 0) {
+            this.consecutiveNegativePeriods++;
+            if (this.consecutiveNegativePeriods >= 2) {
+                isGameOver = true;
+                reason = reason === "burnout" ? "both" : "financial";
+            }
+        } else {
+            this.consecutiveNegativePeriods = 0;
+        }
+
+        if (isGameOver) {
+            // Ensure employees array exists and is valid
+            const employees = Array.isArray(currentState.employees)
+                ? currentState.employees
+                : [];
+            const restaurants = Array.isArray(currentState.restaurants)
+                ? currentState.restaurants
+                : [];
+
+            // Calculate game over stats with safe defaults
+            const stats = {
+                periods: currentState.gameProgress?.currentPeriod || 0,
+                totalRevenue: currentState.finances?.totalBalance || 0,
+                peakRank:
+                    currentState.playerStats?.peakRank ||
+                    currentState.playerStats?.currentRank ||
+                    0,
+                restaurantsOwned: restaurants.length,
+                totalEmployees: employees.length,
+                highestSalary:
+                    employees.length > 0
+                        ? Math.max(
+                              ...employees.map((emp) => emp?.salary || 0),
+                              0
+                          )
+                        : 0,
+                totalTraining: employees.reduce(
+                    (total, emp) => total + (emp?.training || 0),
+                    0
+                ),
+                peakMorale:
+                    employees.length > 0
+                        ? Math.max(
+                              ...employees.map((emp) => emp?.morale || 0),
+                              0
+                          )
+                        : 0,
+            };
+
+            this.gameOverStats = {
+                isGameOver: true,
+                reason,
+                stats,
+            };
+
+            // Emit game over event
+            EventBus.emit("gameOver", this.gameOverStats);
+        }
+
+        return isGameOver;
+    }
+
+    // Add this method to get game over stats
+    getGameOverStats() {
+        return this.gameOverStats;
     }
 }
 

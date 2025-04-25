@@ -24,6 +24,8 @@ import OptionsModal from "./modals/OptionsModal";
 import BuffsModal from "./modals/BuffsModal";
 import HelpModal from "./modals/HelpModal";
 import BusinessRankDisplay from "./common/BusinessRankDisplay";
+import WarningIcons from "./common/WarningIcons";
+import GameOverModal from "./modals/GameOverModal";
 
 const HubComponent = () => {
     // Utiliser uniquement les hooks spécifiques
@@ -61,12 +63,29 @@ const HubComponent = () => {
     // Sons
     const { playClickSound, playBackSound } = useSound();
 
+    // Add state for game over
+    const [gameOverData, setGameOverData] = useState(null);
+
     // Handle menu changes for fairy interaction via EventBus
     useEffect(() => {
         if (activeSubmenu && window.gameRef) {
             EventBus.emit("menuChanged", activeSubmenu);
         }
     }, [activeSubmenu]);
+
+    // Listen for game over events
+    useEffect(() => {
+        const handleGameOver = (data) => {
+            console.log("Game Over triggered:", data);
+            setGameOverData(data);
+        };
+
+        EventBus.on("gameOver", handleGameOver);
+
+        return () => {
+            EventBus.off("gameOver", handleGameOver);
+        };
+    }, []);
 
     const handleStartPeriod = () => {
         playClickSound();
@@ -343,7 +362,6 @@ const HubComponent = () => {
         fundsValue: {
             fontSize: "1.15rem",
             fontWeight: "bold",
-            color: "#10B981",
         },
         divider: {
             width: "1px",
@@ -684,6 +702,27 @@ const HubComponent = () => {
 
     return (
         <div className="absolute inset-0 flex flex-col overflow-hidden">
+            {/* Add Warning Icons */}
+            <WarningIcons funds={funds} burnout={burnout} />
+
+            {/* Add Game Over Modal */}
+            <GameOverModal
+                isOpen={gameOverData !== null}
+                stats={
+                    gameOverData?.stats || {
+                        periods: 0,
+                        totalRevenue: 0,
+                        peakRank: 0,
+                        restaurantsOwned: 0,
+                        totalEmployees: 0,
+                        highestSalary: 0,
+                        totalTraining: 0,
+                        peakMorale: 0,
+                    }
+                }
+                reason={gameOverData?.reason || "financial"}
+            />
+
             {/* Main Content Area */}
             <div className="flex flex-1 relative overflow-hidden">
                 {/* Left Sidebar with header and period indicator inside */}
@@ -887,7 +926,12 @@ const HubComponent = () => {
 
                     <div style={styles.statsItem}>
                         <span style={styles.statsLabel}>FUNDS</span>
-                        <span style={styles.fundsValue}>
+                        <span
+                            style={styles.fundsValue}
+                            className={
+                                funds < 0 ? "text-red-500" : "text-green-500"
+                            }
+                        >
                             {formatCurrency(funds)}
                         </span>
                     </div>

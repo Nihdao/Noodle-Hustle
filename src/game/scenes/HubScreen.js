@@ -764,8 +764,23 @@ export class HubScreen extends Phaser.Scene {
             return;
         }
 
+        // Ensure the scene is properly initialized before proceeding
+        if (!this.scene.isActive()) {
+            console.log("HubScreen: Scene not active, starting scene first");
+            this.scene.start("HubScreen");
+
+            // Add a delay to ensure scene is fully initialized before processing results
+            this.time.delayedCall(500, () => {
+                this.processDeliveryResults(results);
+            });
+            return;
+        }
+
+        this.processDeliveryResults(results);
+    }
+
+    processDeliveryResults(results) {
         // Process the period increment first to ensure it's properly updated
-        // This is critical for audio switching and properly tracking game progress
         if (results.gameProgress) {
             // Make sure the period is incremented
             gameState.updateGameProgress(results.gameProgress);
@@ -838,9 +853,18 @@ export class HubScreen extends Phaser.Scene {
         // Save game state to localStorage after all updates
         gameState.saveGameState(true); // true to create a backup copy
 
+        // Ensure the fairy and text objects are created before displaying messages
+        if (!this.fairy || !this.speechText) {
+            console.log("HubScreen: Recreating fairy and speech objects");
+            this.createSpeechBubble();
+        }
+
         // Display result message
         if (results.message) {
-            this.displayMessage(results.message.text, results.message.type);
+            // Add a small delay to ensure everything is ready
+            this.time.delayedCall(100, () => {
+                this.displayMessage(results.message.text, results.message.type);
+            });
         } else {
             // Fallback message based on financial result
             const messageText =
@@ -849,10 +873,14 @@ export class HubScreen extends Phaser.Scene {
                     : `Period complete. Loss: $${Math.abs(
                           results.balanceChange
                       )}`;
-            this.displayMessage(
-                messageText,
-                results.balanceChange >= 0 ? "success" : "warning"
-            );
+
+            // Add a small delay to ensure everything is ready
+            this.time.delayedCall(100, () => {
+                this.displayMessage(
+                    messageText,
+                    results.balanceChange >= 0 ? "success" : "warning"
+                );
+            });
         }
 
         // Check for game over conditions
