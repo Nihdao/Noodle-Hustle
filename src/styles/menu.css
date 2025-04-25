@@ -18,7 +18,6 @@
 
 /* Menu title styles */
 .menu-title {
-    color: #c17a0f;
     font-size: 2.8rem;
     margin-bottom: 2rem;
     position: relative;
@@ -30,7 +29,6 @@
     font-size: 0.9rem;
     font-family: sans-serif;
     margin-top: 0.5rem;
-    color: #c17a0f;
     letter-spacing: 1px;
 }
 

@@ -36,13 +36,6 @@ function MenuButton({
         opacity: disabled ? 0.5 : 1,
         cursor: disabled ? "not-allowed" : "pointer",
         transform: isHovered && !disabled ? "scale(1.05)" : "scale(1)",
-        backgroundColor: isBack
-            ? isHovered && !disabled
-                ? "#b7813f"
-                : "#CD7F32"
-            : isHovered && !disabled
-            ? "#e67e22"
-            : "#d35400",
         color: "white",
         padding: "0.75rem 1.5rem",
         margin: "0.5rem 0",

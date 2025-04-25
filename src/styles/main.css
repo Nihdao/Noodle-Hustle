@@ -96,7 +96,6 @@
     margin: 10px;
     padding: 10px;
     background-color: #000000;
-    color: rgba(255, 255, 255, 0.87);
     border: 1px solid rgba(255, 255, 255, 0.87);
     cursor: pointer;
     transition: all 0.3s;
@@ -151,8 +150,6 @@
     font-family: "Roboto Condensed", sans-serif;
     font-weight: 700;
     color: #333;
-    background-color: #ffcc66;
-    border: 2px solid #e6ac00;
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s ease-in-out;
@@ -161,7 +158,6 @@
 }
 
 .menu-buttons button:hover {
-    background-color: #ffe08c;
     transform: translateY(-2px);
     box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
 }

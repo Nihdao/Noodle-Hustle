@@ -187,16 +187,18 @@ function OptionsModal({ isOpen, onClose, isMainMenu = false }) {
                         <section className="bg-[#f9f3e5]/70 rounded-lg p-6 border border-[#e1d1b3]">
                             <h3 className="text-xl font-bold text-[#c17a0f] border-b border-[#c17a0f]/30 pb-2 mb-4 flex justify-between items-center">
                                 <span>Audio</span>
-                                <button
-                                    onClick={handleToggleMute}
-                                    className={`px-3 py-1 rounded text-sm font-medium flex items-center ${
-                                        isMuted
-                                            ? "bg-red-500 text-white"
-                                            : "bg-[#e1d1b3] text-[#8b5d33]"
-                                    }`}
-                                >
-                                    {isMuted ? "Unmute" : "Mute"}
-                                </button>
+                                {!isMainMenu && (
+                                    <button
+                                        onClick={handleToggleMute}
+                                        className={`px-3 py-1 rounded text-sm font-medium flex items-center ${
+                                            isMuted
+                                                ? "bg-red-500 text-white"
+                                                : "bg-[#e1d1b3] text-[#8b5d33]"
+                                        }`}
+                                    >
+                                        {isMuted ? "Unmute" : "Mute"}
+                                    </button>
+                                )}
                             </h3>
                             <div className="space-y-4">
                                 <label className="block">
@@ -295,13 +297,13 @@ function OptionsModal({ isOpen, onClose, isMainMenu = false }) {
                             </section>
                         )} */}
 
-                        <section className="bg-[#f9f3e5]/70 rounded-lg p-6 border border-[#e1d1b3]">
+                        <section className="bg-[#f9f3e5]/70 rounded-lg p-6 border border-[#e1d1b3] text-left">
                             <h3 className="text-xl font-bold text-[#c17a0f] border-b border-[#c17a0f]/30 pb-2 mb-4">
                                 Reset
                             </h3>
                             <button
                                 onClick={handleClearData}
-                                className="bg-gradient-to-br from-[#d63031] to-[#e84393] text-white px-6 py-3 rounded-lg font-medium uppercase tracking-wide text-sm hover:from-[#ff7675] hover:to-[#fd79a8] transition-all hover:-translate-y-0.5 hover:shadow-lg"
+                                className="bg-principalRed hover:bg-principalRed-light text-white px-6 py-3 rounded-lg font-medium uppercase tracking-wide text-sm transition-all hover:-translate-y-0.5 hover:shadow-lg"
                             >
                                 Clear Save Data
                             </button>

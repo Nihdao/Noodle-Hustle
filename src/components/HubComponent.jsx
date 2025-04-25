@@ -66,6 +66,28 @@ const HubComponent = () => {
     // Add state for game over
     const [gameOverData, setGameOverData] = useState(null);
 
+    // Add state for onboarding
+    const [showOnboarding, setShowOnboarding] = useState(false);
+
+    // Check if this is a new game when the component mounts
+    useEffect(() => {
+        if (state?.playerStats?.completedIntro === false) {
+            setShowOnboarding(true);
+            setIsHelpModalOpen(true);
+        }
+    }, [state?.playerStats?.completedIntro]);
+
+    // Handle onboarding completion
+    const handleCompleteOnboarding = () => {
+        // Update the completedIntro status in the game state
+        if (window.gameRef) {
+            window.gameRef.events.emit("updatePlayerStats", {
+                completedIntro: true,
+            });
+        }
+        setShowOnboarding(false);
+    };
+
     // Handle menu changes for fairy interaction via EventBus
     useEffect(() => {
         if (activeSubmenu && window.gameRef) {
@@ -1072,10 +1094,12 @@ const HubComponent = () => {
                 onClose={() => setIsBuffsModalOpen(false)}
             />
 
-            {/* Help Modal */}
+            {/* Help Modal - updated with onboarding props */}
             <HelpModal
                 isOpen={isHelpModalOpen}
                 onClose={() => setIsHelpModalOpen(false)}
+                isOnboarding={showOnboarding}
+                onCompleteOnboarding={handleCompleteOnboarding}
             />
 
             {/* Add fadeIn animation for the rank details panel */}

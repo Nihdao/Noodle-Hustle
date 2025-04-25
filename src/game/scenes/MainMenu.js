@@ -9,6 +9,10 @@ export class MainMenu extends Phaser.Scene {
 
     preload() {
         this.load.image("noodles", "noodles.png");
+        this.load.image(
+            "background_run",
+            "assets/deliveryrun/background_run.png"
+        );
     }
 
     create() {
@@ -22,14 +26,20 @@ export class MainMenu extends Phaser.Scene {
             Array.from(this.cache.audio.entries.keys())
         );
 
-        // Add orange background
-        this.add.rectangle(0, 0, width, height, 0xe67e22).setOrigin(0);
-
-        // Add repeating noodles pattern with diagonal scrolling
-        this.noodlesPattern = this.add
-            .tileSprite(0, 0, width, height, "noodles")
+        this.backgroundRun = this.add
+            .tileSprite(0, 0, width, height, "background_run")
             .setOrigin(0)
-            .setAlpha(0.3); // Add some transparency
+            .setAlpha(1);
+
+        this.add
+            .rectangle(0, 0, width, height, 0x312218)
+            .setAlpha(0.6)
+            .setOrigin(0);
+        // Add repeating noodles pattern with diagonal scrolling
+        // this.noodlesPattern = this.add
+        //     .tileSprite(0, 0, width, height, "noodles")
+        //     .setOrigin(0)
+        //     .setAlpha(0.1); // Add some transparency
 
         // Register this scene with the event bus
         console.log("MainMenu: Registering scene with EventBus");
@@ -57,10 +67,10 @@ export class MainMenu extends Phaser.Scene {
 
     update() {
         // Make the pattern scroll diagonally (top-left to bottom-right)
-        if (this.noodlesPattern) {
-            this.noodlesPattern.tilePositionX += 0.5;
-            this.noodlesPattern.tilePositionY += 0.5;
-        }
+        // if (this.noodlesPattern) {
+        //     this.noodlesPattern.tilePositionX += 0.5;
+        //     this.noodlesPattern.tilePositionY += 0.5;
+        // }
     }
 
     onResize() {}

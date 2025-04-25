@@ -5,7 +5,6 @@ const RestaurantSlot = ({
     status,
     index,
     bar,
-    formatCurrency,
     isHovered = false,
     onSelect,
     onMouseEnter,

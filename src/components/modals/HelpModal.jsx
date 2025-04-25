@@ -1,8 +1,21 @@
 import PropTypes from "prop-types";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-const HelpModal = ({ isOpen, onClose }) => {
+const HelpModal = ({
+    isOpen,
+    onClose,
+    isOnboarding = false,
+    onCompleteOnboarding,
+}) => {
     const [activeTab, setActiveTab] = useState("basics");
+    const [onboardingStep, setOnboardingStep] = useState(0);
+
+    useEffect(() => {
+        if (isOnboarding) {
+            setActiveTab("basics");
+            setOnboardingStep(0);
+        }
+    }, [isOnboarding]);
 
     if (!isOpen) return null;
 
@@ -12,11 +25,39 @@ const HelpModal = ({ isOpen, onClose }) => {
         { id: "tips", label: "Tips" },
     ];
 
+    const handleNextStep = () => {
+        if (!isOnboarding) {
+            onClose();
+            return;
+        }
+
+        if (onboardingStep < 2) {
+            setOnboardingStep(onboardingStep + 1);
+            setActiveTab(tabs[onboardingStep + 1].id);
+        } else {
+            onCompleteOnboarding?.();
+            onClose();
+        }
+    };
+
     const renderTabContent = () => {
         switch (activeTab) {
             case "basics":
                 return (
                     <div className="space-y-4 text-principalBrown">
+                        {isOnboarding && (
+                            <div className="bg-principalRed/10 p-4 rounded-lg border border-principalRed/20 mb-4">
+                                <h3 className="font-bold text-xl mb-2 text-principalRed">
+                                    Welcome to Noodle Balance!
+                                </h3>
+                                <p className="text-principalBrown">
+                                    Let&apos;s start your journey as a noodle
+                                    shop owner. We&apos;ll guide you through the
+                                    basics of running your business while
+                                    maintaining a healthy work-life balance.
+                                </p>
+                            </div>
+                        )}
                         <div className="bg-[#f9f3e5]/70 p-4 rounded-lg border border-[#e1d1b3]">
                             <h4 className="font-bold text-lg mb-2">About</h4>
                             <p>
@@ -53,6 +94,18 @@ const HelpModal = ({ isOpen, onClose }) => {
             case "gameplay":
                 return (
                     <div className="space-y-4 text-principalBrown">
+                        {isOnboarding && (
+                            <div className="bg-principalRed/10 p-4 rounded-lg border border-principalRed/20 mb-4">
+                                <h3 className="font-bold text-xl mb-2 text-principalRed">
+                                    Understanding the Game Flow
+                                </h3>
+                                <p className="text-principalBrown">
+                                    Here&apos;s how you&apos;ll manage your
+                                    noodle empire. Each action you take affects
+                                    your business and personal well-being.
+                                </p>
+                            </div>
+                        )}
                         <div className="bg-[#f9f3e5]/70 p-4 rounded-lg border border-[#e1d1b3]">
                             <h4 className="font-bold text-lg mb-2">
                                 Main Actions
@@ -94,6 +147,18 @@ const HelpModal = ({ isOpen, onClose }) => {
             case "tips":
                 return (
                     <div className="space-y-4 text-principalBrown">
+                        {isOnboarding && (
+                            <div className="bg-principalRed/10 p-4 rounded-lg border border-principalRed/20 mb-4">
+                                <h3 className="font-bold text-xl mb-2 text-principalRed">
+                                    Ready to Start!
+                                </h3>
+                                <p className="text-principalBrown">
+                                    Here are some key tips to help you succeed.
+                                    Remember, balance is key - don&apos;t focus
+                                    only on business growth!
+                                </p>
+                            </div>
+                        )}
                         <div className="bg-[#f9f3e5]/70 p-4 rounded-lg border border-[#e1d1b3]">
                             <h4 className="font-bold text-lg mb-2">
                                 Quick Tips
@@ -130,7 +195,7 @@ const HelpModal = ({ isOpen, onClose }) => {
         >
             <div
                 className="absolute inset-0 backdrop-blur-sm bg-black/30"
-                onClick={onClose}
+                onClick={isOnboarding ? undefined : onClose}
             />
             <div
                 className={`bg-whiteCream rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col relative transition-all duration-300 ${
@@ -141,40 +206,54 @@ const HelpModal = ({ isOpen, onClose }) => {
             >
                 {/* Header */}
                 <div className="bg-principalRed text-whiteCream p-4 rounded-t-xl flex justify-between items-center">
-                    <h2 className="text-2xl font-bold">Quick Help Guide</h2>
-                    <button
-                        onClick={onClose}
-                        className="bg-white/20 rounded-full p-2 hover:bg-white/30 transition-colors"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-6 w-6"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
+                    <h2 className="text-2xl font-bold">
+                        {isOnboarding
+                            ? "Welcome to Noodle Balance!"
+                            : "Quick Help Guide"}
+                    </h2>
+                    {!isOnboarding && (
+                        <button
+                            onClick={onClose}
+                            className="bg-white/20 rounded-full p-2 hover:bg-white/30 transition-colors"
                         >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M6 18L18 6M6 6l12 12"
-                            />
-                        </svg>
-                    </button>
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-6 w-6"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M6 18L18 6M6 6l12 12"
+                                />
+                            </svg>
+                        </button>
+                    )}
                 </div>
 
                 {/* Tabs */}
                 <div className="flex p-2 bg-principalBrown/10">
-                    {tabs.map((tab) => (
+                    {tabs.map((tab, index) => (
                         <button
                             key={tab.id}
                             className={`px-4 py-2 mx-1 rounded-lg font-medium whitespace-nowrap ${
                                 activeTab === tab.id
                                     ? "bg-principalRed text-whiteCream"
                                     : "bg-whiteCream text-principalBrown hover:bg-principalRed/10"
-                            } transition-colors`}
-                            onClick={() => setActiveTab(tab.id)}
+                            } transition-colors ${
+                                isOnboarding ? "cursor-default" : ""
+                            }`}
+                            onClick={() =>
+                                !isOnboarding && setActiveTab(tab.id)
+                            }
+                            disabled={isOnboarding}
                         >
+                            {isOnboarding && (
+                                <span className="mr-2">{index + 1}.</span>
+                            )}
                             {tab.label}
                         </button>
                     ))}
@@ -186,10 +265,14 @@ const HelpModal = ({ isOpen, onClose }) => {
                 {/* Footer */}
                 <div className="p-4 border-t border-principalBrown/20 flex justify-end">
                     <button
-                        onClick={onClose}
+                        onClick={handleNextStep}
                         className="px-6 py-2 bg-principalRed text-whiteCream rounded-lg hover:bg-principalRed-light transition-colors"
                     >
-                        Got it!
+                        {isOnboarding
+                            ? onboardingStep < 2
+                                ? "Next Step"
+                                : "Start Playing!"
+                            : "Got it!"}
                     </button>
                 </div>
             </div>
@@ -200,6 +283,8 @@ const HelpModal = ({ isOpen, onClose }) => {
 HelpModal.propTypes = {
     isOpen: PropTypes.bool.isRequired,
     onClose: PropTypes.func.isRequired,
+    isOnboarding: PropTypes.bool,
+    onCompleteOnboarding: PropTypes.func,
 };
 
 export default HelpModal;

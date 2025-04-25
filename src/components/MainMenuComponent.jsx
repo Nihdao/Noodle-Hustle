@@ -82,31 +82,43 @@ function MainMenuComponent({
                 animationState={animationState}
                 className=" min-w-[450px]"
             >
-                <h1 className="menu-title">
+                <h1 className="menu-title text-principalBrown">
                     Noodle Hustle
-                    <span className="menu-subtitle">
+                    <span className="menu-subtitle text-principalBrown">
                         The Balance of Noodles
                     </span>
                 </h1>
 
                 <div className="menu-buttons">
                     {!saveExists && (
-                        <MenuButton onClick={handleNewGameClick}>
+                        <MenuButton
+                            onClick={handleNewGameClick}
+                            className="bg-principalRed hover:bg-principalRed-light"
+                        >
                             New Game
                         </MenuButton>
                     )}
 
                     {saveExists && (
-                        <MenuButton onClick={handleContinueClick}>
+                        <MenuButton
+                            onClick={handleContinueClick}
+                            className="bg-principalRed hover:bg-principalRed-light"
+                        >
                             Continue
                         </MenuButton>
                     )}
 
-                    <MenuButton onClick={handleOptionsClick}>
+                    <MenuButton
+                        onClick={handleOptionsClick}
+                        className="bg-principalRed hover:bg-principalRed-light"
+                    >
                         Options
                     </MenuButton>
 
-                    <MenuButton onClick={handleCreditsClick}>
+                    <MenuButton
+                        onClick={handleCreditsClick}
+                        className="bg-principalRed hover:bg-principalRed-light"
+                    >
                         Credits
                     </MenuButton>
                 </div>

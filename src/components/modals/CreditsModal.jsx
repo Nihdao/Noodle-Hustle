@@ -57,22 +57,24 @@ function CreditsModal({ isOpen, onClose }) {
 
                 {/* Content */}
                 <div className="p-6 overflow-y-auto">
-                    <div className="space-y-6">
-                        <section className="bg-[#f9f3e5]/70 rounded-lg p-6 border border-[#e1d1b3]">
-                            <h3 className="text-xl font-bold text-[#c17a0f] border-b border-[#c17a0f]/30 pb-2 mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Game Information */}
+                        <section className="bg-[#f9f3e5]/70 rounded-lg p-6 border border-[#e1d1b3] flex flex-col items-center text-center">
+                            <h3 className="text-xl font-bold text-[#c17a0f] border-b border-[#c17a0f]/30 pb-2 mb-4 w-full">
                                 Game Information
                             </h3>
                             <p className="text-[#8b5d33] text-lg leading-relaxed">
-                                Created for GameDevJS 2025 Game Jam
+                                Created for GameDevJS 2025 Game Jam for the
+                                theme Balance.
                             </p>
                         </section>
-
-                        <section className="bg-[#f9f3e5]/70 rounded-lg p-6 border border-[#e1d1b3]">
-                            <h3 className="text-xl font-bold text-[#c17a0f] border-b border-[#c17a0f]/30 pb-2 mb-4">
+                        {/* Development Team */}
+                        <section className="bg-[#f9f3e5]/70 rounded-lg p-6 border border-[#e1d1b3] flex flex-col items-center text-center">
+                            <h3 className="text-xl font-bold text-[#c17a0f] border-b border-[#c17a0f]/30 pb-2 mb-4 w-full">
                                 Development Team
                             </h3>
-                            <div className="space-y-4">
-                                <div className="flex flex-col gap-2">
+                            <div className="flex flex-col gap-4 w-full">
+                                <div className="flex flex-col gap-1">
                                     <span className="text-sm font-medium text-[#8b5d33] uppercase tracking-wide">
                                         Game Design & Development
                                     </span>
@@ -87,11 +89,41 @@ function CreditsModal({ isOpen, onClose }) {
                                         </a>
                                     </span>
                                 </div>
+                                <div className="flex flex-col gap-1">
+                                    <span className="text-sm font-medium text-[#8b5d33] uppercase tracking-wide">
+                                        SFX
+                                    </span>
+                                    <span className="text-xl font-semibold text-[#8b5d33]">
+                                        <a
+                                            href="https://nathangibson.myportfolio.com"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="underline hover:text-[color:var(--color-principalRed)] transition-colors"
+                                        >
+                                            Nathan Gibson
+                                        </a>
+                                    </span>
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                    <span className="text-sm font-medium text-[#8b5d33] uppercase tracking-wide">
+                                        Music
+                                    </span>
+                                    <span className="text-xl font-semibold text-[#8b5d33]">
+                                        <a
+                                            href="https://abstractionmusic.com/"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="underline hover:text-[color:var(--color-principalRed)] transition-colors"
+                                        >
+                                            Abstraction
+                                        </a>
+                                    </span>
+                                </div>
                             </div>
                         </section>
-
-                        <section className="bg-[#f9f3e5]/70 rounded-lg p-6 border border-[#e1d1b3]">
-                            <h3 className="text-xl font-bold text-[#c17a0f] border-b border-[#c17a0f]/30 pb-2 mb-4">
+                        {/* Special Thanks (full width) */}
+                        <section className="bg-[#f9f3e5]/70 rounded-lg p-6 border border-[#e1d1b3] flex flex-col items-center text-center md:col-span-2">
+                            <h3 className="text-xl font-bold text-[#c17a0f] border-b border-[#c17a0f]/30 pb-2 mb-4 w-full">
                                 Special Thanks
                             </h3>
                             <p className="text-[#8b5d33] text-lg leading-relaxed">

@@ -1,6 +1,5 @@
 import { Boot } from "./scenes/Boot";
 import { Game } from "./scenes/Game";
-import { GameOver } from "./scenes/GameOver";
 import { MainMenu } from "./scenes/MainMenu";
 import Phaser from "phaser";
 import { Preloader } from "./scenes/Preloader";
@@ -17,16 +16,7 @@ const config = {
     parent: "game-container",
     backgroundColor: "#333333",
     pixelArt: true,
-    scene: [
-        Boot,
-        Preloader,
-        MainMenu,
-        GameIntro,
-        HubScreen,
-        DeliveryRun,
-        Game,
-        GameOver,
-    ],
+    scene: [Boot, Preloader, MainMenu, GameIntro, HubScreen, DeliveryRun, Game],
     scale: {
         mode: Phaser.Scale.RESIZE,
         autoCenter: Phaser.Scale.CENTER_BOTH, // Centrage automatique du canvas
