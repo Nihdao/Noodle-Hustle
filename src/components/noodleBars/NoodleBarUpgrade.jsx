@@ -268,7 +268,7 @@ const NoodleBarUpgrade = ({ onBack }) => {
             </div>
 
             {/* Restaurant Selector */}
-            <div className="p-4 flex-1 overflow-auto">
+            <div className="pb-25 p-4 flex-1 overflow-auto">
                 <h3
                     className="text-lg font-semibold mb-3"
                     style={{ color: "var(--color-principalBrown)" }}

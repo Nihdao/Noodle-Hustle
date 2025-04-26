@@ -354,7 +354,7 @@ const EmployeeManagement = ({ onBack }) => {
             </div>
 
             {/* Employee Grid */}
-            <div className="p-4 flex-1 overflow-auto">
+            <div className="pb-25 p-4 flex-1 overflow-auto">
                 <h3 className="text-lg font-semibold mb-4 text-[color:var(--color-principalBrown)]">
                     Your Employees
                 </h3>

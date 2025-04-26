@@ -35,15 +35,14 @@ const introSlides = [
     {
         image: "intro4.png",
         lines: [
-            "No money. No skills. Just a stubborn dream… and a strange man with ¥500,000.",
-            "He said I looked like someone who needed a fresh start and a new debt.",
+            "No money. No skills. Just a stubborn dream… and a strange man with a little ramen shop.",
+            "He said I looked like someone who needed a fresh start and a new goal.",
         ],
     },
     {
         image: "intro5.png",
         lines: [
-            "Okay… why did I even take that money? I guess every game needs a bit of spice, right?",
-            "Wait—am I not supposed to break the fourth wall?",
+            "Okay… why did I even take that ramen shop by the way?",
             "Maybe this time, I'll find balance… That is the jam's theme, right?",
         ],
     },

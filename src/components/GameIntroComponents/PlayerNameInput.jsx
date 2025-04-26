@@ -57,7 +57,7 @@ function PlayerNameInput({ onNameConfirmed, visible }) {
         >
             <div className="name-input-box">
                 <div className="name-input-inner">
-                    <h2 className="input-title">Welcome to Japanoodle</h2>
+                    <h2 className="input-title">Welcome to Noodle City</h2>
                     <p className="input-subtitle">
                         How should the main character be named?
                     </p>

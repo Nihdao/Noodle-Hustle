@@ -8,8 +8,7 @@ import { useEmployees } from "../../store/gameStateHooks";
 import gameState from "../../game/GameState";
 
 const EmployeeRecruitment = ({ onBack, funds }) => {
-    const { rosterWithDetails: currentEmployees, hireEmployee } =
-        useEmployees();
+    const { hireEmployee } = useEmployees();
     const [hoveredMenuItem, setHoveredMenuItem] = useState(null);
     const [candidates, setCandidates] = useState([]);
     const [recruitmentDone, setRecruitmentDone] = useState(false);
@@ -22,13 +21,6 @@ const EmployeeRecruitment = ({ onBack, funds }) => {
     const [hoveredTooltip, setHoveredTooltip] = useState(false);
 
     const RECRUITMENT_COST = 30000;
-
-    // Create a map of existing employee IDs for quick lookup
-    const existingEmployeeIds = new Set(
-        currentEmployees.map((emp) =>
-            emp.employeeId ? emp.employeeId.toString() : ""
-        )
-    );
 
     const formatCurrency = (value) => {
         return "¥" + new Intl.NumberFormat("en-US").format(value);
@@ -136,6 +128,19 @@ const EmployeeRecruitment = ({ onBack, funds }) => {
     }, [selectedCandidate, showDetails]);
 
     const generateCandidates = () => {
+        console.log("Generating candidates...");
+        // Get the latest roster directly from gameState to ensure freshness
+        const freshRoster = gameState.getGameState().employees.roster || [];
+        const currentExistingIds = new Set(
+            freshRoster
+                .map((emp) => (emp.employeeId ? emp.employeeId.toString() : ""))
+                .filter((id) => id) // Filter out potential empty strings/nulls
+        );
+        console.log(
+            "[generateCandidates] Existing Employee IDs:",
+            currentExistingIds
+        );
+
         // Clear previous candidates
         const newCandidates = [];
 
@@ -143,12 +148,24 @@ const EmployeeRecruitment = ({ onBack, funds }) => {
         const candidateCount = Math.floor(Math.random() * 3) + 3; // 3-5 candidates
 
         // Get available employees (exclude ones the player already has)
-        const availableEmployees = employeesData.filter(
-            (emp) => !existingEmployeeIds.has(emp.id.toString())
+        const allEmployees = employeesData; // Start with all employees
+        const availableEmployees = allEmployees.filter(
+            (emp) => !currentExistingIds.has(emp.id.toString()) // Use the fresh set of IDs
+        );
+        console.log(
+            "[generateCandidates] Total employees:",
+            allEmployees.length
+        );
+        console.log(
+            "[generateCandidates] Available employees (after filtering):",
+            availableEmployees.length,
+            availableEmployees.map((e) => e.name)
         );
 
         if (availableEmployees.length === 0) {
             console.warn("No more available employees to recruit!");
+            setCandidates([]); // Ensure candidates state is empty
+            gameState.saveRecruitmentCandidates([]); // Save empty candidates to state
             return;
         }
 
@@ -230,10 +247,21 @@ const EmployeeRecruitment = ({ onBack, funds }) => {
             newCandidates.push(candidate);
         }
 
-        setCandidates(newCandidates);
+        // Final safety check: ensure no candidates are already hired
+        const finalCandidates = newCandidates.filter(
+            (cand) => !currentExistingIds.has(cand.id.toString())
+        );
+
+        if (finalCandidates.length !== newCandidates.length) {
+            console.warn(
+                "[generateCandidates] Filtered out candidates during final check that were already hired!"
+            );
+        }
+
+        setCandidates(finalCandidates);
 
         // Save candidates to game state
-        gameState.saveRecruitmentCandidates(newCandidates);
+        gameState.saveRecruitmentCandidates(finalCandidates);
     };
 
     const handleStartRecruitment = () => {
@@ -504,7 +532,7 @@ const EmployeeRecruitment = ({ onBack, funds }) => {
             </div>
 
             {/* Contenu principal - Recruitment button or candidates */}
-            <div className="p-4 flex-1 overflow-auto">
+            <div className="pb-25 p-4 flex-1 overflow-auto">
                 {candidates.length === 0 ? (
                     <div className="bg-[color:var(--color-whiteCream)] p-6 rounded-lg shadow-md">
                         <h3 className="text-lg font-semibold mb-4 text-[color:var(--color-principalBrown)]">

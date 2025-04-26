@@ -129,7 +129,7 @@
     },
     {
         "id": 9,
-        "name": "Noodle Galaxy",
+        "name": "$NOODS Galaxy",
         "description": "One small slurp for man...",
         "sellable": true,
         "maxSales": 9,

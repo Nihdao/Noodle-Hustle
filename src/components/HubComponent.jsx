@@ -716,7 +716,11 @@ const HubComponent = () => {
     return (
         <div className="absolute inset-0 flex flex-col overflow-hidden">
             {/* Warning Icons */}
-            <WarningIcons funds={funds} burnout={burnout} />
+            <WarningIcons
+                funds={funds}
+                burnout={burnout}
+                businessRank={businessRank}
+            />
 
             {/* Game Over Modal */}
             <GameOverModal

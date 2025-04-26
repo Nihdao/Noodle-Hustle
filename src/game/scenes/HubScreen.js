@@ -57,7 +57,7 @@ export class HubScreen extends Phaser.Scene {
             "Let's find some talented employees for your noodle bars!",
             "I'll help you find the best staff for your business!",
             "Hmm, who should join our noodle empire today?",
-            "Searching for culinary talent in Tokyo!",
+            "Searching for culinary talent in Noodle City!",
             "Let's see who's looking for work in the restaurant business...",
         ];
 
@@ -198,7 +198,7 @@ export class HubScreen extends Phaser.Scene {
                 // Show initial welcome message only if no results were passed
                 this.time.delayedCall(1000, () => {
                     this.showMessage(
-                        `Welcome back! Ready for another day of noodle business?`
+                        `Hi! Noodle Fairy here! Ready to climb the noodle business ladder?`
                     );
                 });
             }

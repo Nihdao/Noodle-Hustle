@@ -797,6 +797,29 @@ export const useNoodleBarOperations = () => {
 
         // Utiliser la méthode updateGameState pour mettre à jour l'état correctement
         gameState.updateGameState((state) => {
+            // Find employees assigned to the bar being sold
+            const employeesToUnassign = state.employees.roster.filter(
+                (emp) => emp.assigned === barId
+            );
+
+            // Create an updated roster with unassigned employees
+            let updatedRoster = state.employees.roster;
+            if (employeesToUnassign.length > 0) {
+                console.log(
+                    `Unassigning ${employeesToUnassign.length} employees from bar ${barId}`
+                );
+                updatedRoster = state.employees.roster.map((emp) => {
+                    if (emp.assigned === barId) {
+                        return {
+                            ...emp,
+                            assigned: null,
+                            assignedName: null, // Clear assigned name as well
+                        };
+                    }
+                    return emp;
+                });
+            }
+
             // Marquer le slot comme non acheté
             const updatedSlots = state.restaurants.slots.map((slot) =>
                 slot.id === slotId
@@ -828,6 +851,11 @@ export const useNoodleBarOperations = () => {
                             period: state.gameProgress.currentPeriod,
                         },
                     ],
+                },
+                employees: {
+                    // Update the employees state with the potentially modified roster
+                    ...state.employees,
+                    roster: updatedRoster,
                 },
             };
         });
