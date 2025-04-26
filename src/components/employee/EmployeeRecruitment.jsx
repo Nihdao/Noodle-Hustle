@@ -260,9 +260,9 @@ const EmployeeRecruitment = ({ onBack, funds }) => {
 
     const handleHireEmployee = (candidate) => {
         const contractFee = candidate.contractFee;
-        const totalCost = candidate.salary + contractFee;
+        console.log(contractFee);
 
-        if (funds < totalCost) {
+        if (funds < contractFee) {
             console.error("Insufficient funds");
             return;
         }
@@ -272,13 +272,18 @@ const EmployeeRecruitment = ({ onBack, funds }) => {
             id: candidate.id,
             salary: candidate.salary,
         };
-
+        console.log(funds);
+        console.log("yo", contractFee);
+        console.log(funds);
         // Deduct hiring costs directly via gameState
-        gameState.updateFunds(-totalCost, `Hiring ${candidate.name}`, "hiring");
+        gameState.updateFunds(
+            -contractFee,
+            `Hiring ${candidate.name}`,
+            "hiring"
+        );
 
         // Hire the employee through the game state
         hireEmployee(employeeData);
-        console.log(`Hired ${candidate.name} for ${formatCurrency(totalCost)}`);
 
         // Remove from candidates
         const updatedCandidates = candidates.filter(

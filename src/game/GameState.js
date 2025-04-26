@@ -1508,6 +1508,12 @@ class GameState {
     // Add this method to check for game over conditions
     checkGameOver() {
         const currentState = this.getGameState();
+
+        // Check if game over has already been triggered to avoid multiple emissions
+        if (this.gameOverStats?.isGameOver) {
+            return true;
+        }
+
         let isGameOver = false;
         let reason = null;
 
@@ -1517,34 +1523,28 @@ class GameState {
             reason = "burnout";
         }
 
-        // Check funds
+        // Check funds (immediate game over if <= 0)
         if (currentState.finances?.funds <= 0) {
-            this.consecutiveNegativePeriods++;
-            if (this.consecutiveNegativePeriods >= 2) {
-                isGameOver = true;
-                reason = reason === "burnout" ? "both" : "financial";
-            }
-        } else {
-            this.consecutiveNegativePeriods = 0;
+            isGameOver = true;
+            // If burnout was also the reason, set to 'both'
+            reason = reason === "burnout" ? "both" : "financial";
         }
 
         if (isGameOver) {
+            console.log(`Game Over triggered! Reason: ${reason}`);
+
             // Ensure employees array exists and is valid
-            const employees = Array.isArray(currentState.employees)
-                ? currentState.employees
-                : [];
+            const employees = currentState.employees?.roster || [];
+
             const restaurants = Array.isArray(currentState.restaurants)
-                ? currentState.restaurants
-                : [];
+                ? currentState.restaurants.bars // Access the bars array
+                : currentState.restaurants?.bars || []; // Safe access
 
             // Calculate game over stats with safe defaults
             const stats = {
                 periods: currentState.gameProgress?.currentPeriod || 0,
                 totalRevenue: currentState.finances?.totalBalance || 0,
-                peakRank:
-                    currentState.playerStats?.peakRank ||
-                    currentState.playerStats?.currentRank ||
-                    0,
+                peakRank: currentState.gameProgress?.businessRank || 200, // Default to lowest rank
                 restaurantsOwned: restaurants.length,
                 totalEmployees: employees.length,
                 highestSalary:
@@ -1554,15 +1554,15 @@ class GameState {
                               0
                           )
                         : 0,
-                totalTraining: employees.reduce(
-                    (total, emp) => total + (emp?.training || 0),
-                    0
-                ),
-                peakMorale:
-                    employees.length > 0
-                        ? Math.max(
-                              ...employees.map((emp) => emp?.morale || 0),
-                              0
+                // totalTraining: // Assuming 'training' is not tracked per employee in current state
+                //     employees.reduce((total, emp) => total + (emp?.training || 0), 0) || 0,
+                averageMorale:
+                    employees?.length > 0
+                        ? Math.round(
+                              employees.reduce(
+                                  (sum, emp) => sum + (emp?.morale || 0),
+                                  0
+                              ) / employees.length
                           )
                         : 0,
             };
