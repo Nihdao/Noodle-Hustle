@@ -1017,7 +1017,6 @@ export class DeliveryRun extends Phaser.Scene {
         const mentalClarityBuff = this.activeBuffs.find(
             (buff) => buff.type === "mentalClarity"
         );
-        let burnoutChange = 0; // Initialize burnout change
 
         Object.keys(this.playerSprites).forEach((restaurantId) => {
             const restaurantData = this.playerSprites[restaurantId];
@@ -1048,30 +1047,34 @@ export class DeliveryRun extends Phaser.Scene {
             totalProfit += adjustedProfit;
         });
 
-        // --- New Burnout Logic ---
         console.log(
             `DeliveryRun: Total profit across all restaurants: ${totalProfit}`
         );
 
-        // Apply burnout: +10 for profit, +30 for loss
-        burnoutChange = totalProfit > 0 ? 10 : 30;
+        // Determine base burnout change: +10 for profit, +30 for loss
+        let baseBurnoutChange = totalProfit > 0 ? 10 : 30;
         console.log(
-            `DeliveryRun: Base burnout change based on profit: ${burnoutChange}`
+            `DeliveryRun: Base burnout change based on profit: ${baseBurnoutChange}`
         );
 
         // Apply mental clarity buff if it exists
+        let finalBurnoutChange = baseBurnoutChange;
         if (mentalClarityBuff) {
             const reductionPercent = mentalClarityBuff.value || 0;
-            const oldBurnoutChange = burnoutChange;
             // Apply reduction - ensuring it doesn't make burnout negative
-            burnoutChange = Math.max(
+            finalBurnoutChange = Math.max(
                 0,
-                Math.floor(burnoutChange * (1 - reductionPercent / 100))
+                Math.floor(baseBurnoutChange * (1 - reductionPercent / 100))
             );
             console.log(
-                `DeliveryRun: Mental Clarity buff applied - Burnout change reduced from ${oldBurnoutChange} to ${burnoutChange} (${reductionPercent}% reduction)`
+                `DeliveryRun: Mental Clarity buff (Level ${mentalClarityBuff.level}, ${reductionPercent}%) applied. Burnout change reduced from ${baseBurnoutChange} to ${finalBurnoutChange}.`
             );
+        } else {
+            console.log("DeliveryRun: No Mental Clarity buff active.");
         }
+
+        // Assign the final calculated burnout change
+        let burnoutChange = finalBurnoutChange;
 
         // Calculate new total balance
         // Use totalBalance from init data, not recalculated here
@@ -1106,7 +1109,7 @@ export class DeliveryRun extends Phaser.Scene {
         this.gameProgressData = {
             restaurants: this.activeRestaurants,
             totalProfit,
-            burnoutChange, // Use the final calculated burnout change
+            burnoutChange, // Use the final calculated burnout change (after buff)
             rankChange: finalRank - this.currentRank, // Calculate rank change based on finalRank
             activeBuffs: this.activeBuffs,
             newTotalBalance, // Pass the calculated new total balance

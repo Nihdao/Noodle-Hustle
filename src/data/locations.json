@@ -23,12 +23,6 @@
             "name": "Downtown",
             "icon": "🏙️",
             "description": "Explore the bustling downtown area with shops, restaurants, and entertainment venues."
-        },
-        {
-            "id": "hypermarket",
-            "name": "Hypermarket",
-            "icon": "🏬",
-            "description": "Browse the hypermarket for daily necessities or just window shop. An easy way to pass time."
         }
     ]
 }

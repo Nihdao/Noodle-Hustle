@@ -187,7 +187,7 @@ const SocialManagement = ({
         setActionPerformed(true);
 
         // Si des confidants peuvent être rencontrés, 50% de chance d'en rencontrer un
-        if (possibleConfidants.length > 0 && Math.random() > 0.5) {
+        if (possibleConfidants.length > 0) {
             // Sélectionner un confident aléatoire parmi les possibles
             const randomIndex = Math.floor(
                 Math.random() * possibleConfidants.length
@@ -620,9 +620,6 @@ const SocialManagement = ({
                                         <h4 className="font-semibold mb-2">
                                             Possible Encounters:
                                         </h4>
-                                        <p className="text-xs text-gray-500 mb-2">
-                                            50% chance to meet a confidant
-                                        </p>
                                         <div className="space-y-2">
                                             {getLocationConfidants(
                                                 selectedLocation.name
