@@ -12,7 +12,7 @@ import DebugSaveModal from "./utils/DebugSaveModal";
 import gameState from "./game/GameState"; // Import direct du singleton
 import ToastManager from "./components/common/ToastManager";
 
-const DEBUG_MODE = true; // Mettre à false pour désactiver le bouton debug
+const DEBUG_MODE = false; // Mettre à false pour désactiver le bouton debug
 
 function App() {
     // References to the PhaserGame component (game and scene are exposed)
