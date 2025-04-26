@@ -819,8 +819,8 @@ const DeliveryRunComponent = () => {
                     {/* Rank calculation explanation */}
                     <div className="mb-6 bg-principalRed/10 p-3 rounded-lg text-center">
                         <p className="text-sm text-principalBrown">
-                            Your rank is based on your total accumulated balance
-                            of{" "}
+                            Your rank is based on your total accumulated
+                            earnings from runs{" "}
                             <span className="font-bold">
                                 {formatResponsiveCurrency(
                                     results?.newTotalBalance || totalBalance

@@ -28,9 +28,8 @@
                 },
                 {
                     "level": 5,
-                    "effect": "Every newly hired employee starts at +5 levels",
-                    "value": 5,
-                    "special": "levelBoost"
+                    "effect": "+20% chance to roll higher rarity employees",
+                    "value": 25
                 }
             ]
         },
@@ -62,9 +61,8 @@
                 },
                 {
                     "level": 5,
-                    "effect": "All accident/imprévu penalties reduced by 30%",
-                    "value": 30,
-                    "special": "penaltyReduction"
+                    "effect": "-30% chance of negative delivery events",
+                    "value": 30
                 }
             ]
         },
@@ -96,9 +94,8 @@
                 },
                 {
                     "level": 5,
-                    "effect": "Automatically reduces burnout by 5% at the start of each period",
-                    "value": 5,
-                    "special": "autoReduction"
+                    "effect": "-30% burnout gain per period",
+                    "value": 30
                 }
             ]
         },
@@ -130,9 +127,8 @@
                 },
                 {
                     "level": 5,
-                    "effect": "-20% cost reduction on all upgrades",
-                    "value": 20,
-                    "special": "upgradeDiscount"
+                    "effect": "-20% maintenance costs",
+                    "value": 20
                 }
             ]
         }

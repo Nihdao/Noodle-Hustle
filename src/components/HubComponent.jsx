@@ -30,7 +30,7 @@ import GameOverModal from "./modals/GameOverModal";
 const HubComponent = () => {
     // Utiliser uniquement les hooks spécifiques
     const state = useGameState(); // Uniquement pour les propriétés qui n'ont pas de hook dédié
-    const { currentPeriod, investorClashIn, startPeriod } = useGamePeriod();
+    const { currentPeriod, startPeriod } = useGamePeriod();
     const { burnout, burnoutSeverity } = usePlayerStats();
     const { funds, debt, formatCurrency } = useFinances();
     const { personalTime } = useSocial();
@@ -111,15 +111,6 @@ const HubComponent = () => {
 
     const handleStartPeriod = () => {
         playClickSound();
-
-        // Obtenir les données nécessaires des hooks
-        if (investorClashIn === 1) {
-            console.log("Investor clash period!");
-            // TODO: Start investor clash scene
-            // For now, just start the period normally
-            startPeriod();
-            return;
-        }
 
         // Start the DeliveryRun scene with complete game data from hooks
         if (window.gameRef) {

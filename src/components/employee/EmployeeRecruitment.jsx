@@ -3,6 +3,7 @@ import PropTypes from "prop-types";
 import { EventBus } from "../../game/EventBus";
 import MenuContainer from "../common/MenuContainer";
 import employeesData from "../../data/employees.json";
+import buffsData from "../../data/buffs.json";
 import { useEmployees } from "../../store/gameStateHooks";
 import gameState from "../../game/GameState";
 
@@ -151,16 +152,34 @@ const EmployeeRecruitment = ({ onBack, funds }) => {
             return;
         }
 
+        // Fetch the Recruitment Guru buff level from GameState
+        const buffLevel = gameState.getBuffLevel("recruitmentGuru");
+        let buffValue = 0;
+
+        // Find the corresponding buff value from buffs.json if level > 0
+        if (buffLevel > 0) {
+            const buffDetails = buffsData.socialBuffs.recruitmentGuru;
+            const levelEffect = buffDetails?.levels.find(
+                (lvl) => lvl.level === buffLevel
+            );
+            if (levelEffect) {
+                buffValue = levelEffect.value || 0; // Use the percentage value
+            }
+        }
+
         // Randomly select candidates based on rarity
         for (
             let i = 0;
             i < candidateCount && availableEmployees.length > 0;
             i++
         ) {
-            // Determine rarity based on drop chances
-            const rarityRoll = Math.random() * 100;
+            // Determine rarity based on drop chances, adjusted by buff
+            // The buff increases the chance of higher rarity, so we add its value to the roll.
+            const baseRoll = Math.random() * 100;
+            const rarityRoll = Math.min(100, baseRoll + buffValue); // Cap at 100
             let targetRarity;
-
+            console.log(buffValue);
+            // Rarity thresholds remain the same, but the adjusted roll makes higher rarities more likely
             if (rarityRoll < 50) {
                 targetRarity = "D";
             } else if (rarityRoll < 75) {
