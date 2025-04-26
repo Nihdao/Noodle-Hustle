@@ -16,7 +16,6 @@ export class HubScreen extends Phaser.Scene {
         this.fairyMessages = [
             "Remember to keep your burnout level low. Take breaks!",
             "Assign your employees wisely to maximize profits!",
-            "Investors want to see growth. Prepare for the meetings!",
             "Balancing profits and quality is key to success!",
             "Upgrade your noodle bars to attract more customers!",
             "You can check your current profit forecast at any time.",
@@ -676,20 +675,7 @@ export class HubScreen extends Phaser.Scene {
 
             // Display fairy message based on updated state
             const currentPeriod = updatedState.gameProgress?.currentPeriod || 1;
-            const investorClashIn =
-                updatedState.gameProgress?.investorClashIn || 0;
             const burnout = updatedState.playerStats?.burnout || 0;
-
-            if (investorClashIn === 1) {
-                // Investor meeting is next period
-                this.showMessage(
-                    "Investor meeting coming up next period! Make sure your business is looking profitable!"
-                );
-            } else {
-                this.showMessage(
-                    `Starting Period ${currentPeriod}! Let's make this a profitable one!`
-                );
-            }
 
             // Show burnout warning if too high
             if (burnout > 70) {

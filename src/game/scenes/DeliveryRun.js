@@ -70,8 +70,59 @@ export class DeliveryRun extends Phaser.Scene {
 
             // Calculate forecasted profit using actual values with morale adjustment
             const maintenance = restaurant.maintenance || 100;
+
+            // --- Add Malus Calculation Start ---
+            // Get assigned staff details
+            const staff = restaurant.staff
+                ? restaurant.staff.map((staffId) =>
+                      data.employees.find((emp) => emp.id === staffId)
+                  )
+                : [];
+
+            // Get target caps from restaurant data
+            const cuisineTarget =
+                restaurant.productCap || restaurant.maxProduct || 40;
+            const serviceTarget =
+                restaurant.serviceCap || restaurant.maxService || 20;
+            const ambianceTarget =
+                restaurant.ambianceCap || restaurant.maxAmbiance || 10;
+
+            // Calculate total stats from assigned staff (handle null employees)
+            const totalCuisine = staff.reduce(
+                (sum, emp) => sum + (emp?.cuisine || 0),
+                0
+            );
+            const totalService = staff.reduce(
+                (sum, emp) => sum + (emp?.service || 0),
+                0
+            );
+            const totalAmbiance = staff.reduce(
+                (sum, emp) => sum + (emp?.ambiance || 0),
+                0
+            );
+
+            // Count unmet criteria
+            let criteresNonRemplis = 0;
+            if (totalCuisine < cuisineTarget) criteresNonRemplis++;
+            if (totalService < serviceTarget) criteresNonRemplis++;
+            if (totalAmbiance < ambianceTarget) criteresNonRemplis++;
+
+            // Calculate malus percentage
+            let malusPercentage = 0;
+            if (criteresNonRemplis === 1) malusPercentage = 30;
+            else if (criteresNonRemplis === 2) malusPercentage = 60;
+            else if (criteresNonRemplis === 3) malusPercentage = 100;
+
+            // Apply malus to sales volume
+            const malusAmount =
+                criteresNonRemplis > 0
+                    ? Math.round(adjustedSalesVolume * (malusPercentage / 100))
+                    : 0;
+            // --- Add Malus Calculation End ---
+
+            // Calculate final forecasted profit including malus
             const forecastedProfit = Math.round(
-                adjustedSalesVolume - maintenance - staffCost
+                adjustedSalesVolume - maintenance - staffCost - malusAmount
             );
 
             console.log(`DeliveryRun: Restaurant ${restaurant.name} (ID: ${
@@ -85,6 +136,7 @@ export class DeliveryRun extends Phaser.Scene {
                 - Adjusted Sales Volume: ${adjustedSalesVolume}
                 - Maintenance: ${maintenance}
                 - Staff Cost: ${staffCost}
+                - Malus Amount: ${malusAmount}
                 - Forecasted Profit: ${forecastedProfit}`);
 
             return {

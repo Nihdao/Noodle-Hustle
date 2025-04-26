@@ -284,7 +284,7 @@ class GameState {
 
             // Increment Period
             const newPeriod = state.gameProgress.currentPeriod + 1;
-            const newInvestorClashIn = Math.max(0, 10 - (newPeriod % 10));
+            const newInvestorClashIn = 999999;
 
             // Reset period-specific employee flags (moved from startPeriod)
             const resetRoster = state.employees.roster.map((emp) => ({
