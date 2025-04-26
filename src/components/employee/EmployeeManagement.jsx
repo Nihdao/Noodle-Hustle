@@ -293,7 +293,7 @@ const EmployeeManagement = ({ onBack }) => {
             };
         },
         skillBar: (value, color) => ({
-            width: `${value}%`,
+            width: `${value / 2}%`,
             backgroundColor: color || "var(--color-principalRed)",
             height: "0.5rem",
             borderRadius: "9999px",
@@ -555,7 +555,7 @@ const EmployeeManagement = ({ onBack }) => {
                                                         {
                                                             selectedEmployee.cuisine
                                                         }
-                                                        /100
+                                                        /200
                                                     </span>
                                                 </div>
                                                 <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
@@ -578,7 +578,7 @@ const EmployeeManagement = ({ onBack }) => {
                                                         {
                                                             selectedEmployee.service
                                                         }
-                                                        /100
+                                                        /200
                                                     </span>
                                                 </div>
                                                 <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
@@ -601,7 +601,7 @@ const EmployeeManagement = ({ onBack }) => {
                                                         {
                                                             selectedEmployee.ambiance
                                                         }
-                                                        /100
+                                                        /200
                                                     </span>
                                                 </div>
                                                 <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
