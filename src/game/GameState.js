@@ -181,6 +181,7 @@ class GameState {
             totalProfit = 0,
             burnoutChange = 0,
             restaurants = [],
+            netProfit = 0,
         } = results;
 
         // Update employee morale based on restaurant performance
@@ -232,11 +233,11 @@ class GameState {
         // Use updateGameState to ensure atomicity and event emission
         this.updateGameState((state) => {
             // Update finances
-            const updatedFunds = state.finances.funds + totalProfit;
+            const updatedFunds = state.finances.funds + netProfit;
 
             // Update totalBalance with ALL profit/loss changes
             const totalBalance = state.finances.totalBalance || 0;
-            const updatedTotalBalance = totalBalance + totalProfit;
+            const updatedTotalBalance = totalBalance + netProfit;
 
             // --- Corrected Rank Calculation ---
             // Sort rank details descending by balance required

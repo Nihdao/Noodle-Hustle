@@ -6,6 +6,7 @@ import {
     useGameBuffs,
 } from "../../store/gameStateHooks";
 import { useSound } from "../../hooks/useSound";
+import rankData from "../../data/rank.json"; // Import rankData
 
 const DeliveryRunComponent = () => {
     const appGameState = useGameState();
@@ -95,12 +96,33 @@ const DeliveryRunComponent = () => {
     const handleReturnToHub = () => {
         playClickSound();
 
+        // Calculate net profit and updated total balance for rank calculation
+        const netProfit = results.totalProfit - unusedEmployeeCost - debtAmount;
+        const updatedTotalBalance = totalBalance + netProfit;
+
+        // --- Rank Calculation --- (Same logic as in GameState)
+        const rankDetails = [...rankData.rankDetails].sort(
+            (a, b) => b.balanceRequired - a.balanceRequired
+        );
+        let newRank = 200; // Start assuming the lowest rank (highest number)
+        for (const rankDetail of rankDetails) {
+            if (updatedTotalBalance >= rankDetail.balanceRequired) {
+                newRank = rankDetail.rank;
+                break;
+            }
+        }
+        // --- End Rank Calculation ---
+
+        // Calculate rank change
+        const rankChange = newRank - initialBusinessRank;
+
         if (animationPhase === "rank" && results) {
             // Pass the results calculated by DeliveryRun.js
             const finalResults = {
                 totalProfit: results.totalProfit,
+                netProfit: netProfit,
                 burnoutChange: results.burnoutChange,
-                rankChange: results.rankChange, // Use rankChange from results
+                rankChange: rankChange, // Use the calculated rank change
                 restaurants: results.restaurants.map((restaurant) => ({
                     ...restaurant,
                     id: restaurant.id,
@@ -802,8 +824,26 @@ const DeliveryRunComponent = () => {
     const renderRankDisplay = () => {
         // Get next rank threshold information
         const nextRankInfo = getNextRankThreshold();
-        // Use the final rank calculated by DeliveryRun.js from the results state
-        const finalRank = results?.finalRank || initialBusinessRank;
+
+        // Calculate net profit and updated total balance for rank calculation
+        const netProfit = results.totalProfit - unusedEmployeeCost - debtAmount;
+        const updatedTotalBalance = totalBalance + netProfit;
+
+        // --- Rank Calculation --- (Same logic as in GameState)
+        const rankDetails = [...rankData.rankDetails].sort(
+            (a, b) => b.balanceRequired - a.balanceRequired
+        );
+        let newRank = 200; // Start assuming the lowest rank (highest number)
+        for (const rankDetail of rankDetails) {
+            if (updatedTotalBalance >= rankDetail.balanceRequired) {
+                newRank = rankDetail.rank;
+                break;
+            }
+        }
+        // --- End Rank Calculation ---
+
+        // Use the calculated newRank for display
+        const finalRank = newRank;
 
         return (
             <div className="mt-8 bg-whiteCream shadow-2xl rounded-xl p-6 w-full max-w-5xl mx-auto mt-4 transition-discrete duration-500 animate-fade-in">
@@ -819,12 +859,9 @@ const DeliveryRunComponent = () => {
                     {/* Rank calculation explanation */}
                     <div className="mb-6 bg-principalRed/10 p-3 rounded-lg text-center">
                         <p className="text-sm text-principalBrown">
-                            Your rank is based on your total accumulated
-                            earnings from runs{" "}
+                            Your rank is based on your total balance{" "}
                             <span className="font-bold">
-                                {formatResponsiveCurrency(
-                                    results?.newTotalBalance || totalBalance
-                                )}
+                                {formatResponsiveCurrency(updatedTotalBalance)}
                             </span>
                         </p>
                         {nextRankInfo && (

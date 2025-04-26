@@ -5,7 +5,7 @@ const NoodleBarActions = ({ onActionSelect, onBack, forecastedProfit }) => {
     const [hoveredAction, setHoveredAction] = useState(null);
 
     const formatCurrency = (value) => {
-        return new Intl.NumberFormat("fr-FR").format(value) + " ¥";
+        return "¥" + new Intl.NumberFormat("en-US").format(value);
     };
 
     // Using more Tailwind classes instead of inline styles

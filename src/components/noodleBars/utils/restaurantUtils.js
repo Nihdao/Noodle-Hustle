@@ -7,7 +7,7 @@ export function getTotalStat(staff, statName) {
 
 // Format currency in the Japanese yen format
 export function formatCurrency(value) {
-    return new Intl.NumberFormat("fr-FR").format(value) + " ¥";
+    return "¥" + new Intl.NumberFormat("en-US").format(value);
 }
 
 // Calculate available slots based on player rank

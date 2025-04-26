@@ -31,7 +31,7 @@ const EmployeeRecruitment = ({ onBack, funds }) => {
     );
 
     const formatCurrency = (value) => {
-        return new Intl.NumberFormat("fr-FR").format(value) + " ¥";
+        return "¥" + new Intl.NumberFormat("en-US").format(value);
     };
 
     // Check if recruitment has been done for the current period and load saved candidates

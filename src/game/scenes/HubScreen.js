@@ -4,8 +4,8 @@ import { audioManager } from "../AudioManager";
 import gameState from "../GameState";
 
 // Helper function to format currency (can be moved to a utils file later)
-const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("en-US").format(amount || 0) + " ¥";
+const formatCurrency = (value) => {
+    return "¥" + new Intl.NumberFormat("en-US").format(value);
 };
 
 export class HubScreen extends Phaser.Scene {

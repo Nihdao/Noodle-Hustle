@@ -440,7 +440,7 @@ export const useFinances = () => {
 
     // Format currency helper function
     const formatCurrency = useCallback((amount) => {
-        return new Intl.NumberFormat("en-US").format(amount || 0) + " ¥";
+        return "¥" + new Intl.NumberFormat("en-US").format(amount || 0);
     }, []);
 
     return {

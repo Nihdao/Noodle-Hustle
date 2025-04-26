@@ -1136,6 +1136,7 @@ export class DeliveryRun extends Phaser.Scene {
             const finalResults = {
                 totalProfit:
                     results.totalProfit || this.gameProgressData.totalProfit,
+                netProfit: results.netProfit || this.gameProgressData.netProfit,
                 rankChange:
                     results.rankChange || this.gameProgressData.rankChange || 0,
                 burnoutChange:

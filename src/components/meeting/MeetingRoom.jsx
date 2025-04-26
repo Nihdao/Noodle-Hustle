@@ -331,7 +331,7 @@ const MeetingRoom = ({ onBack }) => {
 
     // Format currency
     const formatCurrency = (value) => {
-        return new Intl.NumberFormat("fr-FR").format(value) + " ¥";
+        return "¥" + new Intl.NumberFormat("en-US").format(value);
     };
 
     // Get upcoming shareholders (next meeting)

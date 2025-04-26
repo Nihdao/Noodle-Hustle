@@ -4,7 +4,7 @@
  * @returns {string} The formatted currency string
  */
 export const formatCurrency = (value) => {
-    return new Intl.NumberFormat("en-US").format(value) + " ¥";
+    return "¥" + new Intl.NumberFormat("en-US").format(value);
 };
 
 /**
@@ -31,3 +31,4 @@ export const formatDate = (date) => {
         day: "numeric",
     });
 };
+
