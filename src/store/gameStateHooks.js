@@ -875,9 +875,9 @@ export const useNoodleBarOperations = () => {
 
             // Calculate malus
             let malusPercentage = 0;
-            if (criteresNonRemplis === 1) malusPercentage = 5;
-            else if (criteresNonRemplis === 2) malusPercentage = 15;
-            else if (criteresNonRemplis === 3) malusPercentage = 25;
+            if (criteresNonRemplis === 1) malusPercentage = 30;
+            else if (criteresNonRemplis === 2) malusPercentage = 60;
+            else if (criteresNonRemplis === 3) malusPercentage = 100;
 
             // Apply malus to sales volume
             const malusAmount =

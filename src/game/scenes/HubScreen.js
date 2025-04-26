@@ -197,9 +197,8 @@ export class HubScreen extends Phaser.Scene {
             } else {
                 // Show initial welcome message only if no results were passed
                 this.time.delayedCall(1000, () => {
-                    const playerName = currentGameState.playerName || "Player";
                     this.showMessage(
-                        `Welcome back, ${playerName}! Ready for another day of noodle business?`
+                        `Welcome back! Ready for another day of noodle business?`
                     );
                 });
             }

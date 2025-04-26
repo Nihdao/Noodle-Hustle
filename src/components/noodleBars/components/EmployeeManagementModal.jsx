@@ -105,9 +105,9 @@ const EmployeeManagementModal = ({
         const count = criteresNonRemplis.length;
 
         let malusPercentage = 0;
-        if (count === 1) malusPercentage = 5;
-        else if (count === 2) malusPercentage = 15;
-        else if (count === 3) malusPercentage = 25;
+        if (count === 1) malusPercentage = 30;
+        else if (count === 2) malusPercentage = 60;
+        else if (count === 3) malusPercentage = 100;
 
         const forecastedProfit = getSalesVolume();
         const malusAmount =
@@ -522,13 +522,13 @@ const EmployeeManagementModal = ({
                                                     affects your profits:
                                                 </div>
                                                 <div className="malus-detail">
-                                                    • 1 stat: -5% profit
+                                                    • 1 stat: -30% profit
                                                 </div>
                                                 <div className="malus-detail">
-                                                    • 2 stats: -15% profit
+                                                    • 2 stats: -60% profit
                                                 </div>
                                                 <div className="malus-detail">
-                                                    • 3 stats: -25% profit
+                                                    • 3 stats: -100% profit
                                                 </div>
                                             </span>
                                             <svg
