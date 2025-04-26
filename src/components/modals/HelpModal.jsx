@@ -124,8 +124,7 @@ const HelpModal = ({
                                     burnout, build relationships
                                 </li>
                                 <li>
-                                    <strong>Finances:</strong> Handle loans and
-                                    expenses
+                                    <strong>Finances:</strong> See your loan
                                 </li>
                             </ul>
                         </div>
@@ -166,16 +165,21 @@ const HelpModal = ({
                             <ul className="list-disc pl-5">
                                 <li>
                                     Take personal time before burnout gets too
-                                    high
+                                    high (buffs can help)
                                 </li>
                                 <li>
                                     Match employee skills to restaurant needs
+                                    (or face maluses)
                                 </li>
                                 <li>Build relationships for helpful buffs</li>
-                                <li>Don&apos;t expand too quickly</li>
                                 <li>
-                                    Keep employee morale high for better
-                                    performance
+                                    Don&apos;t expand and upgrade restaurants
+                                    too quickly, go step by step, it will be
+                                    easier to grind then.
+                                </li>
+                                <li>
+                                    Don&apos;t recruit too many employees, step
+                                    by step as always.
                                 </li>
                             </ul>
                         </div>
