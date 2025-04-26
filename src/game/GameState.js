@@ -286,6 +286,16 @@ class GameState {
             const newPeriod = state.gameProgress.currentPeriod + 1;
             const newInvestorClashIn = Math.max(0, 10 - (newPeriod % 10));
 
+            // Reset period-specific employee flags (moved from startPeriod)
+            const resetRoster = state.employees.roster.map((emp) => ({
+                ...emp,
+                management: {
+                    ...emp.management,
+                    trainedThisPeriod: false,
+                    giftedThisPeriod: false,
+                },
+            }));
+
             return {
                 ...state,
                 finances: {
@@ -345,15 +355,18 @@ class GameState {
                         },
                     ],
                 },
-                // Reset flags for the new period
-                employeeRecruitment: {
-                    ...state.employeeRecruitment,
-                    searchActionDoneInPeriod: false,
-                    candidates: [],
+                employees: {
+                    ...state.employees,
+                    roster: resetRoster, // Include the reset roster here
                 },
                 social: {
                     ...state.social,
                     socialActionDoneInPeriod: false,
+                },
+                employeeRecruitment: {
+                    ...state.employeeRecruitment,
+                    searchActionDoneInPeriod: false,
+                    candidates: [],
                 },
             };
         }); // updateGameState handles emitting 'gameStateUpdated' and saving
@@ -1034,14 +1047,35 @@ class GameState {
      */
     hireEmployee(employee) {
         this.updateGameState((state) => {
-            // Ajouter uniquement l'ID et les données spécifiques à l'instance
+            // Find the full employee data from employees.json
+            const baseEmployeeData = employeesData.find(
+                (e) => e.id === employee.id
+            );
+
+            if (!baseEmployeeData) {
+                console.error(
+                    `Could not find base data for employee ID: ${employee.id}`
+                );
+                return state; // Don't add employee if base data is missing
+            }
+
+            // Create the new roster entry, merging base data and instance-specific data
             const newEmployeeEntry = {
-                id: `e${Date.now()}`, // ID unique pour cette instance d'employé
-                employeeId: employee.id, // ID qui référence employees.json
-                level: 1,
-                salary: employee.salary,
-                morale: 100,
-                assigned: null,
+                ...baseEmployeeData, // Copy all base stats (name, skills, rarity, etc.)
+                id: `e${Date.now()}`, // OVERWRITE with a unique instance ID
+                employeeId: employee.id, // Keep the original ID for reference
+                level: 1, // Instance-specific starting level
+                salary: employee.salary, // Use the salary passed (might differ from base?)
+                morale: 100, // Instance-specific starting morale
+                assigned: null, // Instance-specific assignment state
+                management: {
+                    giftedThisPeriod: false,
+                    trainedThisPeriod: false,
+                },
+                // Explicitly ensure skills from base data are present
+                cuisine: baseEmployeeData.cuisine || 0,
+                service: baseEmployeeData.service || 0,
+                ambiance: baseEmployeeData.ambiance || 0,
             };
 
             const newRoster = [...state.employees.roster, newEmployeeEntry];
@@ -1178,14 +1212,49 @@ class GameState {
      */
     trainEmployee(employeeId, cost) {
         this.updateGameState((state) => {
+            // Find the original employee data from employees.json to get base stats if needed
+            const originalEmployeeData = employeesData.find(
+                (e) => e.id.toString() === employeeId.toString()
+            ); // Find based on the ID from employees.json
+            const baseCuisine = originalEmployeeData?.cuisine || 0;
+            const baseService = originalEmployeeData?.service || 0;
+            const baseAmbiance = originalEmployeeData?.ambiance || 0;
+
+            // Define the skill increase amount and the maximum cap
+            const skillIncrease = 5;
+            const skillCap = 200; // Assuming cap based on UI
+
             const statistics = state.statistics || {};
             const trainingsSessions = statistics.trainingsSessions || 0;
 
             const updatedRoster = state.employees.roster.map((emp) => {
                 if (emp.id === employeeId) {
+                    // Calculate new skill levels, ensuring they don't exceed the cap
+                    // Initialize with base stats if not present, otherwise use current level
+                    const currentCuisine = emp.cuisine ?? baseCuisine;
+                    const currentService = emp.service ?? baseService;
+                    const currentAmbiance = emp.ambiance ?? baseAmbiance;
+
+                    const newCuisine = Math.min(
+                        skillCap,
+                        currentCuisine + skillIncrease
+                    );
+                    const newService = Math.min(
+                        skillCap,
+                        currentService + skillIncrease
+                    );
+                    const newAmbiance = Math.min(
+                        skillCap,
+                        currentAmbiance + skillIncrease
+                    );
+
                     return {
                         ...emp,
                         level: emp.level + 1,
+                        // Store the updated skills directly in the roster object
+                        cuisine: newCuisine,
+                        service: newService,
+                        ambiance: newAmbiance,
                         management: {
                             ...emp.management,
                             trainedThisPeriod: true,

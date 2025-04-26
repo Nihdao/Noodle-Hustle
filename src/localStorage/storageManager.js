@@ -138,7 +138,10 @@ export const createNewGameSave = (playerName) => {
                 repartee: employee.repartee,
                 level: 1,
                 assigned: 1, // restaurant id 1
-                management: false,
+                management: {
+                    giftedThisPeriod: false,
+                    trainedThisPeriod: false,
+                },
             })),
             laborCost: starterEmployees.reduce(
                 (sum, emp) => sum + emp.salary,

@@ -1,10 +1,12 @@
 import PropTypes from "prop-types";
 
-const WarningIcons = ({ funds, burnout }) => {
-    const showFundsWarning = funds <= 0;
+const WarningIcons = ({ funds, burnout, businessRank }) => {
+    const showFundsWarning = funds <= 50000;
     const showBurnoutWarning = burnout >= 65;
+    const showSuccessMessage = businessRank === 1;
 
-    if (!showFundsWarning && !showBurnoutWarning) return null;
+    if (!showFundsWarning && !showBurnoutWarning && !showSuccessMessage)
+        return null;
 
     return (
         <div className="fixed top-24 right-8 flex flex-col gap-2 z-50">
@@ -60,6 +62,32 @@ const WarningIcons = ({ funds, burnout }) => {
                     </div>
                 </div>
             )}
+            {showSuccessMessage && (
+                <div className="relative group">
+                    <div className="bg-gradient-to-r from-yellow-400 to-amber-500/90 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 animate-bounce">
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-6 w-6"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                        >
+                            <path
+                                fillRule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                clipRule="evenodd"
+                            />
+                        </svg>
+                        <span className="font-bold">
+                            Legendary Noodle Shop!
+                        </span>
+                    </div>
+                    <div className="absolute right-0 top-full mt-2 w-64 bg-amber-500/95 text-white p-3 rounded-lg shadow-lg text-sm z-50 invisible group-hover:visible">
+                        <strong>Congratulations!</strong> You&apos;ve reached
+                        Rank 1 and become the top noodle business! You can
+                        continue playing and expanding your empire.
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
@@ -67,6 +95,7 @@ const WarningIcons = ({ funds, burnout }) => {
 WarningIcons.propTypes = {
     funds: PropTypes.number.isRequired,
     burnout: PropTypes.number.isRequired,
+    businessRank: PropTypes.number.isRequired,
 };
 
 export default WarningIcons;

@@ -107,7 +107,7 @@ const EmployeeManagement = ({ onBack }) => {
     // Actions sur les employés
     const handleGift = (employee) => {
         if (employee.morale >= 100) return;
-        if (employee.management) {
+        if (employee.management.giftedThisPeriod) {
             setErrorMessage(
                 "This employee has already had a management action performed this period."
             );
@@ -134,7 +134,7 @@ const EmployeeManagement = ({ onBack }) => {
     };
 
     const handleTraining = (employee) => {
-        if (employee.management) {
+        if (employee.management.trainedThisPeriod) {
             setErrorMessage(
                 "This employee has already had a management action performed this period."
             );
@@ -657,7 +657,9 @@ const EmployeeManagement = ({ onBack }) => {
                                                     className={`px-3 py-1 rounded text-white font-medium transform transition-transform ${
                                                         (selectedEmployee.morale ||
                                                             0) < 100 &&
-                                                        !selectedEmployee.management &&
+                                                        !selectedEmployee
+                                                            ?.management
+                                                            ?.giftedThisPeriod &&
                                                         funds >=
                                                             getGiftCost(
                                                                 selectedEmployee.rarity
@@ -673,7 +675,9 @@ const EmployeeManagement = ({ onBack }) => {
                                                     disabled={
                                                         (selectedEmployee.morale ||
                                                             0) >= 100 ||
-                                                        selectedEmployee.management ||
+                                                        selectedEmployee
+                                                            ?.management
+                                                            ?.giftedThisPeriod ||
                                                         funds <
                                                             getGiftCost(
                                                                 selectedEmployee.rarity
@@ -718,7 +722,9 @@ const EmployeeManagement = ({ onBack }) => {
                                                     </span>
                                                     <button
                                                         className={`px-3 py-1 rounded text-white font-medium transform transition-transform ${
-                                                            !selectedEmployee.management &&
+                                                            !selectedEmployee
+                                                                ?.management
+                                                                ?.trainedThisPeriod &&
                                                             funds >=
                                                                 getTrainingCost(
                                                                     selectedEmployee.rarity
@@ -732,7 +738,9 @@ const EmployeeManagement = ({ onBack }) => {
                                                             )
                                                         }
                                                         disabled={
-                                                            selectedEmployee.management ||
+                                                            selectedEmployee
+                                                                ?.management
+                                                                ?.trainedThisPeriod ||
                                                             funds <
                                                                 getTrainingCost(
                                                                     selectedEmployee.rarity
@@ -810,14 +818,16 @@ const EmployeeManagement = ({ onBack }) => {
                                 </div>
                             </div>
 
-                            {selectedEmployee?.management && (
+                            {/* {(selectedEmployee?.management?.trainedThisPeriod ||
+                                selectedEmployee?.management
+                                    ?.giftedThisPeriod) && (
                                 <div className="mt-2 text-center">
                                     <div className="bg-amber-100 border border-amber-300 text-amber-800 px-4 py-2 rounded">
                                         ⚠️ You have already performed an action
                                         on this employee during this period.
                                     </div>
                                 </div>
-                            )}
+                            )} */}
 
                             {errorMessage && (
                                 <div className="mt-2 text-center">
