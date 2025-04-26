@@ -270,26 +270,42 @@ export class DeliveryRun extends Phaser.Scene {
             // Restaurant info panel (left side) - nicer background with gradient
             const infoPanelWidth = width * 0.2;
 
+            // Check if gradient texture already exists and destroy it if needed
+            const gradientKey = "gradient" + i;
+            if (this.textures.exists(gradientKey)) {
+                this.textures.remove(gradientKey);
+            }
+
             // Create a gradient info panel background using principalRed colors
             const gradientTexture = this.textures.createCanvas(
-                "gradient" + i,
+                gradientKey,
                 infoPanelWidth,
                 trackHeight
             );
-            const context = gradientTexture.getContext();
-            const grd = context.createLinearGradient(0, 0, infoPanelWidth, 0);
 
-            grd.addColorStop(0, "#312218"); // principalBrown
-            grd.addColorStop(1, "#a02515"); // principalRed
+            // Check if canvas was created successfully before using getContext
+            if (gradientTexture && gradientTexture.getContext) {
+                const context = gradientTexture.getContext();
+                const grd = context.createLinearGradient(
+                    0,
+                    0,
+                    infoPanelWidth,
+                    0
+                );
 
-            context.fillStyle = grd;
-            context.fillRect(0, 0, infoPanelWidth, trackHeight);
+                grd.addColorStop(0, "#312218"); // principalBrown
+                grd.addColorStop(1, "#a02515"); // principalRed
 
-            gradientTexture.refresh();
+                context.fillStyle = grd;
+                context.fillRect(0, 0, infoPanelWidth, trackHeight);
 
-            const infoPanel = this.add
-                .image(0, y, "gradient" + i)
-                .setOrigin(0, 0);
+                gradientTexture.refresh();
+            } else {
+                console.error(`Failed to create canvas for gradient${i}`);
+                continue; // Skip to next restaurant if canvas creation failed
+            }
+
+            const infoPanel = this.add.image(0, y, gradientKey).setOrigin(0, 0);
 
             this.trackGroups[i].add(infoPanel);
 
@@ -1001,7 +1017,7 @@ export class DeliveryRun extends Phaser.Scene {
         const mentalClarityBuff = this.activeBuffs.find(
             (buff) => buff.type === "mentalClarity"
         );
-        let burnoutChange = 0;
+        let burnoutChange = 0; // Initialize burnout change
 
         Object.keys(this.playerSprites).forEach((restaurantId) => {
             const restaurantData = this.playerSprites[restaurantId];
@@ -1032,25 +1048,25 @@ export class DeliveryRun extends Phaser.Scene {
             totalProfit += adjustedProfit;
         });
 
-        // Base burnout change based on overall performance
+        // --- New Burnout Logic ---
         console.log(
             `DeliveryRun: Total profit across all restaurants: ${totalProfit}`
         );
 
-        if (totalProfit < 0) {
-            burnoutChange += 10; // Large burnout increase for overall loss
-            console.log("DeliveryRun: Overall loss, adding 10 to burnout");
-        } else if (totalProfit > 0) {
-            burnoutChange -= 5; // Small burnout decrease for overall profit
-            console.log("DeliveryRun: Overall profit, reducing burnout by 5");
-        }
+        // Apply burnout: +10 for profit, +30 for loss
+        burnoutChange = totalProfit > 0 ? 10 : 30;
+        console.log(
+            `DeliveryRun: Base burnout change based on profit: ${burnoutChange}`
+        );
 
         // Apply mental clarity buff if it exists
         if (mentalClarityBuff) {
             const reductionPercent = mentalClarityBuff.value || 0;
             const oldBurnoutChange = burnoutChange;
-            burnoutChange = Math.floor(
-                burnoutChange * (1 - reductionPercent / 100)
+            // Apply reduction - ensuring it doesn't make burnout negative
+            burnoutChange = Math.max(
+                0,
+                Math.floor(burnoutChange * (1 - reductionPercent / 100))
             );
             console.log(
                 `DeliveryRun: Mental Clarity buff applied - Burnout change reduced from ${oldBurnoutChange} to ${burnoutChange} (${reductionPercent}% reduction)`
@@ -1058,48 +1074,44 @@ export class DeliveryRun extends Phaser.Scene {
         }
 
         // Calculate new total balance
-        const newTotalBalance =
-            this.totalBalance + (totalProfit > 0 ? totalProfit : 0);
+        // Use totalBalance from init data, not recalculated here
+        const currentTotalBalance = this.totalBalance || 0;
+        const newTotalBalance = currentTotalBalance + totalProfit; // Add the net profit/loss to the balance
 
         // Calculate new rank based on total balance
         const rankDetails = rankData.rankDetails;
         let newRank = 200; // Default rank (lowest)
         for (const detail of rankDetails) {
+            // Find the highest rank threshold the new balance meets
             if (newTotalBalance >= detail.balanceRequired) {
                 newRank = detail.rank;
+            } else {
+                // Stop checking once a threshold isn't met (ranks are sorted)
                 break;
             }
         }
 
-        // Calculate rank change
-        const rankChange = Math.max(
-            -199,
-            Math.min(199, newRank - this.currentRank)
-        );
-        const finalRank = Math.max(
-            1,
-            Math.min(200, this.currentRank + rankChange)
-        );
+        // Calculate the final rank ensuring it's within bounds [1, 200]
+        const finalRank = Math.max(1, Math.min(200, newRank));
 
         console.log(`DeliveryRun: Final calculations:
-            - Current Rank: ${this.currentRank}
-            - Total Balance: ${this.totalBalance}
-            - New Total Balance: ${newTotalBalance}
-            - New Rank: ${newRank}
-            - Rank Change: ${rankChange}
-            - Final Rank: ${finalRank}
-            - Burnout Change: ${burnoutChange}`);
+            - Current Rank (Start of Run): ${this.currentRank}
+            - Current Total Balance (Start of Run): ${currentTotalBalance}
+            - Total Profit/Loss This Run: ${totalProfit}
+            - New Total Balance (End of Run): ${newTotalBalance}
+            - Calculated New Rank: ${finalRank}
+            - Final Burnout Change This Run: ${burnoutChange}`);
 
         // Store complete results for React component
         this.gameProgressData = {
             restaurants: this.activeRestaurants,
             totalProfit,
-            burnoutChange,
-            rankChange: finalRank - this.currentRank,
+            burnoutChange, // Use the final calculated burnout change
+            rankChange: finalRank - this.currentRank, // Calculate rank change based on finalRank
             activeBuffs: this.activeBuffs,
-            newTotalBalance,
-            finalRank,
-            initialFunds: this.funds,
+            newTotalBalance, // Pass the calculated new total balance
+            finalRank, // Pass the final calculated rank
+            initialFunds: this.funds, // Pass initial funds for reference
         };
 
         // Emit event to signal results are ready
@@ -1112,7 +1124,10 @@ export class DeliveryRun extends Phaser.Scene {
     setupReturnToHubListener() {
         // Listen for return to hub event from React
         EventBus.once("returnToHub", (results) => {
-            console.log("DeliveryRun: Returning to hub");
+            console.log(
+                "DeliveryRun: Returning to hub event received with results:",
+                results
+            );
 
             // Store the final results in a variable for logging only
             const finalResults = {
@@ -1124,6 +1139,8 @@ export class DeliveryRun extends Phaser.Scene {
                     results.burnoutChange ||
                     this.gameProgressData.burnoutChange,
                 restaurants: results.restaurants || this.activeRestaurants,
+                // Ensure message is included if present
+                message: results.message || null,
             };
 
             console.log(
@@ -1134,6 +1151,41 @@ export class DeliveryRun extends Phaser.Scene {
             // Stop music
             audioManager.stopMusic();
 
+            // Destroy all particle emitters
+            if (this.particles) {
+                this.particles.destroy();
+                this.particles = null;
+            }
+
+            // Clean up all restaurant track data and destroy sprites
+            Object.keys(this.playerSprites).forEach((restaurantId) => {
+                const restaurantData = this.playerSprites[restaurantId];
+                if (restaurantData.particleTrail) {
+                    restaurantData.particleTrail.destroy();
+                }
+                if (restaurantData.sprite) {
+                    restaurantData.sprite.destroy();
+                }
+                if (restaurantData.progressBar) {
+                    restaurantData.progressBar.destroy();
+                }
+            });
+
+            // Clear all track groups
+            if (this.trackGroups) {
+                this.trackGroups.forEach((group) => {
+                    group.clear(true, true); // Destroy children
+                });
+            }
+
+            // Clean up all canvas textures
+            for (let i = 0; i < 5; i++) {
+                const gradientKey = "gradient" + i;
+                if (this.textures.exists(gradientKey)) {
+                    this.textures.remove(gradientKey);
+                }
+            }
+
             // Reset important variables
             this.activeRestaurants = [];
             this.playerSprites = {};
@@ -1141,13 +1193,16 @@ export class DeliveryRun extends Phaser.Scene {
             this.finished = false;
             this.started = false;
 
-            // Fade out and transition to HubScreen
+            // Fade out and transition to HubScreen, passing results
             this.cameras.main.fadeOut(1000, 0, 0, 0);
             this.time.delayedCall(1000, () => {
                 // Make sure we're still in this scene before transitioning
                 if (this.scene.isActive()) {
                     this.scene.stop();
-                    this.scene.start("HubScreen");
+                    // Ensure proper cleanup happens by removing event listeners
+                    EventBus.removeAllListeners("deliveryResultsReady");
+                    // Pass the finalResults object to HubScreen's init method
+                    this.scene.start("HubScreen", { results: finalResults });
                 }
             });
         });

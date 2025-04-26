@@ -15,13 +15,13 @@ const DeliveryRunComponent = () => {
     const [isBuffsPanelOpen, setIsBuffsPanelOpen] = useState(false);
 
     // State for delivery results data and UI control
-    const [resultsData, setResultsData] = useState(null);
+    const [results, setResults] = useState(null);
     const [showResults, setShowResults] = useState(false);
     const [showRankDisplay, setShowRankDisplay] = useState(false);
     const [animationPhase, setAnimationPhase] = useState("running"); // "running", "results", "rank", "complete"
 
-    // Get business rank from gameState
-    const businessRank = appGameState?.gameProgress?.businessRank || 200;
+    // Get business rank from gameState - this is the rank BEFORE the current run
+    const initialBusinessRank = appGameState?.gameProgress?.businessRank || 200;
     const totalBalance = appGameState?.finances?.totalBalance || 0;
 
     // Get debt amounts from gameState
@@ -54,17 +54,17 @@ const DeliveryRunComponent = () => {
 
     useEffect(() => {
         // Reset states when component mounts
-        setResultsData(null);
+        setResults(null);
         setShowResults(false);
         setShowRankDisplay(false);
         setAnimationPhase("running");
 
         // Listen for results ready event from Phaser scene
         const handleResultsReady = (data) => {
-            console.log("Delivery results ready:", data);
+            console.log("Delivery results ready received by React:", data);
 
             // Include current funds in the results data
-            setResultsData({
+            setResults({
                 ...data,
                 initialFunds: appGameState?.finances?.funds || 0,
             });
@@ -94,162 +94,50 @@ const DeliveryRunComponent = () => {
     // Handle returning to hub
     const handleReturnToHub = () => {
         playClickSound();
-        setAnimationPhase("transitioning");
 
-        // Add burnout based on financial performance
-        if (resultsData) {
-            // Calculate if the player lost money overall
-            const totalProfit = resultsData.totalProfit || 0;
-            const netResult = totalProfit - unusedEmployeeCost - debtAmount;
-            const finalFunds = resultsData.initialFunds + netResult;
-            const isOverallLoss = netResult < 0;
-
-            // Apply burnout based on financial outcome
-            const burnoutToAdd = isOverallLoss ? 30 : 10;
-
-            // Calculate employee morale impacts
-            const employeeMoraleUpdates = [];
-
-            // Process each restaurant and its employees
-            if (resultsData.restaurants && resultsData.restaurants.length > 0) {
-                resultsData.restaurants.forEach((restaurant) => {
-                    const isRestaurantProfitable = restaurant.actualProfit > 0;
-
-                    // If this restaurant has staff
-                    if (restaurant.staff && restaurant.staff.length > 0) {
-                        restaurant.staff.forEach((staffId) => {
-                            let moraleDelta = 0;
-
-                            // If restaurant is not profitable, -20 morale
-                            if (!isRestaurantProfitable) {
-                                moraleDelta -= 20;
-                            }
-
-                            // Add to updates array
-                            employeeMoraleUpdates.push({
-                                employeeId: staffId,
-                                moraleDelta,
-                            });
-                        });
-                    }
-                });
-            }
-
-            // If overall loss, -20 morale for ALL employees
-            if (isOverallLoss) {
-                employeeMoraleUpdates.forEach((update) => {
-                    update.moraleDelta -= 20;
-                });
-            }
-
-            // Get current period from game state
-            const currentPeriod =
-                appGameState?.gameProgress?.currentPeriod || 1;
-            const currentBurnout = appGameState?.playerStats?.burnout || 0;
-
-            // Calculate new total balance
-            const currentTotalBalance =
-                appGameState?.finances?.totalBalance || 0;
-            const balanceToAdd = netResult > 0 ? netResult : 0;
-            const newTotalBalance = currentTotalBalance + balanceToAdd;
-
-            // Get rank details from game state
-            const rankThresholds =
-                appGameState?.gameProgressData?.rankDetails || [];
-            let finalRank = businessRank;
-
-            // Calculate new rank based on thresholds
-            if (rankThresholds.length > 0) {
-                for (let i = rankThresholds.length - 1; i >= 0; i--) {
-                    if (newTotalBalance >= rankThresholds[i].balanceRequired) {
-                        finalRank = rankThresholds[i].rank;
-                        break;
-                    }
-                }
-            }
-
-            // Calculate rank change
-            const rankChange = finalRank - businessRank;
-
-            // Ensure all required data is present and has default values
-            const updatedResults = {
-                ...resultsData,
-                burnoutChange: burnoutToAdd,
-                financialResult: netResult,
-                finalFunds,
-                balanceChange: netResult,
-                employeeMoraleUpdates,
-                updateBalance: true,
-                // Add message data
-                message: {
-                    text: isOverallLoss
-                        ? "Financial losses have increased stress levels significantly."
-                        : "Another day of managing the noodle empire complete.",
-                    type: isOverallLoss ? "warning" : "info",
-                },
-                // Ensure all required properties have default values
-                restaurants: resultsData.restaurants || [],
-                totalProfit: totalProfit || 0,
-                rankChange: rankChange,
-                // Add new properties for complete state update
-                newTotalBalance: newTotalBalance,
-                finalRank: finalRank,
-                currentPeriod: currentPeriod,
-                gameProgress: {
-                    currentPeriod: currentPeriod + 1,
-                    businessRank: finalRank,
-                    totalBalance: newTotalBalance,
-                },
-                // Add all required properties for gameState updates
-                playerStats: {
-                    burnout: Math.min(
-                        100,
-                        Math.max(0, currentBurnout + burnoutToAdd)
-                    ),
-                    currentRank: finalRank,
-                },
-                finances: {
-                    funds: finalFunds,
-                    totalBalance: newTotalBalance,
-                },
+        if (animationPhase === "rank" && results) {
+            // Pass the results calculated by DeliveryRun.js
+            const finalResults = {
+                totalProfit: results.totalProfit,
+                burnoutChange: results.burnoutChange,
+                rankChange: results.rankChange, // Use rankChange from results
+                restaurants: results.restaurants.map((restaurant) => ({
+                    ...restaurant,
+                    id: restaurant.id,
+                    name: restaurant.name,
+                    actualProfit: restaurant.actualProfit,
+                    staff: restaurant.staff,
+                    events: restaurant.events || [],
+                })),
+                // Include message if present
+                message: results.message || null,
             };
 
             console.log(
-                "DeliveryRunComponent: Sending final results to HubScreen:",
-                updatedResults
+                "DeliveryRunComponent: Returning to hub with final results:",
+                finalResults
             );
 
-            // Add a slight delay to ensure Phaser scene is ready
-            setTimeout(() => {
-                // Emit returnToHub event with complete data for GameState
-                EventBus.emit("returnToHub", updatedResults);
-            }, 50);
+            // Emit event to return to hub
+            EventBus.emit("returnToHub", finalResults);
         } else {
-            // Fallback if no results data available
             console.warn(
-                "DeliveryRunComponent: No results data available, sending empty results"
+                "Attempted to return to hub without results or in wrong phase."
             );
-
-            // Send minimal data to avoid errors
+            // Fallback: emit empty results to avoid breaking HubScreen
             EventBus.emit("returnToHub", {
-                burnoutChange: 0,
-                finalFunds: appGameState?.finances?.funds || 0,
-                balanceChange: 0,
-                employeeMoraleUpdates: [],
-                updateBalance: false,
-                restaurants: [],
                 totalProfit: 0,
+                burnoutChange: 0,
                 rankChange: 0,
-                message: {
-                    text: "Period complete.",
-                    type: "info",
-                },
+                restaurants: [],
+                message: null,
             });
         }
     };
 
     // Get noodle-themed rank name based on rank number
     const getNoodleRankName = (rank) => {
+        if (!rank) rank = 200; // Default if rank is undefined
         if (rank <= 10) return { name: "Ramen Temple", color: "#EF4444" };
         if (rank <= 20)
             return { name: "Heavenly Noodle Chain", color: "#F97316" };
@@ -293,10 +181,13 @@ const DeliveryRunComponent = () => {
         let negative = 0;
 
         restaurant.events?.forEach((event) => {
+            // Use forecastedProfit if available, fallback to a default if needed
+            const profitBase =
+                restaurant.forecastedProfit || restaurant.baseProfit || 1000;
             if (event.impact > 0) {
-                positive += event.impact * restaurant.forecastedProfit;
+                positive += event.impact * profitBase;
             } else {
-                negative += event.impact * restaurant.forecastedProfit;
+                negative += event.impact * profitBase;
             }
         });
 
@@ -407,8 +298,8 @@ const DeliveryRunComponent = () => {
 
     // Render business performance results table
     const renderResultsTable = () => {
-        if (!resultsData || !resultsData.restaurants) return null;
-        console.log(impacts);
+        if (!results || !results.restaurants) return null;
+        // Removed console.log(impacts);
 
         return (
             <div className="bg-whiteCream shadow-2xl rounded-xl p-6 w-full max-w-5xl mx-auto transition-discrete duration-500 animate-fade-in">
@@ -435,215 +326,200 @@ const DeliveryRunComponent = () => {
                             </tr>
                         </thead>
                         <tbody className="text-gray-600 text-sm">
-                            {resultsData.restaurants.map(
-                                (restaurant, index) => {
-                                    // Get values from restaurant data
-                                    const maintenance =
-                                        restaurant.maintenance || 0;
-                                    const laborCost = restaurant.staffCost || 0;
+                            {results.restaurants.map((restaurant, index) => {
+                                // Get values from restaurant data
+                                const maintenance = restaurant.maintenance || 0;
+                                const laborCost = restaurant.staffCost || 0;
 
-                                    // Calculate events impact
-                                    const eventsSummary =
-                                        getEventsSummary(restaurant);
+                                // Calculate events impact
+                                const eventsSummary =
+                                    getEventsSummary(restaurant);
 
-                                    // Calculate sales including morale adjustment
-                                    const moraleAdjustment =
-                                        restaurant.moraleAdjustment || 0;
+                                // Calculate sales including morale adjustment
+                                const moraleAdjustment =
+                                    restaurant.moraleAdjustment || 0;
 
-                                    // Calculate total sales including adjustments
-                                    const sales =
-                                        restaurant.actualProfit +
-                                        maintenance +
-                                        laborCost;
+                                // Calculate total sales including adjustments
+                                const sales =
+                                    restaurant.actualProfit +
+                                    maintenance +
+                                    laborCost;
 
-                                    // Calculate base sales without morale adjustment
-                                    const baseVolume =
-                                        restaurant.baseVolume ||
-                                        sales / (1 + moraleAdjustment);
-                                    const moraleImpactAmount =
-                                        sales - baseVolume;
+                                // Calculate base sales without morale adjustment
+                                const baseVolume =
+                                    restaurant.baseVolume ||
+                                    sales / (1 + moraleAdjustment);
+                                const moraleImpactAmount = sales - baseVolume;
 
-                                    const profit = restaurant.actualProfit;
+                                const profit = restaurant.actualProfit;
 
-                                    return (
-                                        <tr
-                                            key={restaurant.id}
-                                            className="border-b border-gray-200 hover:bg-yellowWhite hover:bg-opacity-20 transition-discrete"
-                                        >
-                                            <td className="py-3 px-6 text-left">
-                                                {index + 1}
-                                            </td>
-                                            <td className="py-3 px-6 text-left font-medium">
-                                                <div className="flex items-center">
-                                                    <span className="mr-2">
-                                                        🍜
-                                                    </span>
-                                                    {restaurant.name}
-                                                </div>
-                                                {restaurant.staff &&
-                                                    restaurant.staff.length >
-                                                        0 && (
-                                                        <div className="mt-1 flex items-center">
-                                                            <span className="text-xs text-gray-500 mr-1">
-                                                                Staff:
-                                                            </span>
-                                                            {restaurant.staff.map(
-                                                                (
-                                                                    staffId,
-                                                                    idx
-                                                                ) => (
-                                                                    <span
-                                                                        key={
-                                                                            staffId
-                                                                        }
-                                                                        className="h-4 w-4 bg-green-500 rounded-full mr-1 text-[8px] text-white flex items-center justify-center"
-                                                                        title={`Staff ID: ${staffId}`}
-                                                                    >
-                                                                        {idx +
-                                                                            1}
-                                                                    </span>
-                                                                )
-                                                            )}
-
-                                                            {/* Display morale if available */}
-                                                            {restaurant.averageMorale !==
-                                                                undefined && (
+                                return (
+                                    <tr
+                                        key={restaurant.id}
+                                        className="border-b border-gray-200 hover:bg-yellowWhite hover:bg-opacity-20 transition-discrete"
+                                    >
+                                        <td className="py-3 px-6 text-left">
+                                            {index + 1}
+                                        </td>
+                                        <td className="py-3 px-6 text-left font-medium">
+                                            <div className="flex items-center">
+                                                <span className="mr-2">🍜</span>
+                                                {restaurant.name}
+                                            </div>
+                                            {restaurant.staff &&
+                                                restaurant.staff.length > 0 && (
+                                                    <div className="mt-1 flex items-center">
+                                                        <span className="text-xs text-gray-500 mr-1">
+                                                            Staff:
+                                                        </span>
+                                                        {restaurant.staff.map(
+                                                            (staffId, idx) => (
                                                                 <span
-                                                                    className={`ml-2 text-xs ${
-                                                                        restaurant.averageMorale >=
-                                                                        80
-                                                                            ? "text-emerald-600"
-                                                                            : restaurant.averageMorale <=
-                                                                              30
-                                                                            ? "text-red-600"
-                                                                            : "text-amber-500"
-                                                                    }`}
-                                                                >
-                                                                    Morale:{" "}
-                                                                    {
-                                                                        restaurant.averageMorale
+                                                                    key={
+                                                                        staffId
                                                                     }
-                                                                    %
-                                                                    {restaurant.moraleAdjustment >
-                                                                        0 && (
-                                                                        <span className="text-emerald-600 ml-1">
-                                                                            ↑
-                                                                        </span>
-                                                                    )}
-                                                                    {restaurant.moraleAdjustment <
-                                                                        0 && (
-                                                                        <span className="text-red-600 ml-1">
-                                                                            ↓
-                                                                        </span>
-                                                                    )}
+                                                                    className="h-4 w-4 bg-green-500 rounded-full mr-1 text-[8px] text-white flex items-center justify-center"
+                                                                    title={`Staff ID: ${staffId}`}
+                                                                >
+                                                                    {idx + 1}
                                                                 </span>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                            </td>
-                                            <td className="py-3 px-6 text-right">
-                                                {/* Show total sales and breakdown */}
-                                                <div className="flex flex-col items-end">
-                                                    <div className="font-semibold">
-                                                        {formatResponsiveCurrency(
-                                                            sales
+                                                            )
+                                                        )}
+
+                                                        {/* Display morale if available */}
+                                                        {restaurant.averageMorale !==
+                                                            undefined && (
+                                                            <span
+                                                                className={`ml-2 text-xs ${
+                                                                    restaurant.averageMorale >=
+                                                                    80
+                                                                        ? "text-emerald-600"
+                                                                        : restaurant.averageMorale <=
+                                                                          30
+                                                                        ? "text-red-600"
+                                                                        : "text-amber-500"
+                                                                }`}
+                                                            >
+                                                                Morale:{" "}
+                                                                {
+                                                                    restaurant.averageMorale
+                                                                }
+                                                                %
+                                                                {restaurant.moraleAdjustment >
+                                                                    0 && (
+                                                                    <span className="text-emerald-600 ml-1">
+                                                                        ↑
+                                                                    </span>
+                                                                )}
+                                                                {restaurant.moraleAdjustment <
+                                                                    0 && (
+                                                                    <span className="text-red-600 ml-1">
+                                                                        ↓
+                                                                    </span>
+                                                                )}
+                                                            </span>
                                                         )}
                                                     </div>
+                                                )}
+                                        </td>
+                                        <td className="py-3 px-6 text-right">
+                                            {/* Show total sales and breakdown */}
+                                            <div className="flex flex-col items-end">
+                                                <div className="font-semibold">
+                                                    {formatResponsiveCurrency(
+                                                        sales
+                                                    )}
+                                                </div>
 
-                                                    {/* Breakdown items */}
-                                                    <div className="text-xs mt-1 text-gray-500 flex flex-col items-end">
-                                                        {moraleAdjustment !==
+                                                {/* Breakdown items */}
+                                                <div className="text-xs mt-1 text-gray-500 flex flex-col items-end">
+                                                    {moraleAdjustment !== 0 && (
+                                                        <div>
+                                                            <span>
+                                                                Morale Impact:{" "}
+                                                            </span>
+                                                            <span
+                                                                className={`${
+                                                                    moraleAdjustment >
+                                                                    0
+                                                                        ? "text-emerald-600"
+                                                                        : "text-red-500"
+                                                                } font-medium text-xs`}
+                                                            >
+                                                                {moraleAdjustment >
+                                                                0
+                                                                    ? "+"
+                                                                    : "-"}
+                                                                {formatResponsiveCurrency(
+                                                                    Math.abs(
+                                                                        moraleImpactAmount
+                                                                    )
+                                                                )}{" "}
+                                                            </span>
+                                                        </div>
+                                                    )}
+
+                                                    {eventsSummary.count > 0 &&
+                                                        eventsSummary.total !==
                                                             0 && (
                                                             <div>
                                                                 <span>
-                                                                    Morale
-                                                                    Impact:{" "}
+                                                                    Run Events:{" "}
                                                                 </span>
                                                                 <span
-                                                                    className={`${
-                                                                        moraleAdjustment >
+                                                                    className={`font-medium text-xs ${
+                                                                        eventsSummary.total >=
                                                                         0
                                                                             ? "text-emerald-600"
                                                                             : "text-red-500"
-                                                                    } font-medium text-xs`}
+                                                                    }`}
                                                                 >
-                                                                    {moraleAdjustment >
+                                                                    {eventsSummary.total >=
                                                                     0
-                                                                        ? "+"
-                                                                        : "-"}
+                                                                        ? "+ "
+                                                                        : "- "}
                                                                     {formatResponsiveCurrency(
                                                                         Math.abs(
-                                                                            moraleImpactAmount
+                                                                            eventsSummary.total
                                                                         )
                                                                     )}{" "}
                                                                 </span>
                                                             </div>
                                                         )}
-
-                                                        {eventsSummary.count >
-                                                            0 &&
-                                                            eventsSummary.total !==
-                                                                0 && (
-                                                                <div>
-                                                                    <span>
-                                                                        Run
-                                                                        Events:{" "}
-                                                                    </span>
-                                                                    <span
-                                                                        className={`font-medium text-xs ${
-                                                                            eventsSummary.total >=
-                                                                            0
-                                                                                ? "text-emerald-600"
-                                                                                : "text-red-500"
-                                                                        }`}
-                                                                    >
-                                                                        {eventsSummary.total >=
-                                                                        0
-                                                                            ? "+ "
-                                                                            : "- "}
-                                                                        {formatResponsiveCurrency(
-                                                                            Math.abs(
-                                                                                eventsSummary.total
-                                                                            )
-                                                                        )}{" "}
-                                                                    </span>
-                                                                </div>
-                                                            )}
-                                                    </div>
                                                 </div>
-                                            </td>
-                                            <td className="py-3 px-6 text-right text-principalRed">
-                                                {formatResponsiveCurrency(
-                                                    maintenance
-                                                )}
-                                            </td>
-                                            <td className="py-3 px-6 text-right text-principalRed">
-                                                {formatResponsiveCurrency(
-                                                    laborCost
-                                                )}
-                                            </td>
-                                            <td
-                                                className="py-3 px-6 text-right font-bold"
-                                                style={{
-                                                    color:
-                                                        profit >= 0
-                                                            ? "#10B981"
-                                                            : "#a02515",
-                                                }}
-                                            >
-                                                <div className="flex flex-col items-end">
-                                                    {/* Show total profit */}
-                                                    <div>
-                                                        {formatResponsiveCurrency(
-                                                            profit
-                                                        )}
-                                                    </div>
+                                            </div>
+                                        </td>
+                                        <td className="py-3 px-6 text-right text-principalRed">
+                                            {formatResponsiveCurrency(
+                                                maintenance
+                                            )}
+                                        </td>
+                                        <td className="py-3 px-6 text-right text-principalRed">
+                                            {formatResponsiveCurrency(
+                                                laborCost
+                                            )}
+                                        </td>
+                                        <td
+                                            className="py-3 px-6 text-right font-bold"
+                                            style={{
+                                                color:
+                                                    profit >= 0
+                                                        ? "#10B981"
+                                                        : "#a02515",
+                                            }}
+                                        >
+                                            <div className="flex flex-col items-end">
+                                                {/* Show total profit */}
+                                                <div>
+                                                    {formatResponsiveCurrency(
+                                                        profit
+                                                    )}
                                                 </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                }
-                            )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
 
                         <tfoot className="font-medium text-principalBrown">
@@ -657,13 +533,13 @@ const DeliveryRunComponent = () => {
                                     className="py-3 px-6 text-right font-bold"
                                     style={{
                                         color:
-                                            resultsData.totalProfit >= 0
+                                            results.totalProfit >= 0
                                                 ? "#10B981"
                                                 : "#a02515",
                                     }}
                                 >
                                     {formatResponsiveCurrency(
-                                        resultsData.totalProfit
+                                        results.totalProfit
                                     )}
                                 </td>
                             </tr>
@@ -693,11 +569,11 @@ const DeliveryRunComponent = () => {
                                 </td>
                                 <td
                                     className={`py-3 px-6 text-right ${
-                                        resultsData.initialFunds +
-                                            resultsData.totalProfit -
+                                        results.initialFunds +
+                                            results.totalProfit -
                                             unusedEmployeeCost -
                                             debtAmount >=
-                                        resultsData.initialFunds
+                                        results.initialFunds
                                             ? "text-emerald-600"
                                             : "text-principalRed"
                                     }`}
@@ -705,26 +581,26 @@ const DeliveryRunComponent = () => {
                                     <div className="flex flex-col">
                                         <div className="font-bold">
                                             {formatResponsiveCurrency(
-                                                resultsData.initialFunds +
-                                                    resultsData.totalProfit -
+                                                results.initialFunds +
+                                                    results.totalProfit -
                                                     unusedEmployeeCost -
                                                     debtAmount
                                             )}
                                         </div>
                                         <div className="text-xs mt-1">
-                                            {resultsData.initialFunds +
-                                                resultsData.totalProfit -
+                                            {results.initialFunds +
+                                                results.totalProfit -
                                                 unusedEmployeeCost -
                                                 debtAmount >
-                                            resultsData.initialFunds ? (
+                                            results.initialFunds ? (
                                                 <span className="text-emerald-600">
                                                     (+
                                                     {formatResponsiveCurrency(
-                                                        resultsData.initialFunds +
-                                                            resultsData.totalProfit -
+                                                        results.initialFunds +
+                                                            results.totalProfit -
                                                             unusedEmployeeCost -
                                                             debtAmount -
-                                                            resultsData.initialFunds
+                                                            results.initialFunds
                                                     )}
                                                     )
                                                 </span>
@@ -732,9 +608,9 @@ const DeliveryRunComponent = () => {
                                                 <span className="text-principalRed">
                                                     (-
                                                     {formatResponsiveCurrency(
-                                                        resultsData.initialFunds -
-                                                            (resultsData.initialFunds +
-                                                                resultsData.totalProfit -
+                                                        results.initialFunds -
+                                                            (results.initialFunds +
+                                                                results.totalProfit -
                                                                 unusedEmployeeCost -
                                                                 debtAmount)
                                                     )}
@@ -744,11 +620,11 @@ const DeliveryRunComponent = () => {
                                         </div>
                                     </div>
                                     <span className="ml-2">
-                                        {resultsData.initialFunds +
-                                            resultsData.totalProfit -
+                                        {results.initialFunds +
+                                            results.totalProfit -
                                             unusedEmployeeCost -
                                             debtAmount >=
-                                        resultsData.initialFunds ? (
+                                        results.initialFunds ? (
                                             <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full text-xs">
                                                 ↑ PROFIT
                                             </span>
@@ -775,15 +651,28 @@ const DeliveryRunComponent = () => {
                             </h4>
                             <div className="flex items-center">
                                 <div className="w-8 h-8 flex items-center justify-center mr-2 bg-principalRed/10 rounded-full">
-                                    <span className="text-sm font-bold text-principalRed">
-                                        +{impacts?.burnoutImpact || 10}
+                                    {/* Display actual burnout change from results */}
+                                    <span
+                                        className={`text-sm font-bold ${
+                                            results.burnoutChange >= 0
+                                                ? "text-principalRed"
+                                                : "text-emerald-600" // Red for increase, Green for decrease (shouldn't happen with new rule unless buffed)
+                                        }`}
+                                    >
+                                        {results.burnoutChange >= 0 ? "+" : ""}
+                                        {results.burnoutChange}
                                     </span>
                                 </div>
-                                <div className="flex flex-col">
+                                <div className="flex flex-col flex-1">
                                     <div className="text-xs text-gray-600">
-                                        {impacts?.isOverallLoss
-                                            ? "Financial losses increased stress significantly."
-                                            : "Managing businesses always increases stress levels."}
+                                        {/* Text based on new burnout rule */}
+                                        {results.burnoutChange === 30
+                                            ? "Running an unprofitable business adds significant stress."
+                                            : results.burnoutChange === 10
+                                            ? "Even profitable business management adds some stress."
+                                            : results.burnoutChange < 10
+                                            ? "Mental Clarity buff helped reduce stress increase!" // Assume decrease is due to buff
+                                            : "Business performance had no impact on stress this period."}
                                     </div>
                                     <div className="mt-1 h-2 w-full bg-gray-200 rounded-full overflow-hidden">
                                         <div
@@ -791,10 +680,12 @@ const DeliveryRunComponent = () => {
                                             style={{
                                                 width: `${Math.min(
                                                     100,
-                                                    (appGameState?.playerStats
-                                                        ?.burnout || 0) +
-                                                        (impacts?.burnoutImpact ||
-                                                            10)
+                                                    Math.max(
+                                                        0,
+                                                        appGameState
+                                                            ?.playerStats
+                                                            ?.burnout || 0
+                                                    )
                                                 )}%`,
                                             }}
                                         ></div>
@@ -808,13 +699,13 @@ const DeliveryRunComponent = () => {
                                 Employee Morale Impact
                             </h4>
                             <div className="flex flex-col text-principalBrown">
-                                {resultsData?.restaurants?.some(
+                                {results?.restaurants?.some(
                                     (restaurant) =>
                                         restaurant.staff &&
                                         restaurant.staff.length > 0
                                 ) ? (
                                     <div className="grid grid-cols-2 gap-2 text-xs">
-                                        {resultsData.restaurants.map(
+                                        {results.restaurants.map(
                                             (restaurant) => {
                                                 if (
                                                     !restaurant.staff ||
@@ -823,18 +714,12 @@ const DeliveryRunComponent = () => {
                                                 )
                                                     return null;
                                                 const isProfitable =
-                                                    restaurant.actualProfit > 0;
+                                                    restaurant.actualProfit >=
+                                                    0;
 
-                                                // Employee morale impact based on actual logic
-                                                const moraleChange =
-                                                    isProfitable ? 5 : -20;
-                                                const overallLossImpact =
-                                                    impacts?.isOverallLoss
-                                                        ? -20
-                                                        : 0;
+                                                // Employee morale impact based on actual logic from GameState
                                                 const totalMoraleChange =
-                                                    moraleChange +
-                                                    overallLossImpact;
+                                                    isProfitable ? 5 : -10;
 
                                                 return (
                                                     <div
@@ -876,17 +761,9 @@ const DeliveryRunComponent = () => {
                                     </div>
                                 )}
                                 <div className="text-xs mt-2 text-gray-600">
-                                    {impacts?.isOverallLoss ? (
-                                        <span className="text-principalRed font-medium">
-                                            Overall business loss affects all
-                                            employees (-20)
-                                        </span>
-                                    ) : (
-                                        <span className="text-emerald-600 font-medium">
-                                            Profitable period maintains employee
-                                            morale
-                                        </span>
-                                    )}
+                                    {/* Simplified message about morale change */}
+                                    Profitable restaurants boost morale (+5),
+                                    unprofitable ones decrease it (-10).
                                 </div>
                             </div>
                         </div>
@@ -925,6 +802,8 @@ const DeliveryRunComponent = () => {
     const renderRankDisplay = () => {
         // Get next rank threshold information
         const nextRankInfo = getNextRankThreshold();
+        // Use the final rank calculated by DeliveryRun.js from the results state
+        const finalRank = results?.finalRank || initialBusinessRank;
 
         return (
             <div className="mt-8 bg-whiteCream shadow-2xl rounded-xl p-6 w-full max-w-5xl mx-auto mt-4 transition-discrete duration-500 animate-fade-in">
@@ -944,7 +823,7 @@ const DeliveryRunComponent = () => {
                             of{" "}
                             <span className="font-bold">
                                 {formatResponsiveCurrency(
-                                    impacts?.newTotalBalance || totalBalance
+                                    results?.newTotalBalance || totalBalance
                                 )}
                             </span>
                         </p>
@@ -1036,33 +915,35 @@ const DeliveryRunComponent = () => {
                             </div>
                         </div>
 
-                        {/* Player position marker */}
+                        {/* Player position marker using finalRank from results */}
                         {(() => {
-                            const currentRank =
-                                impacts?.newRank || businessRank;
-                            let position;
+                            const currentRank = finalRank;
+                            let position = "4%"; // Default to lowest category
 
                             // Determine which category the player is in
-                            if (currentRank >= 151) {
-                                position = "4%";
-                            } else if (currentRank >= 101) {
-                                position = "21%";
-                            } else if (currentRank >= 51) {
-                                position = "38%";
-                            } else if (currentRank >= 21) {
-                                position = "55%";
-                            } else if (currentRank >= 11) {
-                                position = "72%";
-                            } else {
+                            if (currentRank < 11) {
                                 position = "88%";
-                            }
+                            } // Ramen Temple
+                            else if (currentRank < 21) {
+                                position = "72%";
+                            } // Heavenly
+                            else if (currentRank < 51) {
+                                position = "55%";
+                            } // Master Bar
+                            else if (currentRank < 101) {
+                                position = "38%";
+                            } // Local Spot
+                            else if (currentRank < 151) {
+                                position = "21%";
+                            } // Street Stand
+                            // Back-Alley is the default
 
                             return (
                                 <div
-                                    className="absolute top-[-10px] transition-all duration-500"
+                                    className="absolute top-[-10px] transition-all duration-500 ease-out"
                                     style={{ left: position }}
                                 >
-                                    <div className="flex flex-col items-center">
+                                    <div className="flex flex-col items-center animate-pulse">
                                         <div className="px-3 py-1 bg-principalRed text-white rounded-full text-xs shadow-md">
                                             Your Rank: #{currentRank}
                                         </div>
@@ -1073,22 +954,21 @@ const DeliveryRunComponent = () => {
                         })()}
                     </div>
 
-                    {/* Current rank detail panel */}
+                    {/* Current rank detail panel using finalRank */}
                     <div className="bg-principalRed/10 rounded-lg p-4 mt-4">
                         <div className="flex justify-between items-center">
                             <div className="flex items-center">
                                 <div
                                     className="w-12 h-12 rounded-full flex items-center justify-center"
                                     style={{
-                                        backgroundColor: getNoodleRankName(
-                                            impacts?.newRank || businessRank
-                                        ).color,
+                                        backgroundColor:
+                                            getNoodleRankName(finalRank).color,
                                         boxShadow:
                                             "0 0 0 3px rgba(255,255,255,0.5)",
                                     }}
                                 >
                                     <span className="text-white font-bold">
-                                        #{impacts?.newRank || businessRank}
+                                        #{finalRank}
                                     </span>
                                 </div>
                                 <div className="ml-4">
@@ -1096,11 +976,7 @@ const DeliveryRunComponent = () => {
                                         Your Current Category
                                     </div>
                                     <div className="text-principalRed font-bold">
-                                        {
-                                            getNoodleRankName(
-                                                impacts?.newRank || businessRank
-                                            ).name
-                                        }
+                                        {getNoodleRankName(finalRank).name}
                                     </div>
                                 </div>
                             </div>
@@ -1197,77 +1073,6 @@ const DeliveryRunComponent = () => {
         }
         return null;
     };
-
-    // Ajouter les calculs à la volée pour les résultats
-    const calculateImpacts = () => {
-        if (!resultsData) return null;
-
-        // Calculer le résultat financier net (ce calcul est déjà fait dans handleReturnToHub)
-        const totalProfit = resultsData.totalProfit || 0;
-        const netResult = totalProfit - unusedEmployeeCost - debtAmount;
-        const isOverallLoss = netResult < 0;
-
-        // Calculer l'impact sur le burnout selon la même logique que handleReturnToHub
-        const burnoutImpact = isOverallLoss ? 30 : 10;
-
-        // Calculer le nouveau solde (final funds)
-        const finalFunds = resultsData.initialFunds + netResult;
-
-        // Récupérer la balance totale actuelle depuis le bon endroit dans le state
-        const currentTotalBalance =
-            appGameState?.finances?.totalBalance ||
-            appGameState?.gameProgress?.totalBalance ||
-            0;
-        console.log("Current total balance from state:", {
-            financesTotalBalance: appGameState?.finances?.totalBalance,
-            gameProgressTotalBalance: appGameState?.gameProgress?.totalBalance,
-            currentTotalBalance,
-        });
-
-        // Calculer la nouvelle balance totale
-        // On ajoute le résultat net à la balance totale, qu'il soit positif ou négatif
-        // car c'est le total cumulé de tous les résultats
-        const newTotalBalance = currentTotalBalance + netResult;
-
-        // Obtenir les détails de rang à partir des données de rank.json
-        const rankThresholds =
-            appGameState?.gameProgressData?.rankDetails || [];
-
-        // Trouver le nouveau rang basé sur la nouvelle balance totale
-        let newRank = businessRank; // Commencer avec le rang actuel
-
-        // Parcourir les seuils de rang pour trouver le nouveau rang
-        if (rankThresholds.length > 0) {
-            // Trouver le rang qui correspond à la nouvelle balance totale
-            for (let i = rankThresholds.length - 1; i >= 0; i--) {
-                if (newTotalBalance >= rankThresholds[i].balanceRequired) {
-                    newRank = rankThresholds[i].rank;
-                    break;
-                }
-            }
-        }
-
-        console.log("calculateImpacts results:", {
-            netResult,
-            currentTotalBalance,
-            newTotalBalance,
-            businessRank,
-            newRank,
-            balanceToAdd: netResult,
-        });
-
-        return {
-            burnoutImpact,
-            netResult,
-            finalFunds,
-            isOverallLoss,
-            newTotalBalance,
-            newRank,
-        };
-    };
-
-    // Calculer les impacts une seule fois
-    const impacts = calculateImpacts();
 
     return (
         <>

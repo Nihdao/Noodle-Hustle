@@ -3,6 +3,11 @@ import { EventBus } from "../EventBus";
 import { audioManager } from "../AudioManager";
 import gameState from "../GameState";
 
+// Helper function to format currency (can be moved to a utils file later)
+const formatCurrency = (amount) => {
+    return new Intl.NumberFormat("en-US").format(amount || 0) + " ¥";
+};
+
 export class HubScreen extends Phaser.Scene {
     constructor() {
         super("HubScreen");
@@ -63,6 +68,13 @@ export class HubScreen extends Phaser.Scene {
         this.isShowingMessage = false;
         this.isPerformingRecruitment = false;
         this.lastMessage = null;
+        this.initialData = null; // To store data passed via init
+    }
+
+    // Add init method to receive data from scene start
+    init(data) {
+        console.log("HubScreen received data:", data);
+        this.initialData = data;
     }
 
     preload() {
@@ -175,13 +187,22 @@ export class HubScreen extends Phaser.Scene {
                 loop: true,
             });
 
-            // Show initial welcome message
-            this.time.delayedCall(1000, () => {
-                const playerName = currentGameState.playerName || "Player";
-                this.showMessage(
-                    `Welcome back, ${playerName}! Ready for another day of noodle business?`
-                );
-            });
+            // Check if results were passed from DeliveryRun via init
+            if (this.initialData?.results) {
+                console.log("HubScreen: Processing results received via init");
+                // Use a delayed call to ensure everything is ready in the scene
+                this.time.delayedCall(100, () => {
+                    this.processDeliveryResults(this.initialData.results);
+                });
+            } else {
+                // Show initial welcome message only if no results were passed
+                this.time.delayedCall(1000, () => {
+                    const playerName = currentGameState.playerName || "Player";
+                    this.showMessage(
+                        `Welcome back, ${playerName}! Ready for another day of noodle business?`
+                    );
+                });
+            }
         }
 
         // Register this scene with the event bus for React components to access
@@ -202,19 +223,22 @@ export class HubScreen extends Phaser.Scene {
 
         // Initialize audio manager and play music based on current period from GameState
         audioManager.init(this.sound);
-        const currentPeriod = currentGameState.gameProgress?.currentPeriod || 1;
-        audioManager.playHubMusic(currentPeriod);
+        // Play music based on period AFTER potential processing
+        const periodToPlay = this.initialData?.results
+            ? (currentGameState.gameProgress?.currentPeriod || 0) + 1
+            : currentGameState.gameProgress?.currentPeriod || 1;
+        audioManager.playHubMusic(periodToPlay);
 
-        // Listen for game state updates
+        // Listen for game state updates (e.g., from GameState itself)
         EventBus.on("gameStateUpdated", this.handleGameStateUpdate, this);
-
-        // Listen for return from delivery run to process results
-        EventBus.on("returnToHub", this.handleReturnFromDelivery, this);
     }
 
     handleGameStateUpdate(updatedState) {
-        console.log("HubScreen: Game state updated", updatedState);
-        // We don't need to store the state here since we'll get it from the singleton when needed
+        console.log("HubScreen: Game state updated received", updatedState);
+        // Potentially update music if period changes significantly outside of delivery run
+        if (updatedState?.gameProgress?.currentPeriod) {
+            audioManager.playHubMusic(updatedState.gameProgress.currentPeriod);
+        }
     }
 
     setupAudioEventListeners() {
@@ -243,6 +267,9 @@ export class HubScreen extends Phaser.Scene {
     }
 
     createSpeechBubble() {
+        // Ensure this.fairy exists before accessing its properties
+        if (!this.fairy) return;
+
         // Create text object for fairy dialogue with better visibility
         this.speechText = this.add
             .text(this.fairy.x - 180, this.fairy.y, "", {
@@ -275,6 +302,13 @@ export class HubScreen extends Phaser.Scene {
     }
 
     showMessage(message) {
+        // Ensure fairy and speech objects are created
+        if (!this.fairy || !this.speechText) {
+            this.createSpeechBubble();
+            // If still not created (e.g., fairy texture missing), exit
+            if (!this.fairy || !this.speechText) return;
+        }
+
         // Cancel any existing hide timer
         if (this.hideMessageTimer) {
             this.hideMessageTimer.remove();
@@ -292,6 +326,17 @@ export class HubScreen extends Phaser.Scene {
     }
 
     displayNewMessage(message) {
+        // Ensure speech objects exist
+        if (!this.speechText || !this.speechBackground || !this.speechPointer) {
+            this.createSpeechBubble();
+            if (
+                !this.speechText ||
+                !this.speechBackground ||
+                !this.speechPointer
+            )
+                return;
+        }
+
         // Update text
         this.speechText.setText(message);
 
@@ -350,16 +395,24 @@ export class HubScreen extends Phaser.Scene {
         });
 
         // Add slight bounce animation to fairy
-        this.tweens.add({
-            targets: this.fairy,
-            y: this.fairy.y - 15,
-            duration: 300,
-            yoyo: true,
-            ease: "Bounce.easeOut",
-        });
+        if (this.fairy) {
+            this.tweens.add({
+                targets: this.fairy,
+                y: this.fairy.y - 15,
+                duration: 300,
+                yoyo: true,
+                ease: "Bounce.easeOut",
+            });
+        }
     }
 
     hideSpeechBubble(callback) {
+        // Ensure speech objects exist before trying to hide
+        if (!this.speechText || !this.speechBackground || !this.speechPointer) {
+            if (callback) callback();
+            return;
+        }
+
         // Hide with fade animation
         this.tweens.add({
             targets: [
@@ -447,77 +500,85 @@ export class HubScreen extends Phaser.Scene {
                     this.showMessage(message);
 
                     // Add fairy animation - a more dramatic bounce and spin
-                    this.tweens.add({
-                        targets: this.fairy,
-                        y: this.fairy.y - 50,
-                        angle: { from: -15, to: 15 },
-                        duration: 800,
-                        yoyo: true,
-                        repeat: 1,
-                        ease: "Sine.easeInOut",
-                        onComplete: () => {
-                            // Create particle effects
-                            this.createRecruitmentParticles();
+                    if (this.fairy) {
+                        this.tweens.add({
+                            targets: this.fairy,
+                            y: this.fairy.y - 50,
+                            angle: { from: -15, to: 15 },
+                            duration: 800,
+                            yoyo: true,
+                            repeat: 1,
+                            ease: "Sine.easeInOut",
+                            onComplete: () => {
+                                // Create particle effects
+                                this.createRecruitmentParticles();
 
-                            // Add a sparkle effect (simple scale pulse)
-                            this.tweens.add({
-                                targets: this.fairy,
-                                scaleX: { from: 0.2, to: 0.26 },
-                                scaleY: { from: 0.2, to: 0.26 },
-                                duration: 300,
-                                yoyo: true,
-                                repeat: 2,
-                                ease: "Sine.easeInOut",
-                                onComplete: () => {
-                                    // Reset fairy scale
-                                    this.fairy.setScale(0.2);
+                                // Add a sparkle effect (simple scale pulse)
+                                this.tweens.add({
+                                    targets: this.fairy,
+                                    scaleX: { from: 0.2, to: 0.26 },
+                                    scaleY: { from: 0.2, to: 0.26 },
+                                    duration: 300,
+                                    yoyo: true,
+                                    repeat: 2,
+                                    ease: "Sine.easeInOut",
+                                    onComplete: () => {
+                                        // Reset fairy scale
+                                        this.fairy.setScale(0.2);
 
-                                    // Return camera and background to normal
-                                    this.tweens.add({
-                                        targets: this.cameras.main,
-                                        zoom: 1,
-                                        duration: 500,
-                                        ease: "Sine.easeIn",
-                                    });
+                                        // Return camera and background to normal
+                                        this.tweens.add({
+                                            targets: this.cameras.main,
+                                            zoom: 1,
+                                            duration: 500,
+                                            ease: "Sine.easeIn",
+                                        });
 
-                                    this.tweens.add({
-                                        targets: this.darkOverlay,
-                                        alpha: 0,
-                                        duration: 500,
-                                        ease: "Sine.easeIn",
-                                        onComplete: () => {
-                                            if (this.darkOverlay) {
-                                                this.darkOverlay.destroy();
-                                                this.darkOverlay = null;
-                                            }
+                                        this.tweens.add({
+                                            targets: this.darkOverlay,
+                                            alpha: 0,
+                                            duration: 500,
+                                            ease: "Sine.easeIn",
+                                            onComplete: () => {
+                                                if (this.darkOverlay) {
+                                                    this.darkOverlay.destroy();
+                                                    this.darkOverlay = null;
+                                                }
 
-                                            // Delay then complete the recruitment process
-                                            this.time.delayedCall(500, () => {
-                                                // Reset the flag
-                                                this.isPerformingRecruitment = false;
+                                                // Delay then complete the recruitment process
+                                                this.time.delayedCall(
+                                                    500,
+                                                    () => {
+                                                        // Reset the flag
+                                                        this.isPerformingRecruitment = false;
 
-                                                // Fire the completion event to show candidates
-                                                EventBus.emit(
-                                                    "recruitmentAnimationComplete"
+                                                        // Fire the completion event to show candidates
+                                                        EventBus.emit(
+                                                            "recruitmentAnimationComplete"
+                                                        );
+
+                                                        // Show completion message
+                                                        this.showMessage(
+                                                            "I found some potential employees! Take a look!"
+                                                        );
+                                                    }
                                                 );
-
-                                                // Show completion message
-                                                this.showMessage(
-                                                    "I found some potential employees! Take a look!"
-                                                );
-                                            });
-                                        },
-                                    });
-                                },
-                            });
-                        },
-                    });
+                                            },
+                                        });
+                                    },
+                                });
+                            },
+                        });
+                    }
                 },
             });
         });
     }
 
     createRecruitmentParticles() {
+        // Ensure fairy exists
+        if (!this.fairy) return;
+
         // Clean up any existing particles first
         if (this.circleParticles) {
             this.circleParticles.destroy();
@@ -582,8 +643,8 @@ export class HubScreen extends Phaser.Scene {
 
         // Stop particles after a delay
         this.time.delayedCall(2500, () => {
-            this.circleParticles.stop();
-            this.starParticles.stop();
+            if (this.circleParticles) this.circleParticles.stop();
+            if (this.starParticles) this.starParticles.stop();
 
             // Clean up particles after they finish
             this.time.delayedCall(2000, () => {
@@ -678,51 +739,52 @@ export class HubScreen extends Phaser.Scene {
     }
 
     update() {
-        // Hub scene update logic goes here
-        // if (this.noodlesPattern) {
-        //     this.noodlesPattern.tilePositionX += 0.5;
-        //     this.noodlesPattern.tilePositionY += 0.5;
-        // }
-
         // Update speech text position to follow fairy
         if (this.speechText && this.fairy) {
-            const bounds = this.speechText.getBounds();
-            // Position to the left of the fairy
+            // Update text position
             this.speechText.x = this.fairy.x - 100;
             this.speechText.y = this.fairy.y - 50;
+
+            const bounds = this.speechText.getBounds();
 
             // Update background position
             if (this.speechBackground && this.speechBackground.clear) {
                 this.speechBackground.clear();
-                this.speechBackground.fillStyle(0xffffff, 0.9);
-                this.speechBackground.fillRoundedRect(
-                    this.speechText.x - bounds.width - 15,
-                    this.speechText.y - bounds.height / 2 - 10,
-                    bounds.width + 30,
-                    bounds.height + 20,
-                    16
-                );
+                if (this.isShowingMessage) {
+                    // Only draw if showing
+                    this.speechBackground.fillStyle(0xffffff, 0.9);
+                    this.speechBackground.fillRoundedRect(
+                        bounds.x - 15,
+                        bounds.y - 10,
+                        bounds.width + 30,
+                        bounds.height + 20,
+                        16
+                    );
+                }
             }
 
             // Update pointer position (pointing right)
             if (this.speechPointer && this.speechPointer.clear) {
                 this.speechPointer.clear();
-                this.speechPointer.fillStyle(0xffffff, 0.9);
-                this.speechPointer.beginPath();
-                this.speechPointer.moveTo(
-                    this.speechText.x + 15,
-                    this.speechText.y - 10
-                );
-                this.speechPointer.lineTo(
-                    this.speechText.x + 35,
-                    this.speechText.y
-                );
-                this.speechPointer.lineTo(
-                    this.speechText.x + 15,
-                    this.speechText.y + 10
-                );
-                this.speechPointer.closePath();
-                this.speechPointer.fillPath();
+                if (this.isShowingMessage) {
+                    // Only draw if showing
+                    this.speechPointer.fillStyle(0xffffff, 0.9);
+                    this.speechPointer.beginPath();
+                    this.speechPointer.moveTo(
+                        bounds.x + bounds.width + 15,
+                        bounds.y + bounds.height / 2 - 10
+                    );
+                    this.speechPointer.lineTo(
+                        bounds.x + bounds.width + 35,
+                        bounds.y + bounds.height / 2
+                    );
+                    this.speechPointer.lineTo(
+                        bounds.x + bounds.width + 15,
+                        bounds.y + bounds.height / 2 + 10
+                    );
+                    this.speechPointer.closePath();
+                    this.speechPointer.fillPath();
+                }
             }
         }
     }
@@ -746,47 +808,37 @@ export class HubScreen extends Phaser.Scene {
         if (state.finances?.funds < -10000) {
             console.log("HubScreen: GAME OVER - Bankruptcy detected");
             EventBus.emit("gameOver", { reason: "bankruptcy" });
+            return true; // Game over
         }
 
         // Check for burnout level too high
         if (state.playerStats?.burnout >= 100) {
             console.log("HubScreen: GAME OVER - Burnout level critical");
             EventBus.emit("gameOver", { reason: "burnout" });
+            return true; // Game over
         }
-    }
-
-    // Add the new method to handle return from delivery run
-    handleReturnFromDelivery(results) {
-        console.log("HubScreen: Processing delivery results:", results);
-
-        if (!results) {
-            console.warn("No results provided to handleReturnFromDelivery");
-            return;
-        }
-
-        // Ensure the scene is properly initialized before proceeding
-        if (!this.scene.isActive()) {
-            console.log("HubScreen: Scene not active, starting scene first");
-            this.scene.start("HubScreen");
-
-            // Add a delay to ensure scene is fully initialized before processing results
-            this.time.delayedCall(500, () => {
-                this.processDeliveryResults(results);
-            });
-            return;
-        }
-
-        this.processDeliveryResults(results);
+        return false; // Game not over
     }
 
     processDeliveryResults(results) {
         console.log("HubScreen: Processing results with GameState:", results);
 
+        // Vérifier à nouveau les résultats au cas où ils auraient été perdus
+        if (!results || typeof results !== "object") {
+            console.error("HubScreen: Invalid results object received");
+            return;
+        }
+
+        // S'assurer que les restaurants sont présents dans les résultats
+        if (!results.restaurants) {
+            console.warn(
+                "HubScreen: No restaurants in results, using empty array"
+            );
+            results.restaurants = [];
+        }
+
         // Use GameState's method to process all delivery results
         gameState.processDeliveryResults(results);
-
-        // Save game state to localStorage after all updates
-        gameState.saveGameState(true); // true to create a backup copy
 
         // Ensure the fairy and text objects are created before displaying messages
         if (!this.fairy || !this.speechText) {
@@ -794,11 +846,23 @@ export class HubScreen extends Phaser.Scene {
             this.createSpeechBubble();
         }
 
+        const processedState = gameState.getGameState();
+        const newPeriod = processedState.gameProgress.currentPeriod;
+
         // Display result message
-        if (results.message) {
+        if (results.message && results.message.text) {
             // Add a small delay to ensure everything is ready
             this.time.delayedCall(100, () => {
-                this.displayMessage(results.message.text, results.message.type);
+                this.displayMessage(
+                    results.message.text,
+                    results.message.type || "info"
+                );
+                // Show a period message after the result message
+                this.time.delayedCall(2000, () => {
+                    this.displayMessage(
+                        `Starting Period ${newPeriod}! Ready for another day of noodle business?`
+                    );
+                });
             });
         } else {
             // Fallback message based on financial result
@@ -806,10 +870,12 @@ export class HubScreen extends Phaser.Scene {
                 results.balanceChange || results.totalProfit || 0;
             const messageText =
                 balanceChange >= 0
-                    ? `Period complete! Profit: $${balanceChange.toLocaleString()}`
-                    : `Period complete. Loss: $${Math.abs(
+                    ? `Period complete! Profit: ${formatCurrency(
                           balanceChange
-                      ).toLocaleString()}`;
+                      )}`
+                    : `Period complete. Loss: ${formatCurrency(
+                          Math.abs(balanceChange)
+                      )}`;
 
             // Add a small delay to ensure everything is ready
             this.time.delayedCall(100, () => {
@@ -817,10 +883,20 @@ export class HubScreen extends Phaser.Scene {
                     messageText,
                     balanceChange >= 0 ? "success" : "warning"
                 );
+
+                // Show a period message
+                this.time.delayedCall(2000, () => {
+                    this.displayMessage(
+                        `Starting Period ${newPeriod}! Ready for another day of noodle business?`
+                    );
+                });
             });
         }
 
-        // Check for game over conditions
+        // Update music based on the new period
+        audioManager.playHubMusic(newPeriod);
+
+        // Check for game over conditions after processing results
         this.checkGameOverConditions();
     }
 }

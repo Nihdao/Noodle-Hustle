@@ -25,12 +25,13 @@ class GameState {
         this.consecutiveNegativePeriods = 0;
         this.gameOverStats = null;
 
-        // Listen for return to hub event to increment period
-        this.events.on("returnToHub", () => {
-            if (this.initialized) {
-                this.startPeriod();
-            }
-        });
+        // Suppression de l'écouteur d'événement automatique pour returnToHub
+        // qui pourrait créer des conflits avec le processus normal
+        // this.events.on("returnToHub", () => {
+        //    if (this.initialized) {
+        //        this.startPeriod();
+        //    }
+        // });
     }
 
     /**
@@ -176,8 +177,59 @@ class GameState {
         }
 
         // Extract relevant data from results
-        const { totalProfit = 0, rankChange = 0 } = results;
+        const {
+            totalProfit = 0,
+            burnoutChange = 0,
+            restaurants = [],
+        } = results;
 
+        // Update employee morale based on restaurant performance
+        if (restaurants && restaurants.length > 0) {
+            restaurants.forEach((restaurant) => {
+                const restaurantPerformance = restaurant.actualProfit >= 0;
+                const moraleChange = restaurantPerformance ? 5 : -10;
+
+                // Update morale for each employee in this restaurant
+                if (restaurant.staff && restaurant.staff.length > 0) {
+                    restaurant.staff.forEach((staffId) => {
+                        const employee = this.getEmployeeById(staffId);
+                        if (employee) {
+                            const currentMorale = employee.morale || 50;
+                            const newMorale = Math.min(
+                                100,
+                                Math.max(0, currentMorale + moraleChange)
+                            );
+                            this.updateEmployeeMorale(staffId, newMorale);
+
+                            // console.log(
+                            //     `GameState: Updated employee ${staffId} morale from ${currentMorale} to ${newMorale} (${
+                            //         moraleChange > 0 ? "+" : ""
+                            //     }${moraleChange}) - Restaurant: ${
+                            //         restaurant.name
+                            //     }, Performance: ${
+                            //         restaurantPerformance ? "Good" : "Poor"
+                            //     }`
+                            // );
+                        }
+                    });
+                }
+
+                // Update restaurant data in gameState with the actual profit results
+                if (restaurant.id) {
+                    const currentRestaurant = this.getRestaurantData(
+                        restaurant.id
+                    );
+                    if (currentRestaurant) {
+                        this.updateRestaurant(restaurant.id, {
+                            lastProfit: restaurant.actualProfit,
+                            lastPeriodEvents: restaurant.events || [],
+                        });
+                    }
+                }
+            });
+        }
+
+        // Use updateGameState to ensure atomicity and event emission
         this.updateGameState((state) => {
             // Update finances
             const updatedFunds = state.finances.funds + totalProfit;
@@ -186,58 +238,52 @@ class GameState {
             const totalBalance = state.finances.totalBalance || 0;
             const updatedTotalBalance = totalBalance + totalProfit;
 
-            // Check for rank change based on totalBalance
-            const currentRank = state.gameProgress.businessRank || 200;
-
-            // Find the appropriate rank based on totalBalance
+            // --- Corrected Rank Calculation ---
+            // Sort rank details descending by balance required
             const rankDetails = [...rankData.rankDetails].sort(
-                (a, b) => a.rank - b.rank
+                (a, b) => b.balanceRequired - a.balanceRequired
             );
-            let newRank = currentRank;
+            let newRank = 200; // Start assuming the lowest rank (highest number)
 
-            // If balance has increased, check if we qualify for a higher rank
-            if (updatedTotalBalance > totalBalance) {
-                for (const rankDetail of rankDetails) {
-                    if (
-                        updatedTotalBalance >= rankDetail.balanceRequired &&
-                        rankDetail.rank < currentRank
-                    ) {
-                        newRank = rankDetail.rank;
-                        break;
-                    }
+            // Loop through ranks from highest balance requirement down
+            for (const rankDetail of rankDetails) {
+                if (updatedTotalBalance >= rankDetail.balanceRequired) {
+                    // Found the highest rank tier (lowest rank number) the player qualifies for
+                    newRank = rankDetail.rank;
+                    break; // Exit the loop once the highest qualifying rank is found
                 }
             }
+            // --- End Corrected Rank Calculation ---
 
-            // Get current business category
+            // Get current business category based on the correctly calculated newRank
             const currentCategory = this.getBusinessCategoryFromRank(newRank);
 
             // Calculate new debt amount based on rank's balanceThreshold
-            let newDebtAmount = 150000; // Initial debt amount
+            let newDebtAmount = state.finances.debt.amount || 150000;
             if (state.gameProgress.currentPeriod > 1) {
-                // Only update debt after first period
-                // Find the current rank range
                 const currentRankRange = rankData.ranks.find(
                     (r) =>
                         r.rankRange.min <= newRank && r.rankRange.max >= newRank
                 );
 
                 if (currentRankRange) {
-                    // Calculate new debt as balanceThreshold / 10
                     newDebtAmount = Math.floor(
                         currentRankRange.balanceThreshold / 10
                     );
-                    // Ensure minimum debt amount
                     newDebtAmount = Math.max(150000, newDebtAmount);
                 }
             }
 
             // Update burnout based on results
             const currentBurnout = state.playerStats?.burnout || 0;
-            const burnoutChange = results.burnoutChange || 0;
             const updatedBurnout = Math.min(
                 100,
                 Math.max(0, currentBurnout + burnoutChange)
             );
+
+            // Increment Period
+            const newPeriod = state.gameProgress.currentPeriod + 1;
+            const newInvestorClashIn = Math.max(0, 10 - (newPeriod % 10));
 
             return {
                 ...state,
@@ -274,7 +320,9 @@ class GameState {
                 },
                 gameProgress: {
                     ...state.gameProgress,
-                    businessRank: newRank,
+                    currentPeriod: newPeriod, // Update period here
+                    investorClashIn: newInvestorClashIn, // Update clash timer
+                    businessRank: newRank, // Use the correctly calculated newRank
                     businessCategory: currentCategory,
                     rankHistory: [
                         ...(state.gameProgress.rankHistory || []),
@@ -296,18 +344,46 @@ class GameState {
                         },
                     ],
                 },
+                // Reset flags for the new period
+                employeeRecruitment: {
+                    ...state.employeeRecruitment,
+                    searchActionDoneInPeriod: false,
+                    candidates: [],
+                },
+                social: {
+                    ...state.social,
+                    socialActionDoneInPeriod: false,
+                },
             };
-        });
+        }); // updateGameState handles emitting 'gameStateUpdated' and saving
+
+        // Emit event for period started AFTER state update
+        this.events.emit(
+            "periodStarted",
+            this.state.gameProgress.currentPeriod
+        );
 
         // Emit event for delivery results processed
         this.events.emit("deliveryResultsProcessed", {
             profit: totalProfit,
-            rankChange,
+            rankChange:
+                this.state.gameProgress.businessRank -
+                (this.state.gameProgress.rankHistory.slice(-2)[0]?.rank || 200),
             burnout: this.state.playerStats.burnout,
             totalBalance: this.state.finances.totalBalance,
             businessRank: this.state.gameProgress.businessRank,
             businessCategory: this.state.gameProgress.businessCategory,
         });
+
+        // Autosave if enabled (now happens after state update)
+        if (this.settings.gameplay.autosaveEnabled) {
+            const currentPeriod = this.state.gameProgress.currentPeriod;
+            if (currentPeriod % this.settings.gameplay.autosaveInterval === 0) {
+                this.saveGameState(true);
+            } else {
+                this.saveGameState(false); // Save without backup every period if autosave enabled
+            }
+        }
 
         return this.state;
     }
